@@ -7,9 +7,11 @@ import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.Capabilities
 import io.github.damnms.buerstli.domain.CommandResult
 import io.github.damnms.buerstli.domain.Validation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
 import java.util.UUID
 
@@ -44,14 +46,24 @@ internal class LaifenWaveV1Session(
 
         return try {
             link.write(ch, LaifenWaveV1Codec.encodeModeSettings(cmd.modeIndex, cmd.settings))
-            // Trust, but verify: only report success if the brush says so itself.
-            val after = refresh()
-            if (after?.modes?.get(cmd.modeIndex) == cmd.settings) CommandResult.Confirmed
-            else CommandResult.NotApplied
+            // Trust, but verify: only report success once the brush reports the new values itself.
+            // The real brush applies a write with a short delay, so the confirmation may come from
+            // a later read or from a notification, whichever is first.
+            val confirmed = withTimeoutOrNull(CONFIRM_TIMEOUT_MS) {
+                while (!applied(cmd)) {
+                    delay(POLL_INTERVAL_MS)
+                    if (!applied(cmd)) refresh()
+                }
+                true
+            }
+            if (confirmed == true) CommandResult.Confirmed else CommandResult.NotApplied
         } catch (e: IOException) {
             CommandResult.Failed(e.message ?: "connection lost")
         }
     }
+
+    private fun applied(cmd: BrushCommand.ChangeModeSettings) =
+        _state.value.modes[cmd.modeIndex] == cmd.settings
 
     /** Reads the status. A read right after a write may return an ack instead, so try a few times. */
     private suspend fun refresh(): BrushState? {
@@ -66,5 +78,7 @@ internal class LaifenWaveV1Session(
 
     private companion object {
         const val READ_ATTEMPTS = 3
+        const val POLL_INTERVAL_MS = 250L
+        const val CONFIRM_TIMEOUT_MS = 3_000L
     }
 }

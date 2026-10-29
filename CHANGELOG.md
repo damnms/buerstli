@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+- Fix: saving showed "the brush ignored that" although it worked. The brush applies a change
+  with a short delay; Bürstli now waits up to 3 seconds for it to report the new values.
+
 ## 0.2.0
 - Change strength, range and speed of every mode, confirmed by reading the brush back.
 - Unsaved changes survive the brush falling asleep.

@@ -8,6 +8,8 @@ import io.github.damnms.buerstli.domain.ParameterKind.RANGE
 import io.github.damnms.buerstli.domain.ParameterKind.SPEED
 import io.github.damnms.buerstli.domain.ParameterKind.STRENGTH
 import io.github.damnms.buerstli.domain.Validation
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -22,18 +24,41 @@ class LaifenWaveV1SessionTest {
      * A pretend brush behind a [BrushLink]: answers reads with its status packet and,
      * if [acceptsWrites], applies mode-settings commands like the real one does.
      */
-    private class FakeBrush(var status: ByteArray, val acceptsWrites: Boolean = true) : BrushLink {
+    private class FakeBrush(
+        var status: ByteArray,
+        val acceptsWrites: Boolean = true,
+        /** Like the real brush: reads right after a write still return the old status. */
+        val staleReadsAfterWrite: Int = 0,
+    ) : BrushLink {
         val writes = mutableListOf<ByteArray>()
         val notificationsEnabled = mutableListOf<UUID>()
         var failWrites = false
+        private var pending: ByteArray? = null
+        private var staleLeft = 0
 
-        override suspend fun read(characteristic: UUID): ByteArray = status.copyOf()
+        override suspend fun read(characteristic: UUID): ByteArray {
+            pending?.let {
+                if (staleLeft-- <= 0) {
+                    status = it
+                    pending = null
+                }
+            }
+            return status.copyOf()
+        }
 
         override suspend fun write(characteristic: UUID, data: ByteArray) {
             if (failWrites) throw IOException("brush fell asleep")
             writes += data
-            if (acceptsWrites) status = apply(status, data)
+            if (!acceptsWrites) return
+            if (staleReadsAfterWrite == 0) {
+                status = apply(status, data)
+            } else {
+                pending = apply(status, data)
+                staleLeft = staleReadsAfterWrite
+            }
         }
+
+        fun applied(cmd: ByteArray) = apply(status, cmd)
 
         override suspend fun enableNotifications(characteristic: UUID) {
             notificationsEnabled += characteristic
@@ -130,5 +155,27 @@ class LaifenWaveV1SessionTest {
         val result = session.execute(ChangeModeSettings(0, settings(4, 1, 5)))
 
         assertTrue(result is CommandResult.Failed)
+    }
+
+    @Test
+    fun `a brush that applies the change a moment later is still confirmed`() = runTest {
+        // Found on the real LFTB01-P: the first reads after a write return the old values.
+        val session = LaifenWaveV1Driver.open(FakeBrush(Packets.MODE3_ACTIVE, staleReadsAfterWrite = 3)).apply { start() }
+
+        assertEquals(CommandResult.Confirmed, session.execute(ChangeModeSettings(2, settings(6, 6, 5))))
+        assertEquals(settings(6, 6, 5), session.state.value.modes[2])
+    }
+
+    @Test
+    fun `confirmation may also arrive as a notification`() = runTest {
+        val brush = FakeBrush(Packets.MODE3_ACTIVE, acceptsWrites = false)
+        val session = LaifenWaveV1Driver.open(brush).apply { start() }
+
+        launch {
+            delay(400)
+            session.onNotification(LaifenWaveV1Codec.CHARACTERISTIC, brush.applied(Packets.SET_MODE3_666_TO_665))
+        }
+
+        assertEquals(CommandResult.Confirmed, session.execute(ChangeModeSettings(2, settings(6, 6, 5))))
     }
 }
