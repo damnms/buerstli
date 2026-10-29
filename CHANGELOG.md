@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+- "For nerds: log" with timings of scanning, connecting and every Bluetooth operation.
+  Stays on the phone, copy it to report problems.
+
 ## 0.3.0
 - Show and change the brushing time (1–5 minutes in half-minute steps).
 - Found out that the Wave V1 does report its brushing time in the status packet.

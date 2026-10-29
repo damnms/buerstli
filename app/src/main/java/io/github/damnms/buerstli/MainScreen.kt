@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
@@ -26,6 +27,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -62,6 +70,7 @@ fun MainScreen(
     drafts: Drafts,
     saveStatus: Map<Int, SaveStatus>,
     duration: DurationUi,
+    logLines: List<String>,
     permissionGranted: Boolean,
     permissionDenied: Boolean,
     actions: Actions,
@@ -80,6 +89,7 @@ fun MainScreen(
             } else {
                 ConnectionContent(connection, brushState, drafts, saveStatus, duration, actions)
             }
+            if (logLines.isNotEmpty()) LogCard(logLines)
             Spacer(Modifier.height(8.dp))
             Footer()
         }
@@ -372,6 +382,31 @@ private fun Message(text: String, hint: String?, action: String?, onAction: (() 
         Text(text, style = MaterialTheme.typography.titleMedium)
         hint?.let { Text(it) }
         if (action != null && onAction != null) Button(onClick = onAction) { Text(action) }
+    }
+}
+
+@Composable
+private fun LogCard(lines: List<String>) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    val clipboard = LocalClipboardManager.current
+    InfoCard {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { open = !open }) { Text(stringResource(R.string.log_title)) }
+            if (open) {
+                TextButton(onClick = { clipboard.setText(AnnotatedString(lines.joinToString("\n"))) }) {
+                    Text(stringResource(R.string.log_copy))
+                }
+            }
+        }
+        if (open) {
+            Text(stringResource(R.string.log_hint), style = MaterialTheme.typography.bodySmall)
+            Text(
+                lines.takeLast(80).joinToString("\n"),
+                fontFamily = FontFamily.Monospace,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            )
+        }
     }
 }
 

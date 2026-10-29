@@ -6,7 +6,9 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothStatusCodes
 import android.os.Build
+import io.github.damnms.buerstli.Diagnostics
 import io.github.damnms.buerstli.domain.BrushLink
+import io.github.damnms.buerstli.hex
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -22,17 +24,20 @@ import java.util.UUID
  * into the result of a suspending call. [BleConnector] forwards the callbacks.
  */
 @SuppressLint("MissingPermission")
-internal class AndroidBrushLink(private val gatt: BluetoothGatt) : BrushLink {
+internal class AndroidBrushLink(
+    private val gatt: BluetoothGatt,
+    private val diag: Diagnostics,
+) : BrushLink {
 
     private val mutex = Mutex()
     @Volatile private var pending: CompletableDeferred<ByteArray>? = null
 
     override suspend fun read(characteristic: UUID): ByteArray =
-        operation { gatt.readCharacteristic(find(characteristic)) }
+        operation("read") { gatt.readCharacteristic(find(characteristic)) }
 
     override suspend fun write(characteristic: UUID, data: ByteArray) {
         val ch = find(characteristic)
-        operation {
+        operation("write ${data.hex()}") {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 gatt.writeCharacteristic(ch, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) ==
                     BluetoothStatusCodes.SUCCESS
@@ -52,7 +57,7 @@ internal class AndroidBrushLink(private val gatt: BluetoothGatt) : BrushLink {
         val cccd = ch.getDescriptor(CCCD) ?: throw IOException("characteristic has no notification descriptor")
         if (!gatt.setCharacteristicNotification(ch, true)) throw IOException("could not enable notifications")
         val enable = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        operation {
+        operation("enable notifications") {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 gatt.writeDescriptor(cccd, enable) == BluetoothStatusCodes.SUCCESS
             } else {
@@ -78,14 +83,22 @@ internal class AndroidBrushLink(private val gatt: BluetoothGatt) : BrushLink {
         gatt.services.firstNotNullOfOrNull { it.getCharacteristic(uuid) }
             ?: throw IOException("characteristic $uuid not found")
 
-    private suspend fun operation(start: () -> Boolean): ByteArray = mutex.withLock {
+    private suspend fun operation(name: String, start: () -> Boolean): ByteArray = mutex.withLock {
         val result = CompletableDeferred<ByteArray>()
         pending = result
+        val t0 = System.currentTimeMillis()
+        fun ms() = System.currentTimeMillis() - t0
         try {
             if (!start()) throw IOException("Bluetooth refused the operation")
-            withTimeout(OPERATION_TIMEOUT_MS) { result.await() }
+            val value = withTimeout(OPERATION_TIMEOUT_MS) { result.await() }
+            diag.log("$name: ok after ${ms()} ms" + if (value.isNotEmpty()) " -> ${value.hex()}" else "")
+            value
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            diag.log("$name: NO ANSWER after ${ms()} ms")
             throw IOException("brush did not answer")
+        } catch (e: IOException) {
+            diag.log("$name: FAILED after ${ms()} ms: ${e.message}")
+            throw e
         } finally {
             pending = null
         }

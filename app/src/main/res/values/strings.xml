@@ -53,4 +53,7 @@
     <string name="duration_title">Brushing time</string>
     <string name="duration_value">%1$d:%2$02d min</string>
     <string name="duration_hint">Dentists say two minutes. The cloud has no opinion, because nobody asked it.</string>
+    <string name="log_title">For nerds: log</string>
+    <string name="log_copy">Copy</string>
+    <string name="log_hint">Stays on this phone. Copy it if you want to report a problem – we couldn\'t send it anywhere even if we wanted to.</string>
 </resources>

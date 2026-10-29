@@ -13,7 +13,9 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
+import io.github.damnms.buerstli.Diagnostics
 import io.github.damnms.buerstli.domain.Advertisement
+import io.github.damnms.buerstli.hex
 import io.github.damnms.buerstli.domain.BrushSession
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.DriverRegistry
@@ -50,6 +52,7 @@ class BleConnector(
     context: Context,
     private val registry: DriverRegistry,
     private val scope: CoroutineScope,
+    private val diag: Diagnostics,
 ) {
     private val appContext = context.applicationContext
     private val adapter = appContext.getSystemService(BluetoothManager::class.java)?.adapter
@@ -70,6 +73,7 @@ class BleConnector(
 
         stopScan()
         closeGatt()
+        diag.mark("find: scanning")
         _state.value = Connection.Scanning
 
         val cb = object : ScanCallback() {
@@ -78,6 +82,7 @@ class BleConnector(
                 val driver = registry.driverFor(Advertisement(name)) ?: return
                 scope.launch {
                     if (scanCallback == null) return@launch // someone else won the race
+                    diag.log("found $name (${result.rssi} dBm) -> ${driver.model.brand} ${driver.model.name}")
                     stopScan()
                     connect(result.device, name ?: result.device.address, driver)
                 }
@@ -86,6 +91,7 @@ class BleConnector(
             override fun onScanFailed(errorCode: Int) {
                 scope.launch {
                     stopScan()
+                    diag.log("scan FAILED: error $errorCode")
                     _state.value = Connection.Failed("scan error $errorCode")
                 }
             }
@@ -95,6 +101,7 @@ class BleConnector(
         scanTimeout = scope.launch {
             delay(SCAN_TIMEOUT_MS)
             if (scanCallback != null) {
+                diag.log("nothing found, giving up")
                 stopScan()
                 _state.value = Connection.NotFound
             }
@@ -102,6 +109,7 @@ class BleConnector(
     }
 
     fun disconnect() {
+        diag.log("disconnect requested")
         stopScan()
         gatt?.disconnect() ?: run { _state.value = Connection.Idle }
     }
@@ -133,13 +141,21 @@ class BleConnector(
 
     private fun connect(device: BluetoothDevice, name: String, driver: ToothbrushDriver) {
         _state.value = Connection.Connecting(name, driver)
+        diag.log("connecting")
         gatt = device.connectGatt(appContext, false, Callback(name, driver), BluetoothDevice.TRANSPORT_LE)
     }
 
     private inner class Callback(val name: String, val driver: ToothbrushDriver) : BluetoothGattCallback() {
 
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+            val stateName = when (newState) {
+                BluetoothProfile.STATE_CONNECTED -> "connected"
+                BluetoothProfile.STATE_DISCONNECTED -> "disconnected"
+                else -> "state $newState"
+            }
+            diag.log("link $stateName (GATT status $status)")
             if (newState == BluetoothProfile.STATE_CONNECTED && status == BluetoothGatt.GATT_SUCCESS) {
+                diag.log("discovering services")
                 g.discoverServices()
                 return
             }
@@ -157,20 +173,23 @@ class BleConnector(
         }
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
+            diag.log("services discovered: ${g.services.size} (GATT status $status)")
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 _state.value = Connection.Unsupported(name)
                 g.disconnect()
                 return
             }
-            val l = AndroidBrushLink(g)
+            val l = AndroidBrushLink(g, diag)
             val s = driver.open(l)
             link = l
             session = s
             scope.launch {
                 try {
                     s.start()
+                    diag.log("ready")
                     _state.value = Connection.Connected(name, driver, s)
                 } catch (e: IOException) {
+                    diag.log("handshake FAILED: ${e.message}")
                     _state.value = Connection.Unsupported(name)
                     g.disconnect()
                 }
@@ -188,6 +207,7 @@ class BleConnector(
             result(status, value)
 
         override fun onCharacteristicChanged(g: BluetoothGatt, ch: BluetoothGattCharacteristic, value: ByteArray) {
+            diag.log("notification ${value.hex()}")
             session?.onNotification(ch.uuid, value)
         }
 
@@ -201,7 +221,11 @@ class BleConnector(
         @Deprecated("Pre-Android-13 callback")
         override fun onCharacteristicChanged(g: BluetoothGatt, ch: BluetoothGattCharacteristic) {
             @Suppress("DEPRECATION")
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) session?.onNotification(ch.uuid, ch.value ?: return)
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                val value = ch.value ?: return
+                diag.log("notification ${value.hex()}")
+                session?.onNotification(ch.uuid, value)
+            }
         }
 
         private fun result(status: Int, value: ByteArray) {

@@ -27,7 +27,8 @@ sealed interface SaveStatus {
 
 class BrushViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val connector = BleConnector(app, Drivers.registry, viewModelScope)
+    val diagnostics = Diagnostics()
+    private val connector = BleConnector(app, Drivers.registry, viewModelScope, diagnostics)
     val connection: StateFlow<Connection> = connector.state
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -72,7 +73,9 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
         val seconds = _durationDraft.value ?: return
         _durationSave.value = SaveStatus.Saving
         viewModelScope.launch {
+            diagnostics.log("save brushing time: $seconds s")
             val result = connected.session.execute(BrushCommand.ChangeBrushingDuration(seconds))
+            diagnostics.log("save brushing time: $result")
             if (result == CommandResult.Confirmed) _durationDraft.value = null
             _durationSave.value = SaveStatus.Done(result)
         }
@@ -95,7 +98,9 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
         val settings = _drafts.value.current(mode, null) ?: return
         _saveStatus.update { it + (mode to SaveStatus.Saving) }
         viewModelScope.launch {
+            diagnostics.log("save mode ${mode + 1}: ${settings.values}")
             val result = connected.session.execute(BrushCommand.ChangeModeSettings(mode, settings))
+            diagnostics.log("save mode ${mode + 1}: $result")
             if (result == CommandResult.Confirmed) _drafts.update { it.clear(mode) }
             _saveStatus.update { it + (mode to SaveStatus.Done(result)) }
         }

@@ -52,4 +52,7 @@
     <string name="duration_title">Putzdauer</string>
     <string name="duration_value">%1$d:%2$02d Min.</string>
     <string name="duration_hint">Zahnärzte sagen zwei Minuten. Die Cloud hat keine Meinung dazu, weil sie niemand gefragt hat.</string>
+    <string name="log_title">Für Nerds: Protokoll</string>
+    <string name="log_copy">Kopieren</string>
+    <string name="log_hint">Bleibt auf diesem Handy. Kopier es, wenn du ein Problem melden willst – wir könnten es gar nicht verschicken, selbst wenn wir wollten.</string>
 </resources>
