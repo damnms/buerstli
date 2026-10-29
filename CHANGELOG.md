@@ -6,6 +6,12 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- 30-second nudge on/off.
+- High frequency on/off; mode 4 says when it isn't used.
+- Start and stop brushing from the phone.
+- Flight mode is shown as a switch (read-only: it can only be changed on the brush).
+
 ## [0.3.2] - 2026-10-29
 
 First public release. Bürstli talks to your Laifen Wave (LFTB01) over Bluetooth – no account,

@@ -2,6 +2,7 @@ package io.github.damnms.buerstli.drivers.laifen
 
 import io.github.damnms.buerstli.domain.BrushCommand.ChangeBrushingDuration
 import io.github.damnms.buerstli.domain.BrushCommand.ChangeModeSettings
+import io.github.damnms.buerstli.domain.BrushCommand.SetSwitch
 import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.BrushSession
 import io.github.damnms.buerstli.domain.CommandResult
@@ -9,6 +10,7 @@ import io.github.damnms.buerstli.domain.ModeSettings
 import io.github.damnms.buerstli.domain.ParameterKind.RANGE
 import io.github.damnms.buerstli.domain.ParameterKind.SPEED
 import io.github.damnms.buerstli.domain.ParameterKind.STRENGTH
+import io.github.damnms.buerstli.domain.Switch
 import io.github.damnms.buerstli.domain.Validation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,10 +56,11 @@ class LaifenWaveV1SessionTest {
         override suspend fun write(characteristic: UUID, data: ByteArray) {
             if (failWrites) throw IOException("brush fell asleep")
             writes += data
+            // As documented: 0x04, 0x0E and 0x0F push the state, 0x05 and 0x0B only acknowledge.
             when (data[1].toInt()) {
                 0x0A -> pushState()
-                0x04 -> { accept(data); pushState() }
-                0x05 -> { accept(data); notify(Packets.ACK_DURATION) }
+                0x04, 0x0E, 0x0F -> { accept(data); pushState() }
+                0x05, 0x0B -> { accept(data); notify(ack(data[1])) }
             }
         }
 
@@ -81,11 +84,21 @@ class LaifenWaveV1SessionTest {
 
         fun applied(cmd: ByteArray) = apply(status, cmd)
 
+        private fun ack(code: Byte): ByteArray {
+            val body = byteArrayOf(0xAA.toByte(), code, 0x02, 0x01, 0x00)
+            var cs = 0
+            for (b in body) cs = cs xor (b.toInt() and 0xFF)
+            return body + cs.toByte()
+        }
+
         private fun apply(status: ByteArray, cmd: ByteArray): ByteArray {
             val out = status.copyOf()
             when (cmd[1].toInt()) {
                 0x04 -> { val base = 5 + 3 * cmd[4]; out[base] = cmd[5]; out[base + 1] = cmd[6]; out[base + 2] = cmd[7] }
                 0x05 -> { out[20] = cmd[4]; out[21] = cmd[5] }
+                0x0B -> out[4 + 15] = cmd[4]
+                0x0E -> out[4 + 18] = cmd[4]
+                0x0F -> out[4 + 19] = cmd[4]
             }
             var cs = 0
             for (i in 0 until out.lastIndex) cs = cs xor (out[i].toInt() and 0xFF)
@@ -221,5 +234,36 @@ class LaifenWaveV1SessionTest {
         brush.failWrites = true
 
         assertTrue(session.execute(ChangeModeSettings(0, settings(4, 1, 5))) is CommandResult.Failed)
+    }
+
+    @Test
+    fun `30-second reminder is confirmed by asking, since the brush only acknowledges`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+
+        assertEquals(CommandResult.Confirmed, session.execute(SetSwitch(Switch.REMINDER_30S, true)))
+        assertArrayEquals(Packets.hex("AA-0B-01-01-01-A0"), brush.commands.single())
+        assertEquals(true, session.state.value.switches[Switch.REMINDER_30S])
+    }
+
+    @Test
+    fun `high frequency and motor are confirmed by the pushed state`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+
+        assertEquals(CommandResult.Confirmed, session.execute(SetSwitch(Switch.HIGH_FREQUENCY, true)))
+        assertEquals(CommandResult.Confirmed, session.execute(SetSwitch(Switch.MOTOR, true)))
+        assertEquals(CommandResult.Confirmed, session.execute(SetSwitch(Switch.MOTOR, false)))
+        assertEquals(true, session.state.value.switches[Switch.HIGH_FREQUENCY])
+        assertEquals(false, session.state.value.switches[Switch.MOTOR])
+    }
+
+    @Test
+    fun `flight mode is never written, it is read-only`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+
+        assertEquals(CommandResult.Unsupported, session.execute(SetSwitch(Switch.FLIGHT_MODE, true)))
+        assertTrue(brush.commands.isEmpty())
     }
 }

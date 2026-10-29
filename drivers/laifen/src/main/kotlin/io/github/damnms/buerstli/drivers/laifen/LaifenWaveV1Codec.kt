@@ -5,6 +5,7 @@ import io.github.damnms.buerstli.domain.ModeSettings
 import io.github.damnms.buerstli.domain.ParameterKind.RANGE
 import io.github.damnms.buerstli.domain.ParameterKind.SPEED
 import io.github.damnms.buerstli.domain.ParameterKind.STRENGTH
+import io.github.damnms.buerstli.domain.Switch
 import java.util.UUID
 
 /**
@@ -20,6 +21,11 @@ import java.util.UUID
  * Command: AA 04 01 04 [mode] [strength] [range] [speed] [xor]
  *          All three values at once; the brush rejects single-value writes.
  * Command: AA 05 01 02 [seconds hi] [seconds lo] [xor]   brushing duration
+ * Command: AA [code] 01 01 [01/00] [xor]   switches: 0B reminder, 0E high frequency, 0F motor
+ *
+ * Payload layout and switch commands as documented (and confirmed on an LFTB01-P) in
+ * laifen-toolbox/docs/PROTOCOL.md: 13 flight mode, 14 battery, 15 reminder, 16-17 brushing
+ * time, 18 high frequency, 19 motor. A boolean is true only for exactly 01.
  * The checksum is the XOR of all preceding bytes.
  */
 object LaifenWaveV1Codec {
@@ -34,7 +40,7 @@ object LaifenWaveV1Codec {
 
     const val MODE_COUNT = 4
     private const val HEADER = 4
-    private const val MIN_PAYLOAD = 18
+    private const val MIN_PAYLOAD = 20
 
     fun decodeStatus(data: ByteArray): BrushState? {
         if (data.size < HEADER + MIN_PAYLOAD + 1) return null
@@ -58,8 +64,13 @@ object LaifenWaveV1Codec {
             batteryPercent = u[p + 14].coerceIn(0, 100),
             activeModeIndex = active,
             modes = modes,
-            flightMode = u[p + 13] != 0,
             brushingDurationSeconds = (u[p + 16] shl 8) or u[p + 17],
+            switches = mapOf(
+                Switch.FLIGHT_MODE to (u[p + 13] == 1),
+                Switch.REMINDER_30S to (u[p + 15] == 1),
+                Switch.HIGH_FREQUENCY to (u[p + 18] == 1),
+                Switch.MOTOR to (u[p + 19] == 1),
+            ),
         )
     }
 
@@ -81,6 +92,18 @@ object LaifenWaveV1Codec {
             (seconds shr 8).toByte(),
             (seconds and 0xFF).toByte(),
         )
+        return body + xor(body, body.size).toByte()
+    }
+
+    /** Null for switches that can't be written (flight mode: command never tested). */
+    fun encodeSwitch(switch: Switch, on: Boolean): ByteArray? {
+        val code = when (switch) {
+            Switch.REMINDER_30S -> 0x0B
+            Switch.HIGH_FREQUENCY -> 0x0E
+            Switch.MOTOR -> 0x0F
+            Switch.FLIGHT_MODE -> return null
+        }
+        val body = byteArrayOf(0xAA.toByte(), code.toByte(), 0x01, 0x01, if (on) 0x01 else 0x00)
         return body + xor(body, body.size).toByte()
     }
 

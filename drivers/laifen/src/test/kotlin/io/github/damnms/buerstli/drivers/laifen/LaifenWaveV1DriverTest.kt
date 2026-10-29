@@ -1,7 +1,9 @@
 package io.github.damnms.buerstli.drivers.laifen
 
 import io.github.damnms.buerstli.domain.Advertisement
+import io.github.damnms.buerstli.domain.Access
 import io.github.damnms.buerstli.domain.DurationSpec
+import io.github.damnms.buerstli.domain.Switch
 import io.github.damnms.buerstli.domain.ParameterKind.STRENGTH
 import io.github.damnms.buerstli.domain.SupportLevel
 import org.junit.Assert.assertEquals
@@ -48,5 +50,18 @@ class LaifenWaveV1DriverTest {
     @Test
     fun `brushing duration is 1 to 5 minutes in half-minute steps`() {
         assertEquals(DurationSpec(60..300, 30), driver.capabilities.brushingDuration)
+    }
+
+    @Test
+    fun `flight mode is only shown, the other switches can be changed`() {
+        assertEquals(
+            mapOf(
+                Switch.REMINDER_30S to Access.READ_WRITE,
+                Switch.HIGH_FREQUENCY to Access.READ_WRITE,
+                Switch.MOTOR to Access.READ_WRITE,
+                Switch.FLIGHT_MODE to Access.READ_ONLY,
+            ),
+            driver.capabilities.switches,
+        )
     }
 }

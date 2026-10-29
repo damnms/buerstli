@@ -12,6 +12,12 @@ object Packets {
     /** After writing [SET_DURATION_150] by hand: brushing duration now 150 s (bytes 20-21). */
     val DURATION_150 = hex("AA-0A-02-14-00-0A-01-01-04-06-06-01-01-0A-0B-06-06-00-5E-00-00-96-00-00-71")
 
+    /**
+     * State of another LFTB01-P with reminder and high frequency on, from
+     * laifen-toolbox/docs/PROTOCOL.md (section 2).
+     */
+    val TOOLBOX_REMINDER_AND_HF_ON = hex("AA-0A-02-14-00-01-0A-07-0A-0A-0A-04-0A-0A-14-01-01-00-5D-01-00-78-01-00-85")
+
     /** Asks the brush for its state; it answers with a status notification. */
     val READ_STATE = hex("AA-0A-00-00-A0")
 

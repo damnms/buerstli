@@ -4,6 +4,7 @@ import io.github.damnms.buerstli.domain.ModeSettings
 import io.github.damnms.buerstli.domain.ParameterKind.RANGE
 import io.github.damnms.buerstli.domain.ParameterKind.SPEED
 import io.github.damnms.buerstli.domain.ParameterKind.STRENGTH
+import io.github.damnms.buerstli.domain.Switch
 import io.github.damnms.buerstli.drivers.laifen.Packets.hex
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -19,7 +20,13 @@ class LaifenWaveV1CodecTest {
         val state = LaifenWaveV1Codec.decodeStatus(Packets.MODE2_ACTIVE)!!
         assertEquals(1, state.activeModeIndex)
         assertEquals(94, state.batteryPercent)
-        assertEquals(false, state.flightMode)
+        assertEquals(
+            mapOf(
+                Switch.FLIGHT_MODE to false, Switch.REMINDER_30S to false,
+                Switch.HIGH_FREQUENCY to false, Switch.MOTOR to false,
+            ),
+            state.switches,
+        )
         assertEquals(settings(3, 1, 5), state.modes[0])
         assertEquals(settings(4, 6, 6), state.modes[1])
         assertEquals(settings(6, 6, 6), state.modes[2])
@@ -73,5 +80,25 @@ class LaifenWaveV1CodecTest {
     @Test
     fun `filler from a plain GATT read is not a status`() {
         assertNull(LaifenWaveV1Codec.decodeStatus(Packets.GATT_READ_FILLER))
+    }
+
+    @Test
+    fun `decodes reminder and high frequency when they are on`() {
+        val state = LaifenWaveV1Codec.decodeStatus(Packets.TOOLBOX_REMINDER_AND_HF_ON)!!
+        assertEquals(true, state.switches[Switch.REMINDER_30S])
+        assertEquals(true, state.switches[Switch.HIGH_FREQUENCY])
+        assertEquals(false, state.switches[Switch.MOTOR])
+        assertEquals(93, state.batteryPercent)
+    }
+
+    @Test
+    fun `encodes the switch commands documented by laifen-toolbox`() {
+        assertArrayEquals(hex("AA-0B-01-01-01-A0"), LaifenWaveV1Codec.encodeSwitch(Switch.REMINDER_30S, true))
+        assertArrayEquals(hex("AA-0B-01-01-00-A1"), LaifenWaveV1Codec.encodeSwitch(Switch.REMINDER_30S, false))
+        assertArrayEquals(hex("AA-0E-01-01-01-A5"), LaifenWaveV1Codec.encodeSwitch(Switch.HIGH_FREQUENCY, true))
+        assertArrayEquals(hex("AA-0E-01-01-00-A4"), LaifenWaveV1Codec.encodeSwitch(Switch.HIGH_FREQUENCY, false))
+        // Same bytes as the Home Assistant integration uses for start/stop:
+        assertArrayEquals(hex("AA-0F-01-01-01-A4"), LaifenWaveV1Codec.encodeSwitch(Switch.MOTOR, true))
+        assertArrayEquals(hex("AA-0F-01-01-00-A5"), LaifenWaveV1Codec.encodeSwitch(Switch.MOTOR, false))
     }
 }

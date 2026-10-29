@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch as SwitchControl
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,7 +46,9 @@ import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.CommandResult
 import io.github.damnms.buerstli.domain.ModeSpec
 import io.github.damnms.buerstli.domain.ParameterKind
+import io.github.damnms.buerstli.domain.Access
 import io.github.damnms.buerstli.domain.SupportLevel
+import io.github.damnms.buerstli.domain.Switch
 import io.github.damnms.buerstli.domain.ToothbrushDriver
 import kotlin.math.roundToInt
 
@@ -59,6 +62,7 @@ class Actions(
     val editDuration: (seconds: Int) -> Unit,
     val saveDuration: () -> Unit,
     val discardDuration: () -> Unit,
+    val setSwitch: (Switch, Boolean) -> Unit,
 )
 
 class DurationUi(val draft: Int?, val save: SaveStatus?)
@@ -70,6 +74,7 @@ fun MainScreen(
     drafts: Drafts,
     saveStatus: Map<Int, SaveStatus>,
     duration: DurationUi,
+    switchSave: Map<Switch, SaveStatus>,
     logLines: List<String>,
     permissionGranted: Boolean,
     permissionDenied: Boolean,
@@ -87,7 +92,7 @@ fun MainScreen(
             if (!permissionGranted) {
                 PermissionCard(permissionDenied, actions.requestPermission)
             } else {
-                ConnectionContent(connection, brushState, drafts, saveStatus, duration, actions)
+                ConnectionContent(connection, brushState, drafts, saveStatus, duration, switchSave, actions)
             }
             if (logLines.isNotEmpty()) LogCard(logLines)
             Spacer(Modifier.height(8.dp))
@@ -131,6 +136,7 @@ private fun ConnectionContent(
     drafts: Drafts,
     saveStatus: Map<Int, SaveStatus>,
     duration: DurationUi,
+    switchSave: Map<Switch, SaveStatus>,
     actions: Actions,
 ) {
     when (connection) {
@@ -145,7 +151,7 @@ private fun ConnectionContent(
             if (brushState == null) {
                 Busy(stringResource(R.string.waiting_for_status), null)
             } else {
-                BrushView(connection.driver, brushState, drafts, saveStatus, duration, editable = true, actions)
+                BrushView(connection.driver, brushState, drafts, saveStatus, duration, switchSave, editable = true, actions)
             }
             OutlinedButton(onClick = actions.disconnect) { Text(stringResource(R.string.disconnect)) }
         }
@@ -156,7 +162,7 @@ private fun ConnectionContent(
                 stringResource(R.string.try_again),
                 actions.find,
             )
-            brushState?.let { BrushView(connection.driver, it, drafts, saveStatus, duration, editable = false, actions) }
+            brushState?.let { BrushView(connection.driver, it, drafts, saveStatus, duration, switchSave, editable = false, actions) }
         }
         Connection.NotFound -> Message(
             stringResource(R.string.not_found),
@@ -202,9 +208,11 @@ private fun BrushView(
     drafts: Drafts,
     saveStatus: Map<Int, SaveStatus>,
     duration: DurationUi,
+    switchSave: Map<Switch, SaveStatus>,
     editable: Boolean,
     actions: Actions,
 ) {
+    val switches = driver.capabilities.switches
     InfoCard {
         state.batteryPercent?.let { battery ->
             Text(stringResource(R.string.battery), style = MaterialTheme.typography.labelLarge)
@@ -213,8 +221,26 @@ private fun BrushView(
                 Text("$battery %", fontWeight = FontWeight.Bold)
             }
         }
-        state.flightMode?.let {
-            Text("${stringResource(R.string.flight_mode)}: ${stringResource(if (it) R.string.on else R.string.off)}")
+        if (Switch.MOTOR in switches) {
+            state.switches[Switch.MOTOR]?.let { running ->
+                MotorButton(running, switches[Switch.MOTOR] == Access.READ_WRITE && editable, switchSave[Switch.MOTOR], actions)
+            }
+        }
+    }
+    val toggles = listOf(Switch.REMINDER_30S, Switch.HIGH_FREQUENCY, Switch.FLIGHT_MODE)
+        .filter { it in switches && state.switches[it] != null }
+    if (toggles.isNotEmpty()) {
+        InfoCard {
+            toggles.forEach { sw ->
+                SwitchRow(
+                    switch = sw,
+                    on = state.switches.getValue(sw),
+                    writable = switches[sw] == Access.READ_WRITE,
+                    editable = editable,
+                    status = switchSave[sw],
+                    actions = actions,
+                )
+            }
         }
     }
     val durationSpec = driver.capabilities.brushingDuration
@@ -226,6 +252,7 @@ private fun BrushView(
         ModeCard(
             spec = spec,
             active = spec.index == state.activeModeIndex,
+            unused = spec.highFrequency && state.switches[Switch.HIGH_FREQUENCY] == false,
             onBrush = state.modes[spec.index],
             drafts = drafts,
             status = saveStatus[spec.index],
@@ -239,6 +266,7 @@ private fun BrushView(
 private fun ModeCard(
     spec: ModeSpec,
     active: Boolean,
+    unused: Boolean,
     onBrush: io.github.damnms.buerstli.domain.ModeSettings?,
     drafts: Drafts,
     status: SaveStatus?,
@@ -265,6 +293,7 @@ private fun ModeCard(
                     Text(stringResource(R.string.active), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
             }
+            if (unused) Text(stringResource(R.string.mode_hf_off_hint), style = MaterialTheme.typography.bodySmall)
             spec.parameters.forEach { p ->
                 val value = shown[p.kind] ?: p.range.first
                 Text("${stringResource(labelOf(p.kind))}: $value", style = MaterialTheme.typography.bodyMedium)
@@ -326,6 +355,56 @@ private fun DurationCard(
         }
         (ui.save as? SaveStatus.Done)?.let { SaveResult(it.result) }
     }
+}
+
+@Composable
+private fun MotorButton(running: Boolean, enabled: Boolean, status: SaveStatus?, actions: Actions) {
+    val busy = status is SaveStatus.Saving
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (running) {
+            OutlinedButton(onClick = { actions.setSwitch(Switch.MOTOR, false) }, enabled = enabled && !busy) {
+                Text(stringResource(R.string.motor_stop))
+            }
+        } else {
+            Button(onClick = { actions.setSwitch(Switch.MOTOR, true) }, enabled = enabled && !busy) {
+                Text(stringResource(R.string.motor_start))
+            }
+        }
+        if (busy) CircularProgressIndicator(Modifier.size(20.dp))
+    }
+    Text(stringResource(R.string.motor_hint), style = MaterialTheme.typography.bodySmall)
+    (status as? SaveStatus.Done)?.result?.takeIf { it != CommandResult.Confirmed }?.let { SaveResult(it) }
+}
+
+@Composable
+private fun SwitchRow(
+    switch: Switch,
+    on: Boolean,
+    writable: Boolean,
+    editable: Boolean,
+    status: SaveStatus?,
+    actions: Actions,
+) {
+    val busy = status is SaveStatus.Saving
+    val (title, hint) = when (switch) {
+        Switch.REMINDER_30S -> R.string.switch_reminder to R.string.switch_reminder_hint
+        Switch.HIGH_FREQUENCY -> R.string.switch_hf to R.string.switch_hf_hint
+        Switch.FLIGHT_MODE -> R.string.flight_mode to R.string.switch_flight_hint
+        Switch.MOTOR -> return
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(hint), style = MaterialTheme.typography.bodySmall)
+        }
+        if (busy) CircularProgressIndicator(Modifier.size(20.dp).padding(end = 8.dp))
+        SwitchControl(
+            checked = on,
+            onCheckedChange = { actions.setSwitch(switch, it) },
+            enabled = writable && editable && !busy,
+        )
+    }
+    (status as? SaveStatus.Done)?.result?.takeIf { it != CommandResult.Confirmed }?.let { SaveResult(it) }
 }
 
 @Composable

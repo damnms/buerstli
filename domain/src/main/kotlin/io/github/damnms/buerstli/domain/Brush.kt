@@ -14,6 +14,8 @@ data class Capabilities(
     val modes: List<ModeSpec>,
     /** Null if the brushing duration can't be changed on this model. */
     val brushingDuration: DurationSpec? = null,
+    /** On/off settings the model reports, and whether Bürstli may change them. */
+    val switches: Map<Switch, Access> = emptyMap(),
 ) {
     fun mode(index: Int): ModeSpec? = modes.firstOrNull { it.index == index }
 }
@@ -26,8 +28,8 @@ data class BrushState(
     val batteryPercent: Int? = null,
     val activeModeIndex: Int? = null,
     val modes: Map<Int, ModeSettings> = emptyMap(),
-    val flightMode: Boolean? = null,
     val brushingDurationSeconds: Int? = null,
+    val switches: Map<Switch, Boolean> = emptyMap(),
 ) {
     companion object {
         val UNKNOWN = BrushState()
@@ -40,3 +42,20 @@ data class DurationSpec(val seconds: IntRange, val stepSeconds: Int) {
         if (value in seconds && (value - seconds.first) % stepSeconds == 0) Validation.Valid
         else Validation.InvalidDuration(value, seconds, stepSeconds)
 }
+
+/** On/off settings and states of a brush. */
+enum class Switch {
+    /** Short buzz every 30 s as a cue to move to the next zone. */
+    REMINDER_30S,
+
+    /** Unlocks the high-frequency mode. */
+    HIGH_FREQUENCY,
+
+    /** Travel lock. */
+    FLIGHT_MODE,
+
+    /** The motor is running, i.e. the brush is brushing. */
+    MOTOR,
+}
+
+enum class Access { READ_ONLY, READ_WRITE }

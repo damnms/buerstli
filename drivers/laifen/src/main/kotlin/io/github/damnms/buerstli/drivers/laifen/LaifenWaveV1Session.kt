@@ -1,5 +1,6 @@
 package io.github.damnms.buerstli.drivers.laifen
 
+import io.github.damnms.buerstli.domain.Access
 import io.github.damnms.buerstli.domain.BrushCommand
 import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.BrushSession
@@ -21,7 +22,7 @@ import java.util.UUID
  * How the LFTB01-P behaves (from the app's diagnostics log and laifen-toolbox/docs/PROTOCOL.md):
  * - The state only arrives as a notification: when asked with READ_STATE, after mode-settings
  *   writes, after button presses, and about every 10 s on its own. GATT reads return filler.
- * - A brushing-time write is only acknowledged, the new state has to be asked for.
+ * - Brushing-time and reminder writes are only acknowledged, the new state has to be asked for.
  */
 internal class LaifenWaveV1Session(
     private val link: BrushLink,
@@ -54,6 +55,13 @@ internal class LaifenWaveV1Session(
     override suspend fun execute(command: BrushCommand): CommandResult = when (command) {
         is BrushCommand.ChangeModeSettings -> changeModeSettings(command)
         is BrushCommand.ChangeBrushingDuration -> changeBrushingDuration(command)
+        is BrushCommand.SetSwitch -> setSwitch(command)
+    }
+
+    private suspend fun setSwitch(cmd: BrushCommand.SetSwitch): CommandResult {
+        if (capabilities.switches[cmd.switch] != Access.READ_WRITE) return CommandResult.Unsupported
+        val bytes = LaifenWaveV1Codec.encodeSwitch(cmd.switch, cmd.on) ?: return CommandResult.Unsupported
+        return writeAndConfirm(bytes) { it.switches[cmd.switch] == cmd.on }
     }
 
     private suspend fun changeModeSettings(cmd: BrushCommand.ChangeModeSettings): CommandResult {

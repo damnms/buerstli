@@ -1,5 +1,6 @@
 package io.github.damnms.buerstli.drivers.laifen
 
+import io.github.damnms.buerstli.domain.Access
 import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.BrushModel
@@ -12,6 +13,7 @@ import io.github.damnms.buerstli.domain.ParameterKind.SPEED
 import io.github.damnms.buerstli.domain.ParameterKind.STRENGTH
 import io.github.damnms.buerstli.domain.ParameterSpec
 import io.github.damnms.buerstli.domain.SupportLevel
+import io.github.damnms.buerstli.domain.Switch
 import io.github.damnms.buerstli.domain.ToothbrushDriver
 
 /** Laifen Wave, first generation (LFTB01). Newer LFTB02 models use a different protocol. */
@@ -37,6 +39,14 @@ object LaifenWaveV1Driver : ToothbrushDriver {
             mode(3, 11..20, hf = true),
         ),
         brushingDuration = DurationSpec(seconds = 60..300, stepSeconds = 30),
+        switches = mapOf(
+            Switch.REMINDER_30S to Access.READ_WRITE,
+            Switch.HIGH_FREQUENCY to Access.READ_WRITE,
+            Switch.MOTOR to Access.READ_WRITE,
+            // The flight-mode command was never tried on a real brush, and if it cuts Bluetooth
+            // we could lock ourselves out. Shown, not changed.
+            Switch.FLIGHT_MODE to Access.READ_ONLY,
+        ),
     )
 
     override fun recognizes(advertisement: Advertisement): Boolean =

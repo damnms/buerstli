@@ -36,8 +36,6 @@
     <string name="speed">Speed</string>
     <string name="active">ACTIVE</string>
     <string name="flight_mode">Flight mode</string>
-    <string name="on">on</string>
-    <string name="off">off</string>
 
     <string name="footer_stats">Internet permission: none · Accounts created: 0 · Data sold: also 0</string>
     <string name="footer_legal">Not affiliated with Laifen. Laifen is a trademark of its owner. Made by someone who just wanted to brush his teeth.</string>
@@ -56,4 +54,13 @@
     <string name="log_title">For nerds: log</string>
     <string name="log_copy">Copy</string>
     <string name="log_hint">Stays on this phone. Copy it if you want to report a problem – we couldn\'t send it anywhere even if we wanted to.</string>
+    <string name="switch_reminder">30-second nudge</string>
+    <string name="switch_reminder_hint">A short buzz every 30 s to switch zones. Like a coach, minus the subscription.</string>
+    <string name="switch_hf">High frequency</string>
+    <string name="switch_hf_hint">Unlocks mode 4.</string>
+    <string name="switch_flight_hint">Only switchable on the brush. Bürstli doesn\'t dare touch it yet.</string>
+    <string name="mode_hf_off_hint">Only used when high frequency is on.</string>
+    <string name="motor_start">Start brushing</string>
+    <string name="motor_stop">Stop</string>
+    <string name="motor_hint">Remote control for your toothbrush. Because we can.</string>
 </resources>

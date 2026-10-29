@@ -35,8 +35,6 @@
     <string name="speed">Tempo</string>
     <string name="active">AKTIV</string>
     <string name="flight_mode">Flugmodus</string>
-    <string name="on">an</string>
-    <string name="off">aus</string>
 
     <string name="footer_stats">Internet-Berechtigung: keine · Angelegte Konten: 0 · Verkaufte Daten: auch 0</string>
     <string name="footer_legal">Nicht mit Laifen verbunden. Laifen ist eine Marke ihres Inhabers. Gemacht von jemandem, der einfach nur Zähne putzen wollte.</string>
@@ -55,4 +53,13 @@
     <string name="log_title">Für Nerds: Protokoll</string>
     <string name="log_copy">Kopieren</string>
     <string name="log_hint">Bleibt auf diesem Handy. Kopier es, wenn du ein Problem melden willst – wir könnten es gar nicht verschicken, selbst wenn wir wollten.</string>
+    <string name="switch_reminder">30-Sekunden-Signal</string>
+    <string name="switch_reminder_hint">Kurzes Zucken alle 30 Sekunden, damit du die Zone wechselst. Wie ein Coach, nur ohne Abo.</string>
+    <string name="switch_hf">Hochfrequenz</string>
+    <string name="switch_hf_hint">Schaltet Modus 4 frei.</string>
+    <string name="switch_flight_hint">Nur an der Bürste umschaltbar. Da traut sich Bürstli noch nicht ran.</string>
+    <string name="mode_hf_off_hint">Wird erst benutzt, wenn Hochfrequenz an ist.</string>
+    <string name="motor_start">Putzen starten</string>
+    <string name="motor_stop">Stoppen</string>
+    <string name="motor_hint">Fernsteuerung für deine Zahnbürste. Weil wir es können.</string>
 </resources>

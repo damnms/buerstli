@@ -4,6 +4,7 @@ package io.github.damnms.buerstli.domain
 sealed interface BrushCommand {
     data class ChangeModeSettings(val modeIndex: Int, val settings: ModeSettings) : BrushCommand
     data class ChangeBrushingDuration(val seconds: Int) : BrushCommand
+    data class SetSwitch(val switch: Switch, val on: Boolean) : BrushCommand
 }
 
 sealed interface CommandResult {

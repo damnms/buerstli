@@ -9,6 +9,7 @@ import io.github.damnms.buerstli.domain.BrushCommand
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.CommandResult
 import io.github.damnms.buerstli.domain.ParameterKind
+import io.github.damnms.buerstli.domain.Switch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -55,7 +56,22 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
     private val _durationSave = MutableStateFlow<SaveStatus?>(null)
     val durationSave: StateFlow<SaveStatus?> = _durationSave.asStateFlow()
 
+    private val _switchSave = MutableStateFlow<Map<Switch, SaveStatus>>(emptyMap())
+    val switchSave: StateFlow<Map<Switch, SaveStatus>> = _switchSave.asStateFlow()
+
     fun find() = connector.find()
+
+    /** Switches apply at once: a toggle with a separate save button would be silly. */
+    fun setSwitch(switch: Switch, on: Boolean) {
+        val connected = connection.value as? Connection.Connected ?: return
+        _switchSave.update { it + (switch to SaveStatus.Saving) }
+        viewModelScope.launch {
+            diagnostics.log("set $switch: $on")
+            val result = connected.session.execute(BrushCommand.SetSwitch(switch, on))
+            diagnostics.log("set $switch: $result")
+            _switchSave.update { it + (switch to SaveStatus.Done(result)) }
+        }
+    }
 
     fun editDuration(seconds: Int) {
         val onBrush = brushState.value?.brushingDurationSeconds
