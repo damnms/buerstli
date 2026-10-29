@@ -13,6 +13,7 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
+import io.github.damnms.buerstli.AddressMask
 import io.github.damnms.buerstli.Diagnostics
 import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.hex
@@ -99,13 +100,15 @@ class BleConnector(
                     is Recognition.Supported -> scope.launch {
                         if (scanCallback == null) return@launch // someone else won the race
                         val driver = recognition.driver
-                        diag.log("found $name (${result.rssi} dBm) -> ${driver.model.brand} ${driver.model.name}")
+                        val shown = name?.let { AddressMask(result.device.address).text(it) }
+                        diag.log("found $shown (${result.rssi} dBm) -> ${driver.model.brand} ${driver.model.name}")
                         stopScan()
                         connect(result.device, name ?: result.device.address, driver)
                     }
                     is Recognition.Unsupported -> scope.launch {
                         if (scanCallback == null || unsupportedGrace != null) return@launch
-                        diag.log("found $name (${result.rssi} dBm): ${recognition.brand}, no driver yet")
+                        val shown = name?.let { AddressMask(result.device.address).text(it) }
+                        diag.log("found $shown (${result.rssi} dBm): ${recognition.brand}, no driver yet")
                         // Give a supported brush nearby a moment to show up before offering the report.
                         unsupportedGrace = scope.launch {
                             delay(UNSUPPORTED_GRACE_MS)

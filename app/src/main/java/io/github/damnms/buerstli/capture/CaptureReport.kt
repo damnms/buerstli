@@ -15,45 +15,14 @@ data class CaptureReport(
     val notifications: List<NotificationSample>,
     val problems: List<String> = emptyList(),
 ) {
-    /** The address as bytes; its last three bytes identify the device and are masked everywhere. */
-    private val addressBytes: ByteArray? = address.split(":")
-        .mapNotNull { it.toIntOrNull(16)?.toByte() }
-        .takeIf { it.size == 6 }
-        ?.toByteArray()
-
-    /** Hex, with the device-specific address bytes masked, forwards or reversed (brushes do both). */
-    private fun hexMasked(bytes: ByteArray): String {
-        val masked = BooleanArray(bytes.size)
-        addressBytes?.let { a ->
-            val device = a.copyOfRange(3, 6)
-            for (pattern in listOf(device, device.reversedArray())) {
-                for (i in 0..bytes.size - 3) {
-                    if (bytes[i] == pattern[0] && bytes[i + 1] == pattern[1] && bytes[i + 2] == pattern[2]) {
-                        masked[i] = true; masked[i + 1] = true; masked[i + 2] = true
-                    }
-                }
-            }
-        }
-        return bytes.indices.joinToString("-") { i ->
-            if (masked[i]) "XX" else String.format(Locale.ROOT, "%02X", bytes[i].toInt() and 0xFF)
-        }
-    }
-
-    /** Names like "LFTB01-P-1DEE" end in address bytes; mask those, keep the model part. */
-    private fun textMasked(text: String): String {
-        val a = addressBytes ?: return text
-        var out = text
-        for (count in listOf(3, 2)) {
-            val suffix = a.takeLast(count).joinToString("") { String.format(Locale.ROOT, "%02X", it.toInt() and 0xFF) }
-            out = out.replace(suffix, "X".repeat(suffix.length), ignoreCase = true)
-        }
-        return out
-    }
+    private val mask = io.github.damnms.buerstli.AddressMask(address)
+    private fun hexMasked(bytes: ByteArray) = mask.hex(bytes)
+    private fun textMasked(text: String) = mask.text(text)
 
     fun render(): String = buildString {
         appendLine("# Bürstli capture report")
         appendLine()
-        appendLine("- Brush: $brand, Bluetooth name \"${deviceName?.let { textMasked(it) } ?: "?"}\", address ${maskAddress(address)}")
+        appendLine("- Brush: $brand, Bluetooth name \"${deviceName?.let { textMasked(it) } ?: "?"}\", address ${mask.address()}")
         appendLine("- App: Bürstli $appVersion")
         appendLine("- Phone: $phone")
         problems.forEach { appendLine("- Problem: $it") }
@@ -107,11 +76,6 @@ data class CaptureReport(
             } else {
                 s
             }
-        }
-
-        fun maskAddress(address: String): String {
-            val parts = address.split(":")
-            return if (parts.size == 6) (parts.take(3) + listOf("XX", "XX", "XX")).joinToString(":") else "XX"
         }
 
         fun hex16(v: Int) = String.format(Locale.ROOT, "0x%04X", v)

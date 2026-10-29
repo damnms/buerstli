@@ -6,6 +6,10 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- Privacy: the "For nerds" log no longer shows the address part of brush names (e.g.
+  "LFTB01-P-XXXX"), so it can be shared safely, too.
+
 ## [0.6.2] - 2026-10-29
 
 ### Fixed

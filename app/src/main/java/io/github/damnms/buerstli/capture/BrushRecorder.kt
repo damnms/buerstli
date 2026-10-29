@@ -74,7 +74,7 @@ class BrushRecorder(
         ads.clear(); notifications.clear(); problems.clear(); linkDown = false
         start = System.currentTimeMillis()
         this.brand = brand
-        diag.mark("capture: $brand ($name)")
+        diag.mark("capture: $brand (${name?.let { io.github.damnms.buerstli.AddressMask(device.address).text(it) }})")
         job = scope.launch {
             listenToAdvertisements(device)
             val services = readGatt(device)
