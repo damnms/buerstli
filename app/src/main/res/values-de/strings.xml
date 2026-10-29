@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tagline">Deine Zahnbürste. Ohne Konto. Ohne Handynummer. Ohne «Ihre Privatsphäre ist uns wichtig».</string>
+
+    <string name="find_brush">Bürste suchen</string>
+    <string name="find_brush_sub">Kein Bestätigungscode nötig. Schockierend, wir wissen.</string>
+    <string name="try_again">Nochmal</string>
+    <string name="disconnect">Schlafen lassen</string>
+
+    <string name="scanning">Suche deine Bürste…</string>
+    <string name="scanning_hint">Nimm sie in die Hand – sie ist scheu und schläft gern. Und schliess andere Apps, die sie vielleicht gerade belagern.</string>
+    <string name="connecting">Verbinde mit %1$s…</string>
+    <string name="connecting_hint">Wird verhandelt. Anders als gewisse Apps fragen wir nicht nach deinem Geburtsdatum.</string>
+    <string name="waiting_for_status">Verbunden. Warte, bis die Bürste etwas sagt…</string>
+
+    <string name="not_found">Keine Bürste gefunden. Entweder schläft sie, oder sie ist weggelaufen, um einen Newsletter zu abonnieren.</string>
+    <string name="not_found_hint">Aufwecken (in die Hand nehmen oder Taste drücken) und nochmal versuchen.</string>
+    <string name="disconnected">Deine Bürste ist eingeschlafen. Anders als gewisse Apps telefoniert sie dabei nicht nach Hause.</string>
+    <string name="bluetooth_off">Bluetooth ist aus. Wir sind gut, aber nicht «Zähneputzen per Telepathie»-gut.</string>
+    <string name="no_bluetooth">Dieses Gerät hat kein Bluetooth LE. Schon mal über eine Handzahnbürste nachgedacht?</string>
+    <string name="unsupported">Mit %1$s verbunden, aber sie spricht eine Sprache, die wir nicht kennen. Ist das eine Laifen Wave (LFTB01)?</string>
+    <string name="error">Da ist was schiefgelaufen: %1$s</string>
+
+    <string name="permission_title">Eine Berechtigung. Eine einzige.</string>
+    <string name="permission_text">Android will, dass wir fragen, bevor wir Bluetooth nutzen. Fair. Mehr wollen wir nicht: keine Kontakte, kein Standortverlauf, keine Blutgruppe.</string>
+    <string name="permission_text_legacy">Deine Android-Version besteht auf «Standort», um Bluetooth-Geräte zu finden. Wir wissen nicht mal, was GPS ist – die App hat keine Internet-Berechtigung, wohin sollten wir ihn also schicken?</string>
+    <string name="grant">Na gut, erlauben</string>
+    <string name="permission_denied">Berechtigung verweigert. Respekt. Aber ohne Bluetooth ist das hier nur ein sehr hübscher Bildschirm.</string>
+
+    <string name="battery">Akku</string>
+    <string name="active_mode">Aktiver Modus</string>
+    <string name="mode_n">Modus %1$d</string>
+    <string name="mode_hf">Modus 4 · Hochfrequenz</string>
+    <string name="strength">Stärke</string>
+    <string name="range">Weite</string>
+    <string name="speed">Tempo</string>
+    <string name="active">AKTIV</string>
+    <string name="flight_mode">Flugmodus</string>
+    <string name="on">an</string>
+    <string name="off">aus</string>
+    <string name="read_only_note">Vorerst nur lesen. Einstellungen ändern kommt in der nächsten Version – selbstverständlich ohne vorher nach deiner E-Mail zu fragen.</string>
+
+    <string name="raw_title">Für Nerds: Rohdaten</string>
+
+    <string name="footer_stats">Internet-Berechtigung: keine · Angelegte Konten: 0 · Verkaufte Daten: auch 0</string>
+    <string name="footer_legal">Nicht mit Laifen verbunden. Laifen ist eine Marke ihres Inhabers. Gemacht von jemandem, der einfach nur Zähne putzen wollte.</string>
+</resources>
