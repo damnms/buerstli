@@ -6,15 +6,18 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-29
+
 ### Added
 - Found a toothbrush Bürstli can't control yet (Philips Sonicare, Oral-B, other Laifen models)?
   Bürstli now says so and can record a report in about a minute – it only listens, nothing on the
-  brush is changed – to send by messenger, e-mail or on GitHub.
-
+  brush is changed – to send by messenger, e-mail or on GitHub. This is brand new and hasn't met a
+  real Sonicare or Oral-B yet, so feedback is very welcome.
 - "Use this mode" on every mode card: switch modes from the phone instead of pressing the
   button again and again.
 - The README and the app explain the hidden fourth mode: the Laifen Wave only offers its
-  strongest mode while high frequency is on, which you can't switch on at the brush.
+  strongest mode while high frequency is on, which as far as is known can't be switched on at
+  the brush.
 
 ### Changed
 - Saving a mode's settings also makes it the active mode – that's how the brush works – and the
