@@ -15,10 +15,45 @@ data class CaptureReport(
     val notifications: List<NotificationSample>,
     val problems: List<String> = emptyList(),
 ) {
+    /** The address as bytes; its last three bytes identify the device and are masked everywhere. */
+    private val addressBytes: ByteArray? = address.split(":")
+        .mapNotNull { it.toIntOrNull(16)?.toByte() }
+        .takeIf { it.size == 6 }
+        ?.toByteArray()
+
+    /** Hex, with the device-specific address bytes masked, forwards or reversed (brushes do both). */
+    private fun hexMasked(bytes: ByteArray): String {
+        val masked = BooleanArray(bytes.size)
+        addressBytes?.let { a ->
+            val device = a.copyOfRange(3, 6)
+            for (pattern in listOf(device, device.reversedArray())) {
+                for (i in 0..bytes.size - 3) {
+                    if (bytes[i] == pattern[0] && bytes[i + 1] == pattern[1] && bytes[i + 2] == pattern[2]) {
+                        masked[i] = true; masked[i + 1] = true; masked[i + 2] = true
+                    }
+                }
+            }
+        }
+        return bytes.indices.joinToString("-") { i ->
+            if (masked[i]) "XX" else String.format(Locale.ROOT, "%02X", bytes[i].toInt() and 0xFF)
+        }
+    }
+
+    /** Names like "LFTB01-P-1DEE" end in address bytes; mask those, keep the model part. */
+    private fun textMasked(text: String): String {
+        val a = addressBytes ?: return text
+        var out = text
+        for (count in listOf(3, 2)) {
+            val suffix = a.takeLast(count).joinToString("") { String.format(Locale.ROOT, "%02X", it.toInt() and 0xFF) }
+            out = out.replace(suffix, "X".repeat(suffix.length), ignoreCase = true)
+        }
+        return out
+    }
+
     fun render(): String = buildString {
         appendLine("# Bürstli capture report")
         appendLine()
-        appendLine("- Brush: $brand, Bluetooth name \"${deviceName ?: "?"}\", address ${maskAddress(address)}")
+        appendLine("- Brush: $brand, Bluetooth name \"${deviceName?.let { textMasked(it) } ?: "?"}\", address ${maskAddress(address)}")
         appendLine("- App: Bürstli $appVersion")
         appendLine("- Phone: $phone")
         problems.forEach { appendLine("- Problem: $it") }
@@ -28,7 +63,7 @@ data class CaptureReport(
         advertisements.forEach { a ->
             val parts = mutableListOf("${seconds(a.timeMs)} rssi ${a.rssi}")
             if (a.serviceUuids.isNotEmpty()) parts += "services " + a.serviceUuids.joinToString { short(it) }
-            a.manufacturerData.forEach { (id, data) -> parts += "manufacturer ${hex16(id)}: ${hex(data)}" }
+            a.manufacturerData.forEach { (id, data) -> parts += "manufacturer ${hex16(id)}: ${hexMasked(data)}" }
             appendLine("- " + parts.joinToString(" · "))
         }
 
@@ -41,7 +76,7 @@ data class CaptureReport(
                     .joinToString(", ")
                 val value = when {
                     c.uuid in PRIVATE -> " = [removed for privacy]"
-                    c.value != null -> " = ${hex(c.value)}" + (text(c.value)?.let { " \"$it\"" } ?: "")
+                    c.value != null -> " = ${hexMasked(c.value)}" + (text(c.value)?.let { " \"${textMasked(it)}\"" } ?: "")
                     else -> ""
                 }
                 val error = c.error?.let { " (error: $it)" } ?: ""
@@ -52,7 +87,7 @@ data class CaptureReport(
         appendLine()
         appendLine("## Notifications (${notifications.size})")
         notifications.forEach { n ->
-            val value = if (n.characteristic in PRIVATE) "[removed for privacy]" else hex(n.value)
+            val value = if (n.characteristic in PRIVATE) "[removed for privacy]" else hexMasked(n.value)
             appendLine("- +${seconds(n.timeMs)} ${short(n.characteristic)} $value")
         }
     }
@@ -79,7 +114,6 @@ data class CaptureReport(
             return if (parts.size == 6) (parts.take(3) + listOf("XX", "XX", "XX")).joinToString(":") else "XX"
         }
 
-        fun hex(bytes: ByteArray) = bytes.joinToString("-") { String.format(Locale.ROOT, "%02X", it.toInt() and 0xFF) }
         fun hex16(v: Int) = String.format(Locale.ROOT, "0x%04X", v)
         fun seconds(ms: Long) = String.format(Locale.ROOT, "%.2fs", ms / 1000.0)
 

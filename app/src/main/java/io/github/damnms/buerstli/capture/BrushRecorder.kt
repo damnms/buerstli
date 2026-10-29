@@ -62,7 +62,10 @@ class BrushRecorder(
     private val problems: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf())
     @Volatile private var linkDown = false
 
-    @Volatile private var pending: CompletableDeferred<ByteArray?>? = null
+    /** Wrapped so that "answered without a value" (e.g. a descriptor write) differs from a timeout. */
+    private class Answer(val value: ByteArray?)
+
+    @Volatile private var pending: CompletableDeferred<Answer>? = null
     @Volatile private var connected: CompletableDeferred<Boolean>? = null
     @Volatile private var discovered: CompletableDeferred<Boolean>? = null
 
@@ -205,13 +208,13 @@ class BrushRecorder(
     }
 
     private suspend fun op(start: () -> Boolean): Result<ByteArray?> {
-        val result = CompletableDeferred<ByteArray?>()
+        val result = CompletableDeferred<Answer>()
         pending = result
         return try {
             if (!start()) return Result.failure(IllegalStateException("refused by Android"))
-            val value = withTimeoutOrNull(OPERATION_TIMEOUT_MS) { result.await() }
+            val answer = withTimeoutOrNull(OPERATION_TIMEOUT_MS) { result.await() }
                 ?: return Result.failure(IllegalStateException("no answer"))
-            Result.success(value)
+            Result.success(answer.value)
         } catch (e: IllegalStateException) {
             Result.failure(e)
         } finally {
@@ -260,7 +263,7 @@ class BrushRecorder(
 
         private fun finish(status: Int, value: ByteArray?) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                pending?.complete(value)
+                pending?.complete(Answer(value))
             } else {
                 val hint = if (status == 5 || status == 15) " (pairing needed?)" else ""
                 pending?.completeExceptionally(IllegalStateException("GATT status $status$hint"))

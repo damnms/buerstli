@@ -6,6 +6,12 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- Privacy: brush reports could still contain the brush's Bluetooth address – Laifen brushes put
+  it, byte-reversed, into their radio packets and partly into their name. It is now masked
+  everywhere in the report. If you shared a report before, it may contain the address.
+- Reports listed successful subscriptions as "no answer".
+
 ## [0.6.1] - 2026-10-29
 
 ### Added

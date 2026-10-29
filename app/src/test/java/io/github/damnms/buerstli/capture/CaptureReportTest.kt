@@ -72,4 +72,41 @@ class CaptureReportTest {
         assertTrue(text.contains("manufacturer 0x01DD: 01-02"))
         assertTrue(text.contains("+32.50s 0x2A19 5D"))
     }
+
+    // Found in a real report from an LFTB01-P: the brush puts its own address, byte-reversed,
+    // into the advertisement, and the last two address bytes into its name.
+    private val laifen = CaptureReport(
+        appVersion = "0.6.1",
+        phone = "OnePlus CPH2449, Android 17",
+        brand = "Laifen",
+        deviceName = "LFTB01-P-1DEE",
+        address = "C0:00:00:01:1D:EE",
+        advertisements = listOf(
+            AdvertisementSample(4_060, -61, emptyList(), mapOf(0xAA00 to byteArrayOf(0xEE.toByte(), 0x1D, 0x01, 0x00, 0x00, 0xC0.toByte()))),
+        ),
+        services = listOf(
+            ServiceDump(uuid16(0x1800), listOf(CharacteristicDump(uuid16(0x2A00), setOf("READ"), "LFTB01-P-1DEE".toByteArray(), null))),
+        ),
+        notifications = listOf(
+            NotificationSample(1_000, uuid16(0xFF02), byteArrayOf(0x09, 0xC0.toByte(), 0x00, 0x00, 0x01, 0x1D, 0xEE.toByte())),
+        ),
+    ).render()
+
+    @Test
+    fun `the address is masked inside advertisement data, also when reversed`() {
+        assertFalse(laifen.contains("EE-1D-01"))
+        assertTrue(laifen.contains("manufacturer 0xAA00: XX-XX-XX-00-00-C0"))
+    }
+
+    @Test
+    fun `the address is masked inside values and notifications`() {
+        assertFalse(laifen.contains("00-01-1D-EE"))
+        assertTrue(laifen.contains("09-C0-00-00-XX-XX-XX"))
+    }
+
+    @Test
+    fun `an address suffix in the device name is masked, the model part stays`() {
+        assertFalse(laifen.contains("1DEE"))
+        assertTrue(laifen.contains("\"LFTB01-P-XXXX\""))
+    }
 }
