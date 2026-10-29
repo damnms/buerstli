@@ -66,6 +66,7 @@ class Actions(
     val setSwitch: (Switch, Boolean) -> Unit,
     val startCapture: () -> Unit,
     val finishCapture: () -> Unit,
+    val captureConnected: () -> Unit,
 )
 
 class DurationUi(val draft: Int?, val save: SaveStatus?)
@@ -144,22 +145,36 @@ private fun ConnectionContent(
     capture: io.github.damnms.buerstli.capture.CaptureState,
     actions: Actions,
 ) {
+    // A running or finished report takes over the screen, whatever the connection does meanwhile.
+    val captureBrand = when (capture) {
+        is io.github.damnms.buerstli.capture.CaptureState.Running -> capture.brand
+        is io.github.damnms.buerstli.capture.CaptureState.Done -> capture.report.brand
+        is io.github.damnms.buerstli.capture.CaptureState.Failed -> capture.brand
+        io.github.damnms.buerstli.capture.CaptureState.Idle -> null
+    }
+    if (captureBrand != null) {
+        CaptureContent(captureBrand, capture, actions)
+        return
+    }
     when (connection) {
         is Connection.FoundUnsupported -> CaptureContent(connection.brand, capture, actions)
         Connection.Idle -> FindButton(actions.find)
         Connection.Scanning -> Busy(stringResource(R.string.scanning), stringResource(R.string.scanning_hint))
         is Connection.Connecting -> Busy(
             stringResource(R.string.connecting, connection.name),
-            stringResource(R.string.connecting_hint),
+            stringResource(R.string.connecting_hint) +
+                if (connection.driver.mayNeedPairing) "\n\n" + stringResource(R.string.capture_pairing_hint) else "",
         )
         is Connection.Connected -> {
             BrushHeader(connection.name, connection.driver)
+            if (connection.driver.supportLevel == SupportLevel.EXPERIMENTAL) ExperimentalNote(actions)
             if (brushState == null) {
                 Busy(stringResource(R.string.waiting_for_status), null)
             } else {
                 BrushView(connection.driver, brushState, drafts, saveStatus, duration, switchSave, editable = true, actions)
             }
             OutlinedButton(onClick = actions.disconnect) { Text(stringResource(R.string.disconnect)) }
+            TextButton(onClick = actions.captureConnected) { Text(stringResource(R.string.capture_this_brush)) }
         }
         is Connection.Disconnected -> {
             Message(
@@ -233,6 +248,7 @@ private fun BrushView(
             }
         }
     }
+    InfoReadings(state)
     val toggles = listOf(Switch.REMINDER_30S, Switch.HIGH_FREQUENCY, Switch.FLIGHT_MODE)
         .filter { it in switches && state.switches[it] != null }
     if (toggles.isNotEmpty()) {
@@ -368,6 +384,66 @@ private fun DurationCard(
             }
         }
         (ui.save as? SaveStatus.Done)?.let { SaveResult(it.result) }
+    }
+}
+
+@Composable
+private fun ExperimentalNote(actions: Actions) {
+    InfoCard {
+        Text(stringResource(R.string.experimental_note), style = MaterialTheme.typography.bodyMedium)
+        OutlinedButton(onClick = actions.captureConnected) { Text(stringResource(R.string.capture_this_brush)) }
+    }
+}
+
+/** Read-only values that some brushes report (Sonicare): shown only when present. */
+@Composable
+private fun InfoReadings(state: BrushState) {
+    val rows = buildList {
+        state.activity?.let {
+            add(R.string.info_activity to stringResource(
+                when (it) {
+                    io.github.damnms.buerstli.domain.Activity.OFF -> R.string.activity_off
+                    io.github.damnms.buerstli.domain.Activity.STANDBY -> R.string.activity_standby
+                    io.github.damnms.buerstli.domain.Activity.BRUSHING -> R.string.activity_brushing
+                    io.github.damnms.buerstli.domain.Activity.PAUSED -> R.string.activity_paused
+                    io.github.damnms.buerstli.domain.Activity.CHARGING -> R.string.activity_charging
+                },
+            ))
+        }
+        state.modeName?.let {
+            add(R.string.info_mode to when (it) {
+                io.github.damnms.buerstli.domain.ModeName.CLEAN -> "Clean"
+                io.github.damnms.buerstli.domain.ModeName.WHITE_PLUS -> "White+"
+                io.github.damnms.buerstli.domain.ModeName.GUM_HEALTH -> "Gum Health"
+                io.github.damnms.buerstli.domain.ModeName.DEEP_CLEAN_PLUS -> "Deep Clean+"
+                io.github.damnms.buerstli.domain.ModeName.SENSITIVE -> "Sensitive"
+                io.github.damnms.buerstli.domain.ModeName.TONGUE_CARE -> "Tongue Care"
+            })
+        }
+        state.intensity?.let {
+            add(R.string.info_intensity to stringResource(
+                when (it) {
+                    io.github.damnms.buerstli.domain.Intensity.LOW -> R.string.intensity_low
+                    io.github.damnms.buerstli.domain.Intensity.MEDIUM -> R.string.intensity_medium
+                    io.github.damnms.buerstli.domain.Intensity.HIGH -> R.string.intensity_high
+                },
+            ))
+        }
+        state.brushingSeconds?.let { s ->
+            val target = state.brushingDurationSeconds
+            val text = "%d:%02d".format(s / 60, s % 60) + (target?.let { " / %d:%02d".format(it / 60, it % 60) } ?: "")
+            add(R.string.info_brushing_time to text)
+        }
+        state.brushHeadWearPercent?.let { add(R.string.info_head_wear to stringResource(R.string.info_head_wear_value, it)) }
+    }
+    if (rows.isEmpty()) return
+    InfoCard {
+        rows.forEach { (label, value) ->
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(label), style = MaterialTheme.typography.bodyMedium)
+                Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 

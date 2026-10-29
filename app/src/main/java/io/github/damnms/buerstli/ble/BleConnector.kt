@@ -37,7 +37,12 @@ sealed interface Connection {
     data object Scanning : Connection
     data object NotFound : Connection
     data class Connecting(val name: String, val driver: ToothbrushDriver) : Connection
-    data class Connected(val name: String, val driver: ToothbrushDriver, val session: BrushSession) : Connection
+    data class Connected(
+        val name: String,
+        val driver: ToothbrushDriver,
+        val session: BrushSession,
+        val device: BluetoothDevice,
+    ) : Connection
     data class Unsupported(val name: String) : Connection
     data class Disconnected(val name: String, val driver: ToothbrushDriver, val lastState: BrushState?) : Connection
     data class Failed(val reason: String) : Connection
@@ -222,7 +227,7 @@ class BleConnector(
                 try {
                     s.start()
                     diag.log("ready")
-                    _state.value = Connection.Connected(name, driver, s)
+                    _state.value = Connection.Connected(name, driver, s, g.device)
                 } catch (e: IOException) {
                     diag.log("handshake FAILED: ${e.message}")
                     _state.value = Connection.Unsupported(name)

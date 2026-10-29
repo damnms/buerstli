@@ -67,7 +67,8 @@ nothing to persist.
 protocol we know. When the second brand arrives and doesn't fit, the interface changes then
 — not before.
 
-**ADR-6: No driver without a tester; experimental means read-only.** A driver nobody can run stays
-untested and raises false hopes. Bürstli instead recognizes known brushes and lets their owners
-record a report in the app, with no other tools. Drivers are built from such reports, start
-read-only, and only send commands after an owner confirmed them on a real brush.
+**ADR-6: Experimental drivers only on verified research, and read-only.** A driver may be added
+without a Bürstli tester if its protocol was documented *and verified on real brushes* by others
+(e.g. Sonicare by philips_sonicare_ble). It stays `EXPERIMENTAL` and read-only until an owner
+confirms it with Bürstli. For everything else, Bürstli recognizes the brush and lets its owner
+record a report in the app – also from an experimental driver, when something looks wrong.

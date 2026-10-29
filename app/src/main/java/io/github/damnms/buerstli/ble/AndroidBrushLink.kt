@@ -56,7 +56,9 @@ internal class AndroidBrushLink(
         val ch = find(characteristic)
         val cccd = ch.getDescriptor(CCCD) ?: throw IOException("characteristic has no notification descriptor")
         if (!gatt.setCharacteristicNotification(ch, true)) throw IOException("could not enable notifications")
-        val enable = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+        val canNotify = ch.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
+        val enable = if (canNotify) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+        else BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
         operation("enable notifications") {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 gatt.writeDescriptor(cccd, enable) == BluetoothStatusCodes.SUCCESS

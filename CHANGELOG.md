@@ -6,6 +6,13 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Philips Sonicare (classic models such as DiamondClean, Prestige, ExpertClean, Kids):
+  experimental, read-only support for battery, status, mode, intensity, brushing time and brush
+  head wear. Built on the protocol research of philips_sonicare_ble, not yet tried with Bürstli –
+  if something looks off, use "Record a report for this brush".
+- "Record a report for this brush" works for every connected brush, not only unknown ones.
+
 ## [0.5.0] - 2026-10-29
 
 ### Added

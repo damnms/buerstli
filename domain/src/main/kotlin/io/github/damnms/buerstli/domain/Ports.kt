@@ -18,6 +18,7 @@ data class Advertisement(
 interface BrushLink {
     suspend fun read(characteristic: UUID): ByteArray
     suspend fun write(characteristic: UUID, data: ByteArray)
+    /** Notifications or indications, whichever the characteristic offers. */
     suspend fun enableNotifications(characteristic: UUID)
 }
 
@@ -28,6 +29,9 @@ interface ToothbrushDriver {
     val capabilities: Capabilities
 
     fun recognizes(advertisement: Advertisement): Boolean
+
+    /** Some brushes need Bluetooth pairing; Android then asks the user once. */
+    val mayNeedPairing: Boolean get() = false
 
     /** Starts talking to a connected brush. */
     fun open(link: BrushLink): BrushSession

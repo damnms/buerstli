@@ -28,9 +28,9 @@ import java.util.UUID
 
 sealed interface CaptureState {
     data object Idle : CaptureState
-    data class Running(val phase: Phase, val secondsLeft: Int, val progress: Float) : CaptureState
+    data class Running(val brand: String, val phase: Phase, val secondsLeft: Int, val progress: Float) : CaptureState
     data class Done(val report: CaptureReport) : CaptureState
-    data class Failed(val reason: String) : CaptureState
+    data class Failed(val brand: String, val reason: String) : CaptureState
 
     enum class Phase { ADVERTISEMENTS, CONNECTING, READING, NOTIFICATIONS }
 }
@@ -55,6 +55,7 @@ class BrushRecorder(
     private var job: Job? = null
     private var gatt: BluetoothGatt? = null
     private var start = 0L
+    private var brand = ""
 
     private val ads = mutableListOf<AdvertisementSample>()
     private val notifications = mutableListOf<NotificationSample>()
@@ -69,6 +70,7 @@ class BrushRecorder(
         stop()
         ads.clear(); notifications.clear(); problems.clear(); linkDown = false
         start = System.currentTimeMillis()
+        this.brand = brand
         diag.mark("capture: $brand ($name)")
         job = scope.launch {
             listenToAdvertisements(device)
@@ -104,7 +106,7 @@ class BrushRecorder(
 
     private suspend fun countdown(phase: CaptureState.Phase, seconds: Int) {
         for (left in seconds downTo 1) {
-            _state.value = CaptureState.Running(phase, left, 1f - left.toFloat() / seconds)
+            _state.value = CaptureState.Running(brand, phase, left, 1f - left.toFloat() / seconds)
             delay(1_000)
         }
     }
@@ -146,7 +148,7 @@ class BrushRecorder(
     // --- Phase 2: connect, read everything readable, subscribe to everything ---
 
     private suspend fun readGatt(device: BluetoothDevice): List<ServiceDump> {
-        _state.value = CaptureState.Running(CaptureState.Phase.CONNECTING, 0, 0f)
+        _state.value = CaptureState.Running(brand, CaptureState.Phase.CONNECTING, 0, 0f)
         connected = CompletableDeferred()
         discovered = CompletableDeferred()
         val g = device.connectGatt(appContext, false, callback, BluetoothDevice.TRANSPORT_LE)
@@ -161,7 +163,7 @@ class BrushRecorder(
             return emptyList()
         }
 
-        _state.value = CaptureState.Running(CaptureState.Phase.READING, 0, 0f)
+        _state.value = CaptureState.Running(brand, CaptureState.Phase.READING, 0, 0f)
         val dumps = g.services.map { service ->
             ServiceDump(
                 uuid = service.uuid,

@@ -28,8 +28,18 @@ data class BrushState(
     val batteryPercent: Int? = null,
     val activeModeIndex: Int? = null,
     val modes: Map<Int, ModeSettings> = emptyMap(),
+    /** Target brushing time of a session. */
     val brushingDurationSeconds: Int? = null,
     val switches: Map<Switch, Boolean> = emptyMap(),
+    /** What the brush is doing right now, for brushes that say so. */
+    val activity: Activity? = null,
+    /** Named brushing program, for brushes with named modes (e.g. Sonicare). */
+    val modeName: ModeName? = null,
+    val intensity: Intensity? = null,
+    /** Seconds brushed in the current session. */
+    val brushingSeconds: Int? = null,
+    /** How worn the brush head is, 0-100. */
+    val brushHeadWearPercent: Int? = null,
 ) {
     companion object {
         val UNKNOWN = BrushState()
@@ -59,3 +69,9 @@ enum class Switch {
 }
 
 enum class Access { READ_ONLY, READ_WRITE }
+
+enum class Activity { OFF, STANDBY, BRUSHING, PAUSED, CHARGING }
+
+enum class ModeName { CLEAN, WHITE_PLUS, GUM_HEALTH, DEEP_CLEAN_PLUS, SENSITIVE, TONGUE_CARE }
+
+enum class Intensity { LOW, MEDIUM, HIGH }

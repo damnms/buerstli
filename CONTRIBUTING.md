@@ -2,7 +2,9 @@
 
 ## Adding a toothbrush
 
-You need the brush. Drivers are only marked `VERIFIED` after testing on real hardware.
+Drivers are only marked `VERIFIED` after testing on real hardware with Bürstli. Without the brush,
+a driver can still start as experimental and read-only if its protocol was documented and verified
+on real brushes by someone else (see ADR-6 in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
 
 1. **Capture.** If Bürstli recognizes the brush (see `Drivers.kt`), its built-in report is the
    easiest start: services, readable values, advertisements and notifications, with address and

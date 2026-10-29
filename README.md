@@ -16,7 +16,8 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 |---|---|---|---|---|
 | Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, edit and switch modes, brushing time, 30-second nudge, high frequency, start/stop; flight mode shown |
 | Laifen | Wave (LFTB02), Wave Pro, LFTB01-SE/-C | `LFTB…` | 🔍 recognized, not supported yet | |
-| Philips | Sonicare | `Philips Sonicare`, `Philips OHC` | 🔍 recognized, not supported yet | |
+| Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only | battery, status, mode, intensity, brushing time, brush head wear |
+| Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
 | Oral-B | iO and others | `Oral-B…` | 🔍 recognized, not supported yet | |
 
 ### Laifen Wave: the hidden fourth mode
@@ -32,7 +33,10 @@ mode 4 is active switches to mode 3 first, like the official app does.
 
 ### Testers wanted 🙋
 
-Got one of the brushes marked 🔍? You can help without any technical knowledge: open Bürstli,
+🧪 **experimental** means: built from protocol research by others that was verified on real
+brushes, but not yet tried with Bürstli. Experimental drivers only read, they change nothing.
+
+Got one of the brushes marked 🔍 or 🧪? You can help without any technical knowledge: open Bürstli,
 tap **Find my brush**, then **Let's go**. Bürstli listens to your brush for about a minute –
 it only reads, nothing on the brush is changed – and gives you a report to send by messenger,
 e-mail or as a [GitHub issue](../../issues/new?template=new-brush.yml).
@@ -88,7 +92,8 @@ with real captured packets in the unit tests.
 
 The protocol knowledge comes from earlier interoperability work, which deserves all the credit:
 [UrbanTechIO/Laifen](https://github.com/UrbanTechIO/Laifen) (Home Assistant integration) and
-[marc-alexis-com/laifen-toolbox](https://github.com/marc-alexis-com/laifen-toolbox) (Linux CLI).
+[marc-alexis-com/laifen-toolbox](https://github.com/marc-alexis-com/laifen-toolbox) (Linux CLI), and for
+Philips Sonicare [mtheli/philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble) (Home Assistant integration, MIT).
 No code was copied from either, and none from the official app.
 
 ## How this was made

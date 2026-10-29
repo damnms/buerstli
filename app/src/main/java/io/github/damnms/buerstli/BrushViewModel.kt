@@ -42,6 +42,13 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
         recorder.start(found.device, found.name, found.brand)
     }
 
+    /** For brushes with a driver: a report helps when an experimental driver shows nonsense. */
+    fun captureConnected() {
+        val c = connection.value as? Connection.Connected ?: return
+        connector.disconnect()
+        recorder.start(c.device, c.name, "${c.driver.model.brand} ${c.driver.model.name}")
+    }
+
     fun finishCapture() {
         recorder.stop()
         connector.reset()

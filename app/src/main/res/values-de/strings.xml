@@ -86,4 +86,20 @@
     <string name="mode_use">Diesen Modus verwenden</string>
     <string name="save_and_use">Speichern &amp; verwenden</string>
     <string name="unavailable_hf">Erst Hochfrequenz einschalten.</string>
+    <string name="experimental_note">Experimentell: gebaut nach der Forschung anderer, mit Bürstli noch nicht ausprobiert. Bürstli liest nur, es verändert nichts. Wenn etwas komisch aussieht, hilft ein Bericht sehr.</string>
+    <string name="capture_this_brush">Bericht für diese Bürste aufnehmen</string>
+    <string name="info_activity">Zustand</string>
+    <string name="info_mode">Modus</string>
+    <string name="info_intensity">Intensität</string>
+    <string name="info_brushing_time">Putzzeit</string>
+    <string name="info_head_wear">Bürstenkopf</string>
+    <string name="info_head_wear_value">%1$d %% verbraucht</string>
+    <string name="activity_off">aus</string>
+    <string name="activity_standby">bereit</string>
+    <string name="activity_brushing">putzt</string>
+    <string name="activity_paused">Pause</string>
+    <string name="activity_charging">lädt</string>
+    <string name="intensity_low">niedrig</string>
+    <string name="intensity_medium">mittel</string>
+    <string name="intensity_high">hoch</string>
 </resources>

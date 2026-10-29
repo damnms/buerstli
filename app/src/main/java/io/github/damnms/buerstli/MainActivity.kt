@@ -94,6 +94,7 @@ fun App(vm: BrushViewModel = viewModel()) {
             setSwitch = vm::setSwitch,
             startCapture = vm::startCapture,
             finishCapture = vm::finishCapture,
+            captureConnected = vm::captureConnected,
         ),
     )
 }

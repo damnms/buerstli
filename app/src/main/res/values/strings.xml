@@ -87,4 +87,20 @@
     <string name="mode_use">Use this mode</string>
     <string name="save_and_use">Save and use</string>
     <string name="unavailable_hf">Turn on high frequency first.</string>
+    <string name="experimental_note">Experimental: built from other people\'s research, not yet tried with Bürstli. Bürstli only reads, it changes nothing. If something looks wrong, a report helps a lot.</string>
+    <string name="capture_this_brush">Record a report for this brush</string>
+    <string name="info_activity">Status</string>
+    <string name="info_mode">Mode</string>
+    <string name="info_intensity">Intensity</string>
+    <string name="info_brushing_time">Brushing time</string>
+    <string name="info_head_wear">Brush head</string>
+    <string name="info_head_wear_value">%1$d %% worn</string>
+    <string name="activity_off">off</string>
+    <string name="activity_standby">ready</string>
+    <string name="activity_brushing">brushing</string>
+    <string name="activity_paused">paused</string>
+    <string name="activity_charging">charging</string>
+    <string name="intensity_low">low</string>
+    <string name="intensity_medium">medium</string>
+    <string name="intensity_high">high</string>
 </resources>
