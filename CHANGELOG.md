@@ -6,6 +6,8 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-29
+
 ### Added
 - 30-second nudge on/off.
 - High frequency on/off; mode 4 says when it isn't used.
