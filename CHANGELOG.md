@@ -6,6 +6,8 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-10-29
+
 ### Fixed
 - Privacy: brush reports could still contain the brush's Bluetooth address – Laifen brushes put
   it, byte-reversed, into their radio packets and partly into their name. It is now masked

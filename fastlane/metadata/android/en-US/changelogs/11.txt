@@ -1,0 +1,3 @@
+Fixed:
+- Privacy: brush reports could still contain the brush's Bluetooth address – Laifen brushes put it, byte-reversed, into their radio packets and partly into their name. It is now masked everywhere in the report. If you shared a report before, it may contain the address.
+- Reports listed successful subscriptions as "no answer".
