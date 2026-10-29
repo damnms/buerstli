@@ -20,6 +20,22 @@ You need the brush. Drivers are only marked `VERIFIED` after testing on real har
 If your brush needs a concept the domain doesn't have yet (a new parameter, a new
 command), add it to `:domain` with tests, and explain why in the pull request.
 
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md) follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+Every user-visible change gets a line under `## [Unreleased]`, in the section that fits
+(`Added`, `Changed`, `Fixed`, `Removed`), written for users, not developers. CI fails if code
+under `src/main/` changes without a changelog entry.
+
+## Releasing
+
+1. Rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` and add a fresh empty `## [Unreleased]`.
+2. Set `versionName = "x.y.z"` and increase `versionCode` in `app/build.gradle.kts`.
+3. Commit, then `git tag vx.y.z && git push origin main vx.y.z`.
+
+The release workflow checks that tag, app version and changelog agree, builds and signs the APK,
+and publishes the changelog section as release notes.
+
 ## Ground rules
 
 - `./gradlew test lintDebug assembleDebug` must pass.

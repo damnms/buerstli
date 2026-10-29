@@ -13,6 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the changelog check compares against the previous commit
+
+      - name: Changelog updated?
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: scripts/changelog.sh check-updated "$BASE" HEAD
 
       - uses: actions/setup-java@v4
         with:

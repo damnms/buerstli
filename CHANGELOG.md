@@ -1,29 +1,35 @@
 # Changelog
 
-## 0.3.2
-- Connecting is much faster: Bürstli now asks the brush for its state instead of waiting up
-  to 10 s for it to send it on its own. (Plain Bluetooth reads only return filler.)
-- Fix: saving the brushing time showed "connection lost" although it worked. The brush only
-  acknowledges this command, so Bürstli now asks for the state to confirm it.
-- Fix: a timeout while confirming was misreported as "connection lost".
+All notable changes to Bürstli are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
+[Semantic Versioning](https://semver.org/).
 
-## 0.3.1
-- "For nerds: log" with timings of scanning, connecting and every Bluetooth operation.
-  Stays on the phone, copy it to report problems.
+## [Unreleased]
 
-## 0.3.0
+## [0.3.2] - 2026-10-29
+
+First public release. Bürstli talks to your Laifen Wave (LFTB01) over Bluetooth – no account,
+no internet permission, no data leaving your phone.
+
+### Added
+- Find and connect to a Laifen Wave (LFTB01) and show battery, active mode, flight mode and the
+  settings of all four modes.
+- Change strength, range and speed of every mode.
 - Show and change the brushing time (1–5 minutes in half-minute steps).
-- Read the brushing time from the status packet (field documented by laifen-toolbox).
-
-## 0.2.1
-- Fix: saving showed "the brush ignored that" although it worked. The brush applies a change
-  with a short delay; Bürstli now waits up to 3 seconds for it to report the new values.
-
-## 0.2.0
-- Change strength, range and speed of every mode, confirmed by reading the brush back.
+- Every change is only reported as saved once the brush itself reports the new value.
 - Unsaved changes survive the brush falling asleep.
-- New architecture for supporting more toothbrushes: pure-Kotlin domain and drivers.
-- Lint and Dependabot in CI.
+- "For nerds: log" with timings of every Bluetooth step. Stays on the phone; copy it to report
+  problems.
+- German and English.
 
-## 0.1.0
-- Find and connect to a Laifen Wave (LFTB01), show battery, modes and flight mode.
+### Changed
+- Connecting takes about 2 seconds: Bürstli asks the brush for its state instead of waiting up
+  to 10 seconds for it.
+
+### Fixed
+- Saving no longer shows "ignored" or "connection lost" when it actually worked.
+
+## [0.1.0] - 2026-10-29
+
+### Added
+- Internal preview: find and connect to a Laifen Wave (LFTB01) and show its status.
