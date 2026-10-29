@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.damnms.buerstli.ble.BleConnector
 import io.github.damnms.buerstli.ble.Connection
+import io.github.damnms.buerstli.capture.BrushRecorder
+import io.github.damnms.buerstli.capture.CaptureState
 import io.github.damnms.buerstli.domain.BrushCommand
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.CommandResult
@@ -31,6 +33,19 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
     val diagnostics = Diagnostics()
     private val connector = BleConnector(app, Drivers.registry, viewModelScope, diagnostics)
     val connection: StateFlow<Connection> = connector.state
+
+    private val recorder = BrushRecorder(app, viewModelScope, diagnostics)
+    val capture: StateFlow<CaptureState> = recorder.state
+
+    fun startCapture() {
+        val found = connection.value as? Connection.FoundUnsupported ?: return
+        recorder.start(found.device, found.name, found.brand)
+    }
+
+    fun finishCapture() {
+        recorder.stop()
+        connector.reset()
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val brushState: StateFlow<BrushState?> = connection
@@ -122,5 +137,8 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    override fun onCleared() = connector.close()
+    override fun onCleared() {
+        recorder.stop()
+        connector.close()
+    }
 }

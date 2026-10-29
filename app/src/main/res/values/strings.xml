@@ -63,4 +63,25 @@
     <string name="motor_start">Start brushing</string>
     <string name="motor_stop">Stop</string>
     <string name="motor_hint">Remote control for your toothbrush. Because we can.</string>
+    <string name="found_unsupported_title">Found: %1$s</string>
+    <string name="found_unsupported_text">Bürstli can\'t control this toothbrush yet. You can help change that – no tech skills needed.</string>
+    <string name="capture_steps">Here\'s how:\n1. Take the brush off its charger.\n2. Switch it on, as if you were brushing.\n3. Put the phone next to it and wait about a minute.\n\nBürstli only listens. Nothing on the brush is changed.</string>
+    <string name="capture_start">Let\'s go</string>
+    <string name="capture_cancel">Cancel</string>
+    <string name="capture_phase_ads">Listening… keep the brush running.</string>
+    <string name="capture_phase_connecting">Connecting to the brush…</string>
+    <string name="capture_phase_reading">Reading the brush…</string>
+    <string name="capture_phase_notifications">Almost done… keep the brush running.</string>
+    <string name="capture_seconds">%1$d s left</string>
+    <string name="capture_pairing_hint">If your phone asks whether to pair: tap “Pair”.</string>
+    <string name="capture_done_title">Done – thank you!</string>
+    <string name="capture_done_text">Now just send the report, for example by messenger or e-mail to whoever recommended Bürstli to you, or on GitHub. The device address and serial number have been removed.</string>
+    <string name="capture_partial">Not everything worked, but half a report helps, too.</string>
+    <string name="capture_send">Send report</string>
+    <string name="capture_github">Report on GitHub</string>
+    <string name="capture_github_hint">The report is copied – just paste it into the form.</string>
+    <string name="capture_show">Show report</string>
+    <string name="capture_finish">Done</string>
+    <string name="capture_failed">That didn\'t work: %1$s</string>
+    <string name="capture_share_subject">Bürstli report: %1$s</string>
 </resources>

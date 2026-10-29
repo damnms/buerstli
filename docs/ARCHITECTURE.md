@@ -42,6 +42,8 @@ Rules, enforced by Gradle module boundaries:
 | **Parameter** | A knob of a mode: strength, range, speed, … |
 | **Capabilities** | What a model can do; the UI is generated from them. |
 | **Support level** | `VERIFIED` = tested on real hardware, otherwise `EXPERIMENTAL`. |
+| **Known brush** | A brush Bürstli recognizes but has no driver for. |
+| **Capture report** | What Bürstli recorded from a known brush, read-only, for building its driver. |
 
 ## Decisions
 
@@ -64,3 +66,8 @@ nothing to persist.
 **ADR-5: The driver interface follows reality, not speculation.** It is shaped by the one
 protocol we know. When the second brand arrives and doesn't fit, the interface changes then
 — not before.
+
+**ADR-6: No driver without a tester; experimental means read-only.** A driver nobody can run stays
+untested and raises false hopes. Bürstli instead recognizes known brushes and lets their owners
+record a report in the app, with no other tools. Drivers are built from such reports, start
+read-only, and only send commands after an owner confirmed them on a real brush.

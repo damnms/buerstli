@@ -62,4 +62,25 @@
     <string name="motor_start">Putzen starten</string>
     <string name="motor_stop">Stoppen</string>
     <string name="motor_hint">Fernsteuerung für deine Zahnbürste. Weil wir es können.</string>
+    <string name="found_unsupported_title">Gefunden: %1$s</string>
+    <string name="found_unsupported_text">Bürstli kann diese Zahnbürste noch nicht steuern. Du kannst helfen, das zu ändern – ganz ohne Technik-Kenntnisse.</string>
+    <string name="capture_steps">So geht’s:\n1. Nimm die Bürste aus der Ladestation.\n2. Schalte sie ein, als würdest du putzen.\n3. Leg das Handy daneben und warte etwa eine Minute.\n\nBürstli hört nur zu. An der Bürste wird nichts verändert.</string>
+    <string name="capture_start">Los geht’s</string>
+    <string name="capture_cancel">Abbrechen</string>
+    <string name="capture_phase_ads">Bürstli hört zu… Bürste eingeschaltet lassen.</string>
+    <string name="capture_phase_connecting">Verbinde mit der Bürste…</string>
+    <string name="capture_phase_reading">Lese die Bürste aus…</string>
+    <string name="capture_phase_notifications">Fast fertig… Bürste noch eingeschaltet lassen.</string>
+    <string name="capture_seconds">noch %1$d s</string>
+    <string name="capture_pairing_hint">Falls dein Handy fragt, ob es koppeln soll: auf „Koppeln“ tippen.</string>
+    <string name="capture_done_title">Fertig – danke!</string>
+    <string name="capture_done_text">Jetzt nur noch den Bericht verschicken, zum Beispiel per Messenger oder E-Mail an die Person, die dir Bürstli empfohlen hat, oder direkt auf GitHub. Geräteadresse und Seriennummer sind unkenntlich gemacht.</string>
+    <string name="capture_partial">Nicht alles hat geklappt, aber auch ein halber Bericht hilft.</string>
+    <string name="capture_send">Bericht senden</string>
+    <string name="capture_github">Auf GitHub melden</string>
+    <string name="capture_github_hint">Der Bericht ist kopiert – einfach ins Formular einfügen.</string>
+    <string name="capture_show">Bericht anzeigen</string>
+    <string name="capture_finish">Fertig</string>
+    <string name="capture_failed">Hat nicht geklappt: %1$s</string>
+    <string name="capture_share_subject">Bürstli-Bericht: %1$s</string>
 </resources>

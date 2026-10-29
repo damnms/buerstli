@@ -1,0 +1,32 @@
+name: Support my toothbrush
+description: Bürstli found your brush but can't control it yet? Send us the report from the app.
+title: "Support for: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping! In Bürstli tap **Find my brush**, then **Let's go**, and at the end
+        **Report on GitHub** – the report is already copied, just paste it below.
+        No other tools needed.
+  - type: input
+    id: model
+    attributes:
+      label: Brand and model
+      description: Printed on the box or the handle, if you can find it.
+      placeholder: Philips Sonicare DiamondClean 9000 (HX992B)
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Bürstli report
+      description: Paste the report here.
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: tester
+    attributes:
+      label: Testing
+      options:
+        - label: I can try a test version on this brush later.

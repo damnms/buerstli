@@ -4,7 +4,12 @@ import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
 
 /** What a scan saw. Drivers decide from this whether a device is "their" brush. */
-data class Advertisement(val name: String?)
+data class Advertisement(
+    val name: String?,
+    val serviceUuids: List<UUID> = emptyList(),
+    /** Manufacturer-specific data by Bluetooth company id. */
+    val manufacturerData: Map<Int, ByteArray> = emptyMap(),
+)
 
 /**
  * Port to a connected brush. Implemented by the Bluetooth adapter in the app and by fakes
@@ -41,8 +46,26 @@ interface BrushSession {
     suspend fun execute(command: BrushCommand): CommandResult
 }
 
-/** Finds the driver for a scanned device. Order matters: first match wins. */
-class DriverRegistry(val drivers: List<ToothbrushDriver>) {
+/** A brush we can recognize but have no driver for yet. */
+class KnownBrush(val brand: String, val matches: (Advertisement) -> Boolean)
+
+sealed interface Recognition {
+    data class Supported(val driver: ToothbrushDriver) : Recognition
+    data class Unsupported(val brand: String) : Recognition
+    data object Unknown : Recognition
+}
+
+/** Finds the driver for a scanned device. Order matters: first match wins, drivers first. */
+class DriverRegistry(
+    val drivers: List<ToothbrushDriver>,
+    val knownUnsupported: List<KnownBrush> = emptyList(),
+) {
     fun driverFor(advertisement: Advertisement): ToothbrushDriver? =
         drivers.firstOrNull { it.recognizes(advertisement) }
+
+    fun recognize(advertisement: Advertisement): Recognition {
+        driverFor(advertisement)?.let { return Recognition.Supported(it) }
+        knownUnsupported.firstOrNull { it.matches(advertisement) }?.let { return Recognition.Unsupported(it.brand) }
+        return Recognition.Unknown
+    }
 }

@@ -19,6 +19,7 @@ import io.github.damnms.buerstli.hex
 import io.github.damnms.buerstli.domain.BrushSession
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.DriverRegistry
+import io.github.damnms.buerstli.domain.Recognition
 import io.github.damnms.buerstli.domain.ToothbrushDriver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -40,6 +41,9 @@ sealed interface Connection {
     data class Unsupported(val name: String) : Connection
     data class Disconnected(val name: String, val driver: ToothbrushDriver, val lastState: BrushState?) : Connection
     data class Failed(val reason: String) : Connection
+
+    /** A brush we know but can't talk to yet; the user can record a report for it. */
+    data class FoundUnsupported(val name: String?, val brand: String, val device: BluetoothDevice) : Connection
 }
 
 /**
@@ -65,6 +69,7 @@ class BleConnector(
     private var session: BrushSession? = null
     private var scanCallback: ScanCallback? = null
     private var scanTimeout: Job? = null
+    private var unsupportedGrace: Job? = null
 
     fun find() {
         val a = adapter ?: run { _state.value = Connection.NoBluetooth; return }
@@ -78,13 +83,34 @@ class BleConnector(
 
         val cb = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                val name = result.scanRecord?.deviceName ?: result.device.name
-                val driver = registry.driverFor(Advertisement(name)) ?: return
-                scope.launch {
-                    if (scanCallback == null) return@launch // someone else won the race
-                    diag.log("found $name (${result.rssi} dBm) -> ${driver.model.brand} ${driver.model.name}")
-                    stopScan()
-                    connect(result.device, name ?: result.device.address, driver)
+                val record = result.scanRecord
+                val name = record?.deviceName ?: result.device.name
+                val manufacturer = buildMap {
+                    val data = record?.manufacturerSpecificData ?: return@buildMap
+                    for (i in 0 until data.size()) put(data.keyAt(i), data.valueAt(i))
+                }
+                val ad = Advertisement(name, record?.serviceUuids?.map { it.uuid } ?: emptyList(), manufacturer)
+                when (val recognition = registry.recognize(ad)) {
+                    is Recognition.Supported -> scope.launch {
+                        if (scanCallback == null) return@launch // someone else won the race
+                        val driver = recognition.driver
+                        diag.log("found $name (${result.rssi} dBm) -> ${driver.model.brand} ${driver.model.name}")
+                        stopScan()
+                        connect(result.device, name ?: result.device.address, driver)
+                    }
+                    is Recognition.Unsupported -> scope.launch {
+                        if (scanCallback == null || unsupportedGrace != null) return@launch
+                        diag.log("found $name (${result.rssi} dBm): ${recognition.brand}, no driver yet")
+                        // Give a supported brush nearby a moment to show up before offering the report.
+                        unsupportedGrace = scope.launch {
+                            delay(UNSUPPORTED_GRACE_MS)
+                            if (scanCallback != null) {
+                                stopScan()
+                                _state.value = Connection.FoundUnsupported(name, recognition.brand, result.device)
+                            }
+                        }
+                    }
+                    Recognition.Unknown -> Unit
                 }
             }
 
@@ -114,6 +140,13 @@ class BleConnector(
         gatt?.disconnect() ?: run { _state.value = Connection.Idle }
     }
 
+    /** Back to the start screen, e.g. after a report was recorded. */
+    fun reset() {
+        stopScan()
+        closeGatt()
+        _state.value = Connection.Idle
+    }
+
     fun close() {
         stopScan()
         closeGatt()
@@ -122,6 +155,8 @@ class BleConnector(
     private fun stopScan() {
         scanTimeout?.cancel()
         scanTimeout = null
+        unsupportedGrace?.cancel()
+        unsupportedGrace = null
         val cb = scanCallback ?: return
         scanCallback = null
         try {
@@ -236,5 +271,6 @@ class BleConnector(
     private companion object {
         // The brush can take a while to advertise again after a disconnect.
         const val SCAN_TIMEOUT_MS = 30_000L
+        const val UNSUPPORTED_GRACE_MS = 4_000L
     }
 }

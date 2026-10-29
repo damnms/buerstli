@@ -49,8 +49,13 @@ object LaifenWaveV1Driver : ToothbrushDriver {
         ),
     )
 
-    override fun recognizes(advertisement: Advertisement): Boolean =
-        advertisement.name?.startsWith("LFTB01") == true
+    /** Per laifen-toolbox these LFTB01 variants speak another protocol. */
+    private val otherProtocol = listOf("LFTB01-SE", "LFTB01-C")
+
+    override fun recognizes(advertisement: Advertisement): Boolean {
+        val name = advertisement.name ?: return false
+        return name.startsWith("LFTB01") && otherProtocol.none { name.startsWith(it) }
+    }
 
     override fun open(link: BrushLink): BrushSession = LaifenWaveV1Session(link, capabilities)
 }

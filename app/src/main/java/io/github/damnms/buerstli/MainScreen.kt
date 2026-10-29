@@ -63,6 +63,8 @@ class Actions(
     val saveDuration: () -> Unit,
     val discardDuration: () -> Unit,
     val setSwitch: (Switch, Boolean) -> Unit,
+    val startCapture: () -> Unit,
+    val finishCapture: () -> Unit,
 )
 
 class DurationUi(val draft: Int?, val save: SaveStatus?)
@@ -75,6 +77,7 @@ fun MainScreen(
     saveStatus: Map<Int, SaveStatus>,
     duration: DurationUi,
     switchSave: Map<Switch, SaveStatus>,
+    capture: io.github.damnms.buerstli.capture.CaptureState,
     logLines: List<String>,
     permissionGranted: Boolean,
     permissionDenied: Boolean,
@@ -92,7 +95,7 @@ fun MainScreen(
             if (!permissionGranted) {
                 PermissionCard(permissionDenied, actions.requestPermission)
             } else {
-                ConnectionContent(connection, brushState, drafts, saveStatus, duration, switchSave, actions)
+                ConnectionContent(connection, brushState, drafts, saveStatus, duration, switchSave, capture, actions)
             }
             if (logLines.isNotEmpty()) LogCard(logLines)
             Spacer(Modifier.height(8.dp))
@@ -137,9 +140,11 @@ private fun ConnectionContent(
     saveStatus: Map<Int, SaveStatus>,
     duration: DurationUi,
     switchSave: Map<Switch, SaveStatus>,
+    capture: io.github.damnms.buerstli.capture.CaptureState,
     actions: Actions,
 ) {
     when (connection) {
+        is Connection.FoundUnsupported -> CaptureContent(connection.brand, capture, actions)
         Connection.Idle -> FindButton(actions.find)
         Connection.Scanning -> Busy(stringResource(R.string.scanning), stringResource(R.string.scanning_hint))
         is Connection.Connecting -> Busy(

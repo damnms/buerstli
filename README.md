@@ -14,8 +14,22 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 
 | Brand | Model | Bluetooth name | Status | Features |
 |---|---|---|---|---|
-| Laifen | Wave (LFTB01) | `LFTB01-…` | ✅ tested on a real brush | battery, modes, flight mode, edit strength/range/speed, brushing time |
-| Laifen | Wave (LFTB02), Wave Pro | `LFTB02-…` | ❌ not yet (different protocol) | |
+| Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, flight mode, edit strength/range/speed, brushing time |
+| Laifen | Wave (LFTB02), Wave Pro, LFTB01-SE/-C | `LFTB…` | 🔍 recognized, not supported yet | |
+| Philips | Sonicare | `Philips Sonicare`, `Philips OHC` | 🔍 recognized, not supported yet | |
+| Oral-B | iO and others | `Oral-B…` | 🔍 recognized, not supported yet | |
+
+### Testers wanted 🙋
+
+Got one of the brushes marked 🔍? You can help without any technical knowledge: open Bürstli,
+tap **Find my brush**, then **Let's go**. Bürstli listens to your brush for about a minute –
+it only reads, nothing on the brush is changed – and gives you a report to send by messenger,
+e-mail or as a [GitHub issue](../../issues/new?template=new-brush.yml).
+
+The protocols have been researched by others already, which makes a driver much more likely:
+[philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble/blob/main/docs/BLE_PROTOCOL.md)
+and [oralb-ha](https://github.com/thomasgregg/oralb-ha/blob/main/docs/protocol.md). Bürstli only
+ships drivers that someone has tested on a real brush.
 
 Got another brush? [CONTRIBUTING.md](CONTRIBUTING.md) explains how to add it.
 The architecture is described in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

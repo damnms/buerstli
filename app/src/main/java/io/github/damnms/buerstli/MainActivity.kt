@@ -52,6 +52,7 @@ fun App(vm: BrushViewModel = viewModel()) {
     val durationSave by vm.durationSave.collectAsStateWithLifecycle()
     val logLines by vm.diagnostics.lines.collectAsStateWithLifecycle()
     val switchSave by vm.switchSave.collectAsStateWithLifecycle()
+    val capture by vm.capture.collectAsStateWithLifecycle()
 
     fun hasPermissions() = requiredPermissions.all {
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
@@ -75,6 +76,7 @@ fun App(vm: BrushViewModel = viewModel()) {
         saveStatus = saveStatus,
         duration = DurationUi(durationDraft, durationSave),
         switchSave = switchSave,
+        capture = capture,
         logLines = logLines,
         permissionGranted = granted,
         permissionDenied = denied,
@@ -89,6 +91,8 @@ fun App(vm: BrushViewModel = viewModel()) {
             saveDuration = vm::saveDuration,
             discardDuration = vm::discardDuration,
             setSwitch = vm::setSwitch,
+            startCapture = vm::startCapture,
+            finishCapture = vm::finishCapture,
         ),
     )
 }

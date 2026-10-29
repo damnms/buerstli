@@ -28,6 +28,12 @@ class LaifenWaveV1DriverTest {
     }
 
     @Test
+    fun `does not claim LFTB01-SE and LFTB01-C, which use another protocol per laifen-toolbox`() {
+        assertFalse(driver.recognizes(Advertisement("LFTB01-SE-1234")))
+        assertFalse(driver.recognizes(Advertisement("LFTB01-C-1234")))
+    }
+
+    @Test
     fun `does not claim unrelated devices`() {
         assertFalse(driver.recognizes(Advertisement("Oral-B Toothbrush")))
         assertFalse(driver.recognizes(Advertisement(null)))

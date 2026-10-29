@@ -6,6 +6,15 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Found a toothbrush Bürstli can't control yet (Philips Sonicare, Oral-B, other Laifen models)?
+  Bürstli now says so and can record a report in about a minute – it only listens, nothing on the
+  brush is changed – to send by messenger, e-mail or on GitHub.
+
+### Fixed
+- Laifen LFTB01-SE and LFTB01-C are no longer treated as a Wave V1; according to laifen-toolbox
+  they use a different protocol.
+
 ## [0.4.0] - 2026-10-29
 
 ### Added
