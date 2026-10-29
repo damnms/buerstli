@@ -52,5 +52,7 @@ list of supported brushes.
 ## Ground rules
 
 - `./gradlew test lintDebug assembleDebug` must pass.
+- The release build must stay reproducible (CI builds it twice and compares). If a change breaks
+  this, find out why before merging; F-Droid relies on it.
 - No `INTERNET` permission, no analytics, no accounts. Ever.
 - Commit messages: short imperative summary ("Add Oral-B iO driver").

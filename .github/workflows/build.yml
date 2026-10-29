@@ -38,3 +38,57 @@ jobs:
         with:
           name: buerstli-debug
           path: app/build/outputs/apk/debug/*.apk
+
+  # F-Droid ships our own signed APK only if its build matches ours byte for byte. Build the
+  # release in two different environments (JDK vendor and version, checkout path) and compare,
+  # so a dependency update that breaks reproducibility is caught right away.
+  reproducible:
+    name: Reproducible build (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: temurin-17
+            distribution: temurin
+            java: 17
+            path: buerstli
+          - name: zulu-21-other-path
+            distribution: zulu
+            java: 21
+            path: some/other/place/buerstli
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ${{ matrix.path }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: ${{ matrix.distribution }}
+          java-version: ${{ matrix.java }}
+
+      - name: Build unsigned release APK
+        working-directory: ${{ matrix.path }}
+        run: ./gradlew assembleRelease
+
+      - name: Checksum
+        run: sha256sum ${{ matrix.path }}/app/build/outputs/apk/release/app-release-unsigned.apk | cut -d' ' -f1 | tee hash-${{ matrix.name }}.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hash-${{ matrix.name }}
+          path: hash-${{ matrix.name }}.txt
+
+  reproducible-compare:
+    name: Reproducible build (compare)
+    needs: reproducible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: hash-*
+          merge-multiple: true
+
+      - name: Both builds must be identical
+        run: |
+          grep . hash-*.txt
+          [ "$(sort -u hash-*.txt | wc -l)" = 1 ] || { echo "Release builds differ: not reproducible"; exit 1; }
