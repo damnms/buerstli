@@ -7,6 +7,7 @@ import io.github.damnms.buerstli.domain.BrushSession
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.Capabilities
 import io.github.damnms.buerstli.domain.CommandResult
+import io.github.damnms.buerstli.domain.ModeSpec
 import io.github.damnms.buerstli.domain.Validation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,16 +57,40 @@ internal class LaifenWaveV1Session(
         is BrushCommand.ChangeModeSettings -> changeModeSettings(command)
         is BrushCommand.ChangeBrushingDuration -> changeBrushingDuration(command)
         is BrushCommand.SetSwitch -> setSwitch(command)
+        is BrushCommand.ActivateMode -> activateMode(command.modeIndex)
+    }
+
+    /** Null if the mode can be used right now, otherwise why not. */
+    private fun unavailable(spec: ModeSpec): CommandResult? =
+        spec.requires?.takeIf { _state.value.switches[it] != true }?.let { CommandResult.Unavailable(it) }
+
+    /** The brush has no "select mode" command: writing a mode's values also makes it active. */
+    private suspend fun activateMode(index: Int): CommandResult {
+        val spec = capabilities.mode(index) ?: return CommandResult.UnknownMode(index)
+        unavailable(spec)?.let { return it }
+        val current = _state.value.modes[index] ?: return CommandResult.Unavailable(null)
+        return writeAndConfirm(LaifenWaveV1Codec.encodeModeSettings(index, current)) { it.activeModeIndex == index }
     }
 
     private suspend fun setSwitch(cmd: BrushCommand.SetSwitch): CommandResult {
         if (capabilities.switches[cmd.switch] != Access.READ_WRITE) return CommandResult.Unsupported
         val bytes = LaifenWaveV1Codec.encodeSwitch(cmd.switch, cmd.on) ?: return CommandResult.Unsupported
+        if (!cmd.on) {
+            // Like the official app: leave a mode before switching off what it requires.
+            val active = _state.value.activeModeIndex?.let { capabilities.mode(it) }
+            if (active?.requires == cmd.switch) {
+                val fallback = capabilities.modes.lastOrNull { it.requires == null }
+                    ?: return CommandResult.Unavailable(cmd.switch)
+                val moved = activateMode(fallback.index)
+                if (moved != CommandResult.Confirmed) return moved
+            }
+        }
         return writeAndConfirm(bytes) { it.switches[cmd.switch] == cmd.on }
     }
 
     private suspend fun changeModeSettings(cmd: BrushCommand.ChangeModeSettings): CommandResult {
         val spec = capabilities.mode(cmd.modeIndex) ?: return CommandResult.UnknownMode(cmd.modeIndex)
+        unavailable(spec)?.let { return it }
         val validation = spec.validate(cmd.settings)
         if (validation != Validation.Valid) return CommandResult.Invalid(validation)
 

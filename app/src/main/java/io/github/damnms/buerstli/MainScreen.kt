@@ -59,6 +59,7 @@ class Actions(
     val edit: (mode: Int, kind: ParameterKind, value: Int) -> Unit,
     val save: (mode: Int) -> Unit,
     val discard: (mode: Int) -> Unit,
+    val activateMode: (mode: Int) -> Unit,
     val editDuration: (seconds: Int) -> Unit,
     val saveDuration: () -> Unit,
     val discardDuration: () -> Unit,
@@ -257,7 +258,7 @@ private fun BrushView(
         ModeCard(
             spec = spec,
             active = spec.index == state.activeModeIndex,
-            unused = spec.highFrequency && state.switches[Switch.HIGH_FREQUENCY] == false,
+            unused = spec.requires != null && state.switches[spec.requires] != true,
             onBrush = state.modes[spec.index],
             drafts = drafts,
             status = saveStatus[spec.index],
@@ -307,12 +308,20 @@ private fun ModeCard(
                     onValueChange = { actions.edit(spec.index, p.kind, it.roundToInt()) },
                     valueRange = p.range.first.toFloat()..p.range.last.toFloat(),
                     steps = (p.range.last - p.range.first - 1).coerceAtLeast(0),
-                    enabled = editable && !saving,
+                    enabled = editable && !saving && !unused,
                 )
             }
-            if (dirty && editable) {
+            if (!active && !dirty && editable && !unused) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Button(onClick = { actions.save(spec.index) }, enabled = !saving) { Text(stringResource(R.string.save)) }
+                    OutlinedButton(onClick = { actions.activateMode(spec.index) }, enabled = !saving) {
+                        Text(stringResource(R.string.mode_use))
+                    }
+                    if (saving) CircularProgressIndicator(Modifier.size(20.dp))
+                }
+            }
+            if (dirty && editable && !unused) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Button(onClick = { actions.save(spec.index) }, enabled = !saving) { Text(stringResource(R.string.save_and_use)) }
                     TextButton(onClick = { actions.discard(spec.index) }, enabled = !saving) { Text(stringResource(R.string.discard)) }
                     if (saving) CircularProgressIndicator(Modifier.size(20.dp))
                 }
@@ -418,6 +427,7 @@ private fun SaveResult(result: CommandResult) {
         CommandResult.Confirmed -> stringResource(R.string.saved) to false
         CommandResult.NotApplied -> stringResource(R.string.not_applied) to true
         is CommandResult.Failed -> stringResource(R.string.save_failed) to true
+        is CommandResult.Unavailable -> stringResource(R.string.unavailable_hf) to true
         is CommandResult.Invalid, is CommandResult.UnknownMode, CommandResult.Unsupported ->
             stringResource(R.string.invalid) to true
     }

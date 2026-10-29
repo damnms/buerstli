@@ -5,6 +5,9 @@ sealed interface BrushCommand {
     data class ChangeModeSettings(val modeIndex: Int, val settings: ModeSettings) : BrushCommand
     data class ChangeBrushingDuration(val seconds: Int) : BrushCommand
     data class SetSwitch(val switch: Switch, val on: Boolean) : BrushCommand
+
+    /** Make this mode the one the brush uses. */
+    data class ActivateMode(val modeIndex: Int) : BrushCommand
 }
 
 sealed interface CommandResult {
@@ -16,6 +19,9 @@ sealed interface CommandResult {
 
     /** Rejected before sending: the model can't do this at all. */
     data object Unsupported : CommandResult
+
+    /** Rejected before sending: only possible while [requires] is on. */
+    data class Unavailable(val requires: Switch?) : CommandResult
 
     /** Rejected before sending: the model has no such mode. */
     data class UnknownMode(val index: Int) : CommandResult

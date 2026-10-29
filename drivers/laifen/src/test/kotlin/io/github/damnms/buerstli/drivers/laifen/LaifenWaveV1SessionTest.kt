@@ -1,5 +1,6 @@
 package io.github.damnms.buerstli.drivers.laifen
 
+import io.github.damnms.buerstli.domain.BrushCommand.ActivateMode
 import io.github.damnms.buerstli.domain.BrushCommand.ChangeBrushingDuration
 import io.github.damnms.buerstli.domain.BrushCommand.ChangeModeSettings
 import io.github.damnms.buerstli.domain.BrushCommand.SetSwitch
@@ -94,7 +95,11 @@ class LaifenWaveV1SessionTest {
         private fun apply(status: ByteArray, cmd: ByteArray): ByteArray {
             val out = status.copyOf()
             when (cmd[1].toInt()) {
-                0x04 -> { val base = 5 + 3 * cmd[4]; out[base] = cmd[5]; out[base + 1] = cmd[6]; out[base + 2] = cmd[7] }
+                0x04 -> { // sets the mode's values AND makes it the active mode
+                    val base = 5 + 3 * cmd[4]
+                    out[base] = cmd[5]; out[base + 1] = cmd[6]; out[base + 2] = cmd[7]
+                    out[4] = cmd[4]
+                }
                 0x05 -> { out[20] = cmd[4]; out[21] = cmd[5] }
                 0x0B -> out[4 + 15] = cmd[4]
                 0x0E -> out[4 + 18] = cmd[4]
@@ -265,5 +270,52 @@ class LaifenWaveV1SessionTest {
 
         assertEquals(CommandResult.Unsupported, session.execute(SetSwitch(Switch.FLIGHT_MODE, true)))
         assertTrue(brush.commands.isEmpty())
+    }
+
+    @Test
+    fun `activating a mode writes its current values and confirms the switch`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+
+        assertEquals(CommandResult.Confirmed, session.execute(ActivateMode(0)))
+        assertArrayEquals(Packets.hex("AA-04-01-04-00-03-01-05-AC"), brush.commands.single())
+        assertEquals(0, session.state.value.activeModeIndex)
+    }
+
+    @Test
+    fun `the high-frequency mode is unavailable while high frequency is off`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+
+        val unavailable = CommandResult.Unavailable(Switch.HIGH_FREQUENCY)
+        assertEquals(unavailable, session.execute(ActivateMode(3)))
+        assertEquals(unavailable, session.execute(ChangeModeSettings(3, settings(12, 6, 6))))
+        assertTrue(brush.commands.isEmpty())
+    }
+
+    @Test
+    fun `with high frequency on, mode 4 can be used`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+
+        session.execute(SetSwitch(Switch.HIGH_FREQUENCY, true))
+        assertEquals(CommandResult.Confirmed, session.execute(ActivateMode(3)))
+        assertEquals(3, session.state.value.activeModeIndex)
+    }
+
+    @Test
+    fun `turning high frequency off while in mode 4 first moves to mode 3, like the official app`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+        session.execute(SetSwitch(Switch.HIGH_FREQUENCY, true))
+        session.execute(ActivateMode(3))
+
+        assertEquals(CommandResult.Confirmed, session.execute(SetSwitch(Switch.HIGH_FREQUENCY, false)))
+
+        val lastTwo = brush.commands.takeLast(2)
+        assertArrayEquals(Packets.hex("AA-04-01-04-02-06-06-06-AF"), lastTwo[0]) // mode 3, its own values
+        assertArrayEquals(Packets.hex("AA-0E-01-01-00-A4"), lastTwo[1])
+        assertEquals(2, session.state.value.activeModeIndex)
+        assertEquals(false, session.state.value.switches[Switch.HIGH_FREQUENCY])
     }
 }

@@ -14,10 +14,21 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 
 | Brand | Model | Bluetooth name | Status | Features |
 |---|---|---|---|---|
-| Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, flight mode, edit strength/range/speed, brushing time |
+| Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, edit and switch modes, brushing time, 30-second nudge, high frequency, start/stop; flight mode shown |
 | Laifen | Wave (LFTB02), Wave Pro, LFTB01-SE/-C | `LFTB…` | 🔍 recognized, not supported yet | |
 | Philips | Sonicare | `Philips Sonicare`, `Philips OHC` | 🔍 recognized, not supported yet | |
 | Oral-B | iO and others | `Oral-B…` | 🔍 recognized, not supported yet | |
+
+### Laifen Wave: the hidden fourth mode
+
+The Wave has a fourth mode, **high frequency**, with the strongest vibration (strength 11–20
+instead of 1–10). It is not part of the button's mode cycle until high frequency is switched on,
+and as far as is known (laifen-toolbox's protocol notes, reviews of the official app) that is only
+possible from an app – the button alone never gets you there.
+
+In Bürstli: turn on **High frequency**, then either press the button twice to cycle
+Mode 1 → 2 → 3 → 4, or tap **Use this mode** on the mode 4 card. Turning high frequency off while
+mode 4 is active switches to mode 3 first, like the official app does.
 
 ### Testers wanted 🙋
 

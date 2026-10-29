@@ -57,9 +57,9 @@
     <string name="switch_reminder">30-second nudge</string>
     <string name="switch_reminder_hint">A short buzz every 30 s to switch zones. Like a coach, minus the subscription.</string>
     <string name="switch_hf">High frequency</string>
-    <string name="switch_hf_hint">Unlocks mode 4.</string>
+    <string name="switch_hf_hint">Unlocks mode 4, the strongest vibration (strength 11–20). Without it, the button skips mode 4.</string>
     <string name="switch_flight_hint">Only switchable on the brush. Bürstli doesn\'t dare touch it yet.</string>
-    <string name="mode_hf_off_hint">Only used when high frequency is on.</string>
+    <string name="mode_hf_off_hint">Only available while high frequency is on.</string>
     <string name="motor_start">Start brushing</string>
     <string name="motor_stop">Stop</string>
     <string name="motor_hint">Remote control for your toothbrush. Because we can.</string>
@@ -84,4 +84,7 @@
     <string name="capture_finish">Done</string>
     <string name="capture_failed">That didn\'t work: %1$s</string>
     <string name="capture_share_subject">Bürstli report: %1$s</string>
+    <string name="mode_use">Use this mode</string>
+    <string name="save_and_use">Save and use</string>
+    <string name="unavailable_hf">Turn on high frequency first.</string>
 </resources>

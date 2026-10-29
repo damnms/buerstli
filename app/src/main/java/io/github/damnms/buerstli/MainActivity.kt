@@ -87,6 +87,7 @@ fun App(vm: BrushViewModel = viewModel()) {
             edit = vm::edit,
             save = vm::save,
             discard = vm::discard,
+            activateMode = vm::activateMode,
             editDuration = vm::editDuration,
             saveDuration = vm::saveDuration,
             discardDuration = vm::discardDuration,

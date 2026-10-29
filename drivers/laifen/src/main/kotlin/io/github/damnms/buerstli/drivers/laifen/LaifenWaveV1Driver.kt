@@ -29,6 +29,8 @@ object LaifenWaveV1Driver : ToothbrushDriver {
             ParameterSpec(SPEED, 1..10),
         ),
         highFrequency = hf,
+        // The high-frequency mode only exists while high frequency is switched on.
+        requires = if (hf) Switch.HIGH_FREQUENCY else null,
     )
 
     override val capabilities = Capabilities(

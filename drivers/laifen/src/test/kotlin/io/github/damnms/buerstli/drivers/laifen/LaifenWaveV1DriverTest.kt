@@ -50,6 +50,7 @@ class LaifenWaveV1DriverTest {
         assertEquals(4, modes.size)
         modes.take(3).forEach { assertEquals(1..10, it.spec(STRENGTH)!!.range) }
         assertTrue(modes[3].highFrequency)
+        assertEquals(Switch.HIGH_FREQUENCY, modes[3].requires)
         assertEquals(11..20, modes[3].spec(STRENGTH)!!.range)
     }
 

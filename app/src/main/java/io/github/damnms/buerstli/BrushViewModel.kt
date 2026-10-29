@@ -119,6 +119,17 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
         _saveStatus.update { it - mode }
     }
 
+    fun activateMode(mode: Int) {
+        val connected = connection.value as? Connection.Connected ?: return
+        _saveStatus.update { it + (mode to SaveStatus.Saving) }
+        viewModelScope.launch {
+            diagnostics.log("use mode ${mode + 1}")
+            val result = connected.session.execute(BrushCommand.ActivateMode(mode))
+            diagnostics.log("use mode ${mode + 1}: $result")
+            _saveStatus.update { it + (mode to SaveStatus.Done(result)) }
+        }
+    }
+
     fun discard(mode: Int) {
         _drafts.update { it.clear(mode) }
         _saveStatus.update { it - mode }

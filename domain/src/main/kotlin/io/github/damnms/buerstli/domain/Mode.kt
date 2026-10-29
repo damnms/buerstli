@@ -11,6 +11,8 @@ data class ModeSpec(
     val index: Int,
     val parameters: List<ParameterSpec>,
     val highFrequency: Boolean = false,
+    /** A switch that must be on for this mode to exist on the brush, if any. */
+    val requires: Switch? = null,
 ) {
     fun spec(kind: ParameterKind): ParameterSpec? = parameters.firstOrNull { it.kind == kind }
 

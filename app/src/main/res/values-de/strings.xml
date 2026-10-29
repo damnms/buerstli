@@ -56,9 +56,9 @@
     <string name="switch_reminder">30-Sekunden-Signal</string>
     <string name="switch_reminder_hint">Kurzes Zucken alle 30 Sekunden, damit du die Zone wechselst. Wie ein Coach, nur ohne Abo.</string>
     <string name="switch_hf">Hochfrequenz</string>
-    <string name="switch_hf_hint">Schaltet Modus 4 frei.</string>
+    <string name="switch_hf_hint">Schaltet Modus 4 frei, die stärkste Vibration (Stärke 11–20). Ohne das überspringt die Taste Modus 4.</string>
     <string name="switch_flight_hint">Nur an der Bürste umschaltbar. Da traut sich Bürstli noch nicht ran.</string>
-    <string name="mode_hf_off_hint">Wird erst benutzt, wenn Hochfrequenz an ist.</string>
+    <string name="mode_hf_off_hint">Nur verfügbar, solange Hochfrequenz an ist.</string>
     <string name="motor_start">Putzen starten</string>
     <string name="motor_stop">Stoppen</string>
     <string name="motor_hint">Fernsteuerung für deine Zahnbürste. Weil wir es können.</string>
@@ -83,4 +83,7 @@
     <string name="capture_finish">Fertig</string>
     <string name="capture_failed">Hat nicht geklappt: %1$s</string>
     <string name="capture_share_subject">Bürstli-Bericht: %1$s</string>
+    <string name="mode_use">Diesen Modus verwenden</string>
+    <string name="save_and_use">Speichern &amp; verwenden</string>
+    <string name="unavailable_hf">Erst Hochfrequenz einschalten.</string>
 </resources>

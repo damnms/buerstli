@@ -11,6 +11,17 @@ All notable changes to Bürstli are documented here. The format follows
   Bürstli now says so and can record a report in about a minute – it only listens, nothing on the
   brush is changed – to send by messenger, e-mail or on GitHub.
 
+- "Use this mode" on every mode card: switch modes from the phone instead of pressing the
+  button again and again.
+- The README and the app explain the hidden fourth mode: the Laifen Wave only offers its
+  strongest mode while high frequency is on, which you can't switch on at the brush.
+
+### Changed
+- Saving a mode's settings also makes it the active mode – that's how the brush works – and the
+  button now says so ("Save and use").
+- Mode 4 can only be used or changed while high frequency is on, and turning high frequency off
+  while in mode 4 switches to mode 3 first, as in the official app.
+
 ### Fixed
 - Laifen LFTB01-SE and LFTB01-C are no longer treated as a Wave V1; according to laifen-toolbox
   they use a different protocol.
