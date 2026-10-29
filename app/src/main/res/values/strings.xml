@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Bürstli</string>
+    <string name="app_name" translatable="false">Bürstli</string>
     <string name="tagline">Your toothbrush. No account. No phone number. No \"we value your privacy\".</string>
 
     <string name="find_brush">Find my brush</string>
@@ -19,7 +19,7 @@
     <string name="disconnected">Your brush fell asleep. Unlike certain apps, it doesn\'t phone home while sleeping.</string>
     <string name="bluetooth_off">Bluetooth is off. We\'re good, but not \"brush via telepathy\" good.</string>
     <string name="no_bluetooth">This device has no Bluetooth LE. Have you considered a manual toothbrush?</string>
-    <string name="unsupported">Connected to %1$s, but it doesn\'t speak the language we know. Is this a Laifen Wave (LFTB01)?</string>
+    <string name="unsupported">Connected to %1$s, but it doesn\'t speak the language we expected.</string>
     <string name="error">Something went wrong: %1$s</string>
 
     <string name="permission_title">One permission. Just one.</string>
@@ -29,9 +29,8 @@
     <string name="permission_denied">Permission denied. Respect. But without Bluetooth, this is just a very pretty screen.</string>
 
     <string name="battery">Battery</string>
-    <string name="active_mode">Active mode</string>
     <string name="mode_n">Mode %1$d</string>
-    <string name="mode_hf">Mode 4 · high frequency</string>
+    <string name="mode_hf">Mode %1$d · high frequency</string>
     <string name="strength">Strength</string>
     <string name="range">Range</string>
     <string name="speed">Speed</string>
@@ -39,10 +38,16 @@
     <string name="flight_mode">Flight mode</string>
     <string name="on">on</string>
     <string name="off">off</string>
-    <string name="read_only_note">Read-only for now. Changing settings comes in the next version – obviously without asking for your e-mail first.</string>
-
-    <string name="raw_title">For nerds: raw packet</string>
 
     <string name="footer_stats">Internet permission: none · Accounts created: 0 · Data sold: also 0</string>
     <string name="footer_legal">Not affiliated with Laifen. Laifen is a trademark of its owner. Made by someone who just wanted to brush his teeth.</string>
+    <string name="verified">tested on a real brush</string>
+    <string name="experimental">experimental</string>
+    <string name="save">Save to brush</string>
+    <string name="discard">Undo</string>
+    <string name="saved">Saved. On the brush. Not in some cloud. Imagine that.</string>
+    <string name="not_applied">The brush ignored that. At least it didn\'t ask for your e-mail.</string>
+    <string name="save_failed">Connection lost – the brush probably dozed off. Wake it, reconnect, save again. Your change is still here.</string>
+    <string name="invalid">Invalid value. This should never happen – please report it.</string>
+    <string name="drafts_kept">Unsaved changes are kept until you reconnect.</string>
 </resources>

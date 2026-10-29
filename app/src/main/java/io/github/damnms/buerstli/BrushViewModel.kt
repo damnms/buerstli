@@ -2,14 +2,75 @@ package io.github.damnms.buerstli
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import io.github.damnms.buerstli.ble.BleConnector
+import io.github.damnms.buerstli.ble.Connection
+import io.github.damnms.buerstli.domain.BrushCommand
+import io.github.damnms.buerstli.domain.BrushState
+import io.github.damnms.buerstli.domain.CommandResult
+import io.github.damnms.buerstli.domain.ParameterKind
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+sealed interface SaveStatus {
+    data object Saving : SaveStatus
+    data class Done(val result: CommandResult) : SaveStatus
+}
 
 class BrushViewModel(app: Application) : AndroidViewModel(app) {
-    private val connection = BrushConnection(app)
-    val state: StateFlow<ConnState> = connection.state
 
-    fun find() = connection.find()
-    fun disconnect() = connection.disconnect()
+    private val connector = BleConnector(app, Drivers.registry, viewModelScope)
+    val connection: StateFlow<Connection> = connector.state
 
-    override fun onCleared() = connection.close()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val brushState: StateFlow<BrushState?> = connection
+        .flatMapLatest { c ->
+            when (c) {
+                is Connection.Connected -> c.session.state
+                is Connection.Disconnected -> flowOf(c.lastState)
+                else -> flowOf(null)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private val _drafts = MutableStateFlow(Drafts())
+    val drafts: StateFlow<Drafts> = _drafts.asStateFlow()
+
+    private val _saveStatus = MutableStateFlow<Map<Int, SaveStatus>>(emptyMap())
+    val saveStatus: StateFlow<Map<Int, SaveStatus>> = _saveStatus.asStateFlow()
+
+    fun find() = connector.find()
+    fun disconnect() = connector.disconnect()
+
+    fun edit(mode: Int, kind: ParameterKind, value: Int) {
+        val onBrush = brushState.value?.modes?.get(mode) ?: return
+        _drafts.update { it.edit(mode, onBrush, kind, value) }
+        _saveStatus.update { it - mode }
+    }
+
+    fun discard(mode: Int) {
+        _drafts.update { it.clear(mode) }
+        _saveStatus.update { it - mode }
+    }
+
+    fun save(mode: Int) {
+        val connected = connection.value as? Connection.Connected ?: return
+        val settings = _drafts.value.current(mode, null) ?: return
+        _saveStatus.update { it + (mode to SaveStatus.Saving) }
+        viewModelScope.launch {
+            val result = connected.session.execute(BrushCommand.ChangeModeSettings(mode, settings))
+            if (result == CommandResult.Confirmed) _drafts.update { it.clear(mode) }
+            _saveStatus.update { it + (mode to SaveStatus.Done(result)) }
+        }
+    }
+
+    override fun onCleared() = connector.close()
 }
