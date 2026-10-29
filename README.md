@@ -4,6 +4,10 @@
 
 Starting with the Laifen Wave. More brushes welcome — see [Supported brushes](#supported-brushes).
 
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" alt="Bürstli connected to a Laifen Wave: battery, start button, 30-second nudge, high frequency and brushing time" width="280">
+</p>
+
 The official app wants you to register with an e-mail address or phone number and confirm a
 verification code. To adjust a toothbrush. Bürstli doesn't. It talks to your brush over
 Bluetooth, and that's it — the app doesn't even have the permission to access the internet.
