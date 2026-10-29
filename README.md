@@ -1,6 +1,8 @@
 # Bürstli 🪥
 
-**Open-source Android app for the Laifen Wave toothbrush. No account. No internet permission. No nonsense.**
+**Open-source Android app for Bluetooth toothbrushes. No account. No internet permission. No nonsense.**
+
+Starting with the Laifen Wave. More brushes welcome — see [Supported brushes](#supported-brushes).
 
 The official app wants you to register with an e-mail address or phone number and confirm a
 verification code. To adjust a toothbrush. Bürstli doesn't. It talks to your brush over
@@ -8,17 +10,15 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 
 > *Bürstli* is Swiss German for "little brush". Rhymes with *Brötli*. Pronounce it however you like.
 
-## Status
+## Supported brushes
 
-| | |
-|---|---|
-| ✅ Find and connect to the brush | |
-| ✅ Live status: battery, active mode, settings of all 4 modes, flight mode | |
-| 🚧 Changing mode settings | next |
-| 🚧 Brushing duration, 30 s reminder, high frequency, flight mode | later |
+| Brand | Model | Bluetooth name | Status | Features |
+|---|---|---|---|---|
+| Laifen | Wave (LFTB01) | `LFTB01-…` | ✅ tested on a real brush | battery, modes, flight mode, edit strength/range/speed |
+| Laifen | Wave (LFTB02), Wave Pro | `LFTB02-…` | ❌ not yet (different protocol) | |
 
-**Supported:** Laifen Wave **V1** (model `LFTB01`, Bluetooth name `LFTB01-…`), tested on an `LFTB01-P`.
-The newer Wave (`LFTB02`) and Wave Pro speak a different protocol and are not supported yet.
+Got another brush? [CONTRIBUTING.md](CONTRIBUTING.md) explains how to add it.
+The architecture is described in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Install
 
@@ -40,7 +40,7 @@ Tips:
 ## Build
 
 ```sh
-./gradlew testDebugUnitTest assembleDebug
+./gradlew test lintDebug assembleDebug
 ```
 
 Releases are built by GitHub Actions when a tag `v*` is pushed. The workflow expects these
@@ -54,7 +54,7 @@ Status packet: `AA 0A 02 [len] [payload] [xor]`, payload = active mode index, th
 4 × (strength, range, speed), flight mode flag, battery %.
 Write mode settings: `AA 04 01 04 [mode] [strength] [range] [speed] [xor]`.
 The checksum is the XOR of all preceding bytes. Details in
-[`BrushProtocol.kt`](app/src/main/java/io/github/damnms/buerstli/BrushProtocol.kt),
+[`LaifenWaveV1Codec.kt`](drivers/laifen/src/main/kotlin/io/github/damnms/buerstli/drivers/laifen/LaifenWaveV1Codec.kt),
 with real captured packets in the unit tests.
 
 ## Credits

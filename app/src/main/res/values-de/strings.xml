@@ -18,7 +18,7 @@
     <string name="disconnected">Deine Bürste ist eingeschlafen. Anders als gewisse Apps telefoniert sie dabei nicht nach Hause.</string>
     <string name="bluetooth_off">Bluetooth ist aus. Wir sind gut, aber nicht «Zähneputzen per Telepathie»-gut.</string>
     <string name="no_bluetooth">Dieses Gerät hat kein Bluetooth LE. Schon mal über eine Handzahnbürste nachgedacht?</string>
-    <string name="unsupported">Mit %1$s verbunden, aber sie spricht eine Sprache, die wir nicht kennen. Ist das eine Laifen Wave (LFTB01)?</string>
+    <string name="unsupported">Mit %1$s verbunden, aber sie spricht nicht die Sprache, die wir erwartet haben.</string>
     <string name="error">Da ist was schiefgelaufen: %1$s</string>
 
     <string name="permission_title">Eine Berechtigung. Eine einzige.</string>
@@ -28,9 +28,8 @@
     <string name="permission_denied">Berechtigung verweigert. Respekt. Aber ohne Bluetooth ist das hier nur ein sehr hübscher Bildschirm.</string>
 
     <string name="battery">Akku</string>
-    <string name="active_mode">Aktiver Modus</string>
     <string name="mode_n">Modus %1$d</string>
-    <string name="mode_hf">Modus 4 · Hochfrequenz</string>
+    <string name="mode_hf">Modus %1$d · Hochfrequenz</string>
     <string name="strength">Stärke</string>
     <string name="range">Weite</string>
     <string name="speed">Tempo</string>
@@ -38,10 +37,16 @@
     <string name="flight_mode">Flugmodus</string>
     <string name="on">an</string>
     <string name="off">aus</string>
-    <string name="read_only_note">Vorerst nur lesen. Einstellungen ändern kommt in der nächsten Version – selbstverständlich ohne vorher nach deiner E-Mail zu fragen.</string>
-
-    <string name="raw_title">Für Nerds: Rohdaten</string>
 
     <string name="footer_stats">Internet-Berechtigung: keine · Angelegte Konten: 0 · Verkaufte Daten: auch 0</string>
     <string name="footer_legal">Nicht mit Laifen verbunden. Laifen ist eine Marke ihres Inhabers. Gemacht von jemandem, der einfach nur Zähne putzen wollte.</string>
+    <string name="verified">an echter Bürste getestet</string>
+    <string name="experimental">experimentell</string>
+    <string name="save">Auf Bürste speichern</string>
+    <string name="discard">Zurück</string>
+    <string name="saved">Gespeichert. Auf der Bürste. Nicht in irgendeiner Cloud. Stell dir vor.</string>
+    <string name="not_applied">Die Bürste hat das ignoriert. Wenigstens hat sie nicht nach deiner E-Mail gefragt.</string>
+    <string name="save_failed">Verbindung weg – die Bürste ist wohl eingenickt. Aufwecken, verbinden, nochmal speichern. Deine Änderung ist noch da.</string>
+    <string name="invalid">Ungültiger Wert. Das dürfte nie passieren – bitte melden.</string>
+    <string name="drafts_kept">Ungespeicherte Änderungen bleiben erhalten, bis du wieder verbindest.</string>
 </resources>

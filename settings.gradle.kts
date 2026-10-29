@@ -13,4 +13,7 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "buerstli"
+
 include(":app")
+include(":domain")          // pure Kotlin: the toothbrush model and ports, no Android
+include(":drivers:laifen")  // pure Kotlin: Laifen protocol, depends only on :domain

@@ -44,7 +44,10 @@ val requiredPermissions: Array<String> =
 @Composable
 fun App(vm: BrushViewModel = viewModel()) {
     val context = LocalContext.current
-    val state by vm.state.collectAsStateWithLifecycle()
+    val connection by vm.connection.collectAsStateWithLifecycle()
+    val brushState by vm.brushState.collectAsStateWithLifecycle()
+    val drafts by vm.drafts.collectAsStateWithLifecycle()
+    val saveStatus by vm.saveStatus.collectAsStateWithLifecycle()
 
     fun hasPermissions() = requiredPermissions.all {
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
@@ -62,12 +65,20 @@ fun App(vm: BrushViewModel = viewModel()) {
     }
 
     MainScreen(
-        state = state,
+        connection = connection,
+        brushState = brushState,
+        drafts = drafts,
+        saveStatus = saveStatus,
         permissionGranted = granted,
         permissionDenied = denied,
-        onRequestPermission = { launcher.launch(requiredPermissions) },
-        onFind = { vm.find() },
-        onDisconnect = { vm.disconnect() },
+        actions = Actions(
+            requestPermission = { launcher.launch(requiredPermissions) },
+            find = vm::find,
+            disconnect = vm::disconnect,
+            edit = vm::edit,
+            save = vm::save,
+            discard = vm::discard,
+        ),
     )
 }
 

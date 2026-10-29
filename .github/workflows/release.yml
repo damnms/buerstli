@@ -33,7 +33,7 @@ jobs:
           BUERSTLI_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           BUERSTLI_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          ./gradlew testDebugUnitTest assembleRelease
+          ./gradlew test lintDebug assembleRelease
           cp app/build/outputs/apk/release/app-release.apk "buerstli-${GITHUB_REF_NAME}.apk"
 
       - name: Publish release
