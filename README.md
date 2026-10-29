@@ -51,7 +51,14 @@ The architecture is described in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Install
 
-Grab the APK from [Releases](../../releases) and sideload it. No Google Play Services needed.
+[<img src="docs/badges/obtainium.png" alt="Get it on Obtainium" height="60">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/damnms/buerstli)
+
+**Recommended: [Obtainium](https://github.com/ImranR98/Obtainium).** It installs Bürstli straight
+from the GitHub releases and keeps it up to date – no store, no account. With Obtainium installed,
+tap the badge above on your phone, or add `https://github.com/damnms/buerstli` by hand.
+
+**Or by hand:** grab the APK from [Releases](../../releases) and open it on your phone. You'll have
+to look for updates yourself. No Google Play Services needed either way.
 
 Tips:
 - The brush only shows up while it's awake. Pick it up before tapping *Find my brush*.
@@ -104,9 +111,10 @@ step on a real brush, and the parser is tested against packets captured from tha
 ## Legal
 
 This is an independent interoperability project. It is not affiliated with, endorsed by or
-supported by Laifen. "Laifen" and "Laifen Wave" are trademarks of their owner and are used here
-only to describe compatibility. Use at your own risk — worst case, your toothbrush forgets its
-favourite settings.
+supported by Laifen, Philips or Procter & Gamble (Oral-B). "Laifen", "Laifen Wave", "Philips",
+"Sonicare" and "Oral-B" are trademarks of their respective owners and are used here only to
+describe compatibility. Use at your own risk – worst case, your toothbrush forgets its favourite
+settings.
 
 ## License
 

@@ -6,6 +6,12 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Install and stay up to date with Obtainium, straight from the GitHub releases (see README).
+
+### Changed
+- The fine print in the app now also says that Bürstli has nothing to do with Philips or Oral-B.
+
 ## [0.6.0] - 2026-10-29
 
 ### Added

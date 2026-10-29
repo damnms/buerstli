@@ -38,7 +38,7 @@
     <string name="flight_mode">Flight mode</string>
 
     <string name="footer_stats">Internet permission: none · Accounts created: 0 · Data sold: also 0</string>
-    <string name="footer_legal">Not affiliated with Laifen. Laifen is a trademark of its owner. Made by someone who just wanted to brush his teeth.</string>
+    <string name="footer_legal">Not affiliated with Laifen, Philips or Oral-B. All trademarks belong to their owners. Made by someone who just wanted to brush his teeth.</string>
     <string name="verified">tested on a real brush</string>
     <string name="experimental">experimental</string>
     <string name="save">Save to brush</string>
