@@ -1,6 +1,7 @@
 package io.github.damnms.buerstli.drivers.laifen
 
 import io.github.damnms.buerstli.domain.Advertisement
+import io.github.damnms.buerstli.domain.DurationSpec
 import io.github.damnms.buerstli.domain.ParameterKind.STRENGTH
 import io.github.damnms.buerstli.domain.SupportLevel
 import org.junit.Assert.assertEquals
@@ -42,5 +43,10 @@ class LaifenWaveV1DriverTest {
         modes.take(3).forEach { assertEquals(1..10, it.spec(STRENGTH)!!.range) }
         assertTrue(modes[3].highFrequency)
         assertEquals(11..20, modes[3].spec(STRENGTH)!!.range)
+    }
+
+    @Test
+    fun `brushing duration is 1 to 5 minutes in half-minute steps`() {
+        assertEquals(DurationSpec(60..300, 30), driver.capabilities.brushingDuration)
     }
 }

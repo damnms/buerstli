@@ -5,6 +5,7 @@ import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.BrushModel
 import io.github.damnms.buerstli.domain.BrushSession
 import io.github.damnms.buerstli.domain.Capabilities
+import io.github.damnms.buerstli.domain.DurationSpec
 import io.github.damnms.buerstli.domain.ModeSpec
 import io.github.damnms.buerstli.domain.ParameterKind.RANGE
 import io.github.damnms.buerstli.domain.ParameterKind.SPEED
@@ -35,6 +36,7 @@ object LaifenWaveV1Driver : ToothbrushDriver {
             mode(2, 1..10),
             mode(3, 11..20, hf = true),
         ),
+        brushingDuration = DurationSpec(seconds = 60..300, stepSeconds = 30),
     )
 
     override fun recognizes(advertisement: Advertisement): Boolean =

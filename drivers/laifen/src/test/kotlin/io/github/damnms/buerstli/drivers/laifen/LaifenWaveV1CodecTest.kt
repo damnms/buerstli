@@ -52,4 +52,16 @@ class LaifenWaveV1CodecTest {
     fun `encodes exactly the command that was verified on the brush`() {
         assertArrayEquals(Packets.SET_MODE3_666_TO_665, LaifenWaveV1Codec.encodeModeSettings(2, settings(6, 6, 5)))
     }
+
+    @Test
+    fun `decodes the brushing duration`() {
+        assertEquals(120, LaifenWaveV1Codec.decodeStatus(Packets.MODE2_ACTIVE)!!.brushingDurationSeconds)
+        assertEquals(150, LaifenWaveV1Codec.decodeStatus(Packets.DURATION_150)!!.brushingDurationSeconds)
+    }
+
+    @Test
+    fun `encodes exactly the duration command that was verified on the brush`() {
+        assertArrayEquals(Packets.SET_DURATION_150, LaifenWaveV1Codec.encodeBrushingDuration(150))
+        assertArrayEquals(hex("AA-05-01-02-00-78-D4"), LaifenWaveV1Codec.encodeBrushingDuration(120))
+    }
 }

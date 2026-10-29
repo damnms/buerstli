@@ -40,4 +40,5 @@ sealed interface Validation {
     data class OutOfRange(val kind: ParameterKind, val value: Int, val allowed: IntRange) : Validation
     data class MissingParameter(val kind: ParameterKind) : Validation
     data class UnknownParameter(val kind: ParameterKind) : Validation
+    data class InvalidDuration(val seconds: Int, val allowed: IntRange, val stepSeconds: Int) : Validation
 }

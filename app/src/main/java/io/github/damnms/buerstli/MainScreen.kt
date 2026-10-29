@@ -48,7 +48,12 @@ class Actions(
     val edit: (mode: Int, kind: ParameterKind, value: Int) -> Unit,
     val save: (mode: Int) -> Unit,
     val discard: (mode: Int) -> Unit,
+    val editDuration: (seconds: Int) -> Unit,
+    val saveDuration: () -> Unit,
+    val discardDuration: () -> Unit,
 )
+
+class DurationUi(val draft: Int?, val save: SaveStatus?)
 
 @Composable
 fun MainScreen(
@@ -56,6 +61,7 @@ fun MainScreen(
     brushState: BrushState?,
     drafts: Drafts,
     saveStatus: Map<Int, SaveStatus>,
+    duration: DurationUi,
     permissionGranted: Boolean,
     permissionDenied: Boolean,
     actions: Actions,
@@ -72,7 +78,7 @@ fun MainScreen(
             if (!permissionGranted) {
                 PermissionCard(permissionDenied, actions.requestPermission)
             } else {
-                ConnectionContent(connection, brushState, drafts, saveStatus, actions)
+                ConnectionContent(connection, brushState, drafts, saveStatus, duration, actions)
             }
             Spacer(Modifier.height(8.dp))
             Footer()
@@ -114,6 +120,7 @@ private fun ConnectionContent(
     brushState: BrushState?,
     drafts: Drafts,
     saveStatus: Map<Int, SaveStatus>,
+    duration: DurationUi,
     actions: Actions,
 ) {
     when (connection) {
@@ -128,7 +135,7 @@ private fun ConnectionContent(
             if (brushState == null) {
                 Busy(stringResource(R.string.waiting_for_status), null)
             } else {
-                BrushView(connection.driver, brushState, drafts, saveStatus, editable = true, actions)
+                BrushView(connection.driver, brushState, drafts, saveStatus, duration, editable = true, actions)
             }
             OutlinedButton(onClick = actions.disconnect) { Text(stringResource(R.string.disconnect)) }
         }
@@ -139,7 +146,7 @@ private fun ConnectionContent(
                 stringResource(R.string.try_again),
                 actions.find,
             )
-            brushState?.let { BrushView(connection.driver, it, drafts, saveStatus, editable = false, actions) }
+            brushState?.let { BrushView(connection.driver, it, drafts, saveStatus, duration, editable = false, actions) }
         }
         Connection.NotFound -> Message(
             stringResource(R.string.not_found),
@@ -184,6 +191,7 @@ private fun BrushView(
     state: BrushState,
     drafts: Drafts,
     saveStatus: Map<Int, SaveStatus>,
+    duration: DurationUi,
     editable: Boolean,
     actions: Actions,
 ) {
@@ -198,6 +206,11 @@ private fun BrushView(
         state.flightMode?.let {
             Text("${stringResource(R.string.flight_mode)}: ${stringResource(if (it) R.string.on else R.string.off)}")
         }
+    }
+    val durationSpec = driver.capabilities.brushingDuration
+    val onBrushDuration = state.brushingDurationSeconds
+    if (durationSpec != null && onBrushDuration != null) {
+        DurationCard(durationSpec, onBrushDuration, duration, editable, actions)
     }
     driver.capabilities.modes.forEach { spec ->
         ModeCard(
@@ -266,12 +279,53 @@ private fun ModeCard(
 }
 
 @Composable
+private fun DurationCard(
+    spec: io.github.damnms.buerstli.domain.DurationSpec,
+    onBrush: Int,
+    ui: DurationUi,
+    editable: Boolean,
+    actions: Actions,
+) {
+    val shown = ui.draft ?: onBrush
+    val saving = ui.save is SaveStatus.Saving
+    InfoCard {
+        Text(stringResource(R.string.duration_title), style = MaterialTheme.typography.titleMedium)
+        Text(
+            stringResource(R.string.duration_value, shown / 60, shown % 60),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+        )
+        Slider(
+            value = shown.toFloat(),
+            onValueChange = {
+                val snapped = spec.seconds.first +
+                    ((it - spec.seconds.first) / spec.stepSeconds).roundToInt() * spec.stepSeconds
+                actions.editDuration(snapped)
+            },
+            valueRange = spec.seconds.first.toFloat()..spec.seconds.last.toFloat(),
+            steps = ((spec.seconds.last - spec.seconds.first) / spec.stepSeconds - 1).coerceAtLeast(0),
+            enabled = editable && !saving,
+        )
+        Text(stringResource(R.string.duration_hint), style = MaterialTheme.typography.bodySmall)
+        if (ui.draft != null && editable) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Button(onClick = actions.saveDuration, enabled = !saving) { Text(stringResource(R.string.save)) }
+                TextButton(onClick = actions.discardDuration, enabled = !saving) { Text(stringResource(R.string.discard)) }
+                if (saving) CircularProgressIndicator(Modifier.size(20.dp))
+            }
+        }
+        (ui.save as? SaveStatus.Done)?.let { SaveResult(it.result) }
+    }
+}
+
+@Composable
 private fun SaveResult(result: CommandResult) {
     val (text, isError) = when (result) {
         CommandResult.Confirmed -> stringResource(R.string.saved) to false
         CommandResult.NotApplied -> stringResource(R.string.not_applied) to true
         is CommandResult.Failed -> stringResource(R.string.save_failed) to true
-        is CommandResult.Invalid, is CommandResult.UnknownMode -> stringResource(R.string.invalid) to true
+        is CommandResult.Invalid, is CommandResult.UnknownMode, CommandResult.Unsupported ->
+            stringResource(R.string.invalid) to true
     }
     Text(
         text,

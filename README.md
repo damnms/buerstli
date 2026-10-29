@@ -14,7 +14,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 
 | Brand | Model | Bluetooth name | Status | Features |
 |---|---|---|---|---|
-| Laifen | Wave (LFTB01) | `LFTB01-…` | ✅ tested on a real brush | battery, modes, flight mode, edit strength/range/speed |
+| Laifen | Wave (LFTB01) | `LFTB01-…` | ✅ tested on a real brush | battery, modes, flight mode, edit strength/range/speed, brushing time |
 | Laifen | Wave (LFTB02), Wave Pro | `LFTB02-…` | ❌ not yet (different protocol) | |
 
 Got another brush? [CONTRIBUTING.md](CONTRIBUTING.md) explains how to add it.
@@ -52,7 +52,9 @@ GATT service `0xFF01`, one characteristic `0xFF02` (read, write, notify).
 
 Status packet: `AA 0A 02 [len] [payload] [xor]`, payload = active mode index, then
 4 × (strength, range, speed), flight mode flag, battery %.
+After battery % and one unknown byte follows the brushing time in seconds (16 bit, big-endian).
 Write mode settings: `AA 04 01 04 [mode] [strength] [range] [speed] [xor]`.
+Write brushing time: `AA 05 01 02 [seconds hi] [seconds lo] [xor]`.
 The checksum is the XOR of all preceding bytes. Details in
 [`LaifenWaveV1Codec.kt`](drivers/laifen/src/main/kotlin/io/github/damnms/buerstli/drivers/laifen/LaifenWaveV1Codec.kt),
 with real captured packets in the unit tests.

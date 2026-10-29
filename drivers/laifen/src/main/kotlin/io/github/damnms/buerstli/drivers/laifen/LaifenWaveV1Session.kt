@@ -37,6 +37,7 @@ internal class LaifenWaveV1Session(
 
     override suspend fun execute(command: BrushCommand): CommandResult = when (command) {
         is BrushCommand.ChangeModeSettings -> changeModeSettings(command)
+        is BrushCommand.ChangeBrushingDuration -> changeBrushingDuration(command)
     }
 
     private suspend fun changeModeSettings(cmd: BrushCommand.ChangeModeSettings): CommandResult {
@@ -44,15 +45,33 @@ internal class LaifenWaveV1Session(
         val validation = spec.validate(cmd.settings)
         if (validation != Validation.Valid) return CommandResult.Invalid(validation)
 
-        return try {
-            link.write(ch, LaifenWaveV1Codec.encodeModeSettings(cmd.modeIndex, cmd.settings))
-            // Trust, but verify: only report success once the brush reports the new values itself.
-            // The real brush applies a write with a short delay, so the confirmation may come from
-            // a later read or from a notification, whichever is first.
+        return writeAndConfirm(LaifenWaveV1Codec.encodeModeSettings(cmd.modeIndex, cmd.settings)) {
+            it.modes[cmd.modeIndex] == cmd.settings
+        }
+    }
+
+    private suspend fun changeBrushingDuration(cmd: BrushCommand.ChangeBrushingDuration): CommandResult {
+        val spec = capabilities.brushingDuration ?: return CommandResult.Unsupported
+        val validation = spec.validate(cmd.seconds)
+        if (validation != Validation.Valid) return CommandResult.Invalid(validation)
+
+        return writeAndConfirm(LaifenWaveV1Codec.encodeBrushingDuration(cmd.seconds)) {
+            it.brushingDurationSeconds == cmd.seconds
+        }
+    }
+
+    /**
+     * Trust, but verify: only report success once the brush reports the new values itself.
+     * The real brush applies a write with a short delay, so the confirmation may come from
+     * a later read or from a notification, whichever is first.
+     */
+    private suspend fun writeAndConfirm(command: ByteArray, applied: (BrushState) -> Boolean): CommandResult =
+        try {
+            link.write(ch, command)
             val confirmed = withTimeoutOrNull(CONFIRM_TIMEOUT_MS) {
-                while (!applied(cmd)) {
+                while (!applied(_state.value)) {
                     delay(POLL_INTERVAL_MS)
-                    if (!applied(cmd)) refresh()
+                    if (!applied(_state.value)) refresh()
                 }
                 true
             }
@@ -60,10 +79,6 @@ internal class LaifenWaveV1Session(
         } catch (e: IOException) {
             CommandResult.Failed(e.message ?: "connection lost")
         }
-    }
-
-    private fun applied(cmd: BrushCommand.ChangeModeSettings) =
-        _state.value.modes[cmd.modeIndex] == cmd.settings
 
     /** Reads the status. A read right after a write may return an ack instead, so try a few times. */
     private suspend fun refresh(): BrushState? {

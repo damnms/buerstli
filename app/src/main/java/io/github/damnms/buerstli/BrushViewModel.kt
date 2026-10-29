@@ -47,7 +47,36 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
     private val _saveStatus = MutableStateFlow<Map<Int, SaveStatus>>(emptyMap())
     val saveStatus: StateFlow<Map<Int, SaveStatus>> = _saveStatus.asStateFlow()
 
+    /** Unsaved brushing duration in seconds, null = no edit. */
+    private val _durationDraft = MutableStateFlow<Int?>(null)
+    val durationDraft: StateFlow<Int?> = _durationDraft.asStateFlow()
+
+    private val _durationSave = MutableStateFlow<SaveStatus?>(null)
+    val durationSave: StateFlow<SaveStatus?> = _durationSave.asStateFlow()
+
     fun find() = connector.find()
+
+    fun editDuration(seconds: Int) {
+        val onBrush = brushState.value?.brushingDurationSeconds
+        _durationDraft.value = if (seconds == onBrush) null else seconds
+        _durationSave.value = null
+    }
+
+    fun discardDuration() {
+        _durationDraft.value = null
+        _durationSave.value = null
+    }
+
+    fun saveDuration() {
+        val connected = connection.value as? Connection.Connected ?: return
+        val seconds = _durationDraft.value ?: return
+        _durationSave.value = SaveStatus.Saving
+        viewModelScope.launch {
+            val result = connected.session.execute(BrushCommand.ChangeBrushingDuration(seconds))
+            if (result == CommandResult.Confirmed) _durationDraft.value = null
+            _durationSave.value = SaveStatus.Done(result)
+        }
+    }
     fun disconnect() = connector.disconnect()
 
     fun edit(mode: Int, kind: ParameterKind, value: Int) {

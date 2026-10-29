@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0
+- Show and change the brushing time (1–5 minutes in half-minute steps).
+- Found out that the Wave V1 does report its brushing time in the status packet.
+
 ## 0.2.1
 - Fix: saving showed "the brush ignored that" although it worked. The brush applies a change
   with a short delay; Bürstli now waits up to 3 seconds for it to report the new values.

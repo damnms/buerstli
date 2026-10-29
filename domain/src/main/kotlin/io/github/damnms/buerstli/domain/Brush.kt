@@ -10,7 +10,11 @@ data class BrushModel(val brand: String, val name: String)
 enum class SupportLevel { VERIFIED, EXPERIMENTAL }
 
 /** What a model can do. The UI is built from this, never from brand-specific knowledge. */
-data class Capabilities(val modes: List<ModeSpec>) {
+data class Capabilities(
+    val modes: List<ModeSpec>,
+    /** Null if the brushing duration can't be changed on this model. */
+    val brushingDuration: DurationSpec? = null,
+) {
     fun mode(index: Int): ModeSpec? = modes.firstOrNull { it.index == index }
 }
 
@@ -23,8 +27,16 @@ data class BrushState(
     val activeModeIndex: Int? = null,
     val modes: Map<Int, ModeSettings> = emptyMap(),
     val flightMode: Boolean? = null,
+    val brushingDurationSeconds: Int? = null,
 ) {
     companion object {
         val UNKNOWN = BrushState()
     }
+}
+
+/** Allowed brushing durations, e.g. 60..300 s in 30 s steps. */
+data class DurationSpec(val seconds: IntRange, val stepSeconds: Int) {
+    fun validate(value: Int): Validation =
+        if (value in seconds && (value - seconds.first) % stepSeconds == 0) Validation.Valid
+        else Validation.InvalidDuration(value, seconds, stepSeconds)
 }

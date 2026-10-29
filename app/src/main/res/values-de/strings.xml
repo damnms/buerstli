@@ -49,4 +49,7 @@
     <string name="save_failed">Verbindung weg – die Bürste ist wohl eingenickt. Aufwecken, verbinden, nochmal speichern. Deine Änderung ist noch da.</string>
     <string name="invalid">Ungültiger Wert. Das dürfte nie passieren – bitte melden.</string>
     <string name="drafts_kept">Ungespeicherte Änderungen bleiben erhalten, bis du wieder verbindest.</string>
+    <string name="duration_title">Putzdauer</string>
+    <string name="duration_value">%1$d:%2$02d Min.</string>
+    <string name="duration_hint">Zahnärzte sagen zwei Minuten. Die Cloud hat keine Meinung dazu, weil sie niemand gefragt hat.</string>
 </resources>

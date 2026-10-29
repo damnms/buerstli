@@ -1,5 +1,6 @@
 package io.github.damnms.buerstli.drivers.laifen
 
+import io.github.damnms.buerstli.domain.BrushCommand.ChangeBrushingDuration
 import io.github.damnms.buerstli.domain.BrushCommand.ChangeModeSettings
 import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.CommandResult
@@ -66,8 +67,15 @@ class LaifenWaveV1SessionTest {
 
         private fun apply(status: ByteArray, cmd: ByteArray): ByteArray {
             val out = status.copyOf()
-            val base = 5 + 3 * cmd[4]
-            out[base] = cmd[5]; out[base + 1] = cmd[6]; out[base + 2] = cmd[7]
+            when (cmd[1].toInt()) {
+                0x04 -> { // mode settings
+                    val base = 5 + 3 * cmd[4]
+                    out[base] = cmd[5]; out[base + 1] = cmd[6]; out[base + 2] = cmd[7]
+                }
+                0x05 -> { // brushing duration
+                    out[20] = cmd[4]; out[21] = cmd[5]
+                }
+            }
             var cs = 0
             for (i in 0 until out.lastIndex) cs = cs xor (out[i].toInt() and 0xFF)
             out[out.lastIndex] = cs.toByte()
@@ -177,5 +185,27 @@ class LaifenWaveV1SessionTest {
         }
 
         assertEquals(CommandResult.Confirmed, session.execute(ChangeModeSettings(2, settings(6, 6, 5))))
+    }
+
+    @Test
+    fun `brushing duration is written, confirmed and shown`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE, staleReadsAfterWrite = 2)
+        val session = LaifenWaveV1Driver.open(brush).apply { start() }
+
+        assertEquals(CommandResult.Confirmed, session.execute(ChangeBrushingDuration(150)))
+        assertArrayEquals(Packets.SET_DURATION_150, brush.writes.single())
+        assertEquals(150, session.state.value.brushingDurationSeconds)
+    }
+
+    @Test
+    fun `invalid brushing duration never reaches the brush`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = LaifenWaveV1Driver.open(brush).apply { start() }
+
+        assertEquals(
+            CommandResult.Invalid(Validation.InvalidDuration(75, 60..300, 30)),
+            session.execute(ChangeBrushingDuration(75)),
+        )
+        assertTrue(brush.writes.isEmpty())
     }
 }

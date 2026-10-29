@@ -50,4 +50,7 @@
     <string name="save_failed">Connection lost – the brush probably dozed off. Wake it, reconnect, save again. Your change is still here.</string>
     <string name="invalid">Invalid value. This should never happen – please report it.</string>
     <string name="drafts_kept">Unsaved changes are kept until you reconnect.</string>
+    <string name="duration_title">Brushing time</string>
+    <string name="duration_value">%1$d:%2$02d min</string>
+    <string name="duration_hint">Dentists say two minutes. The cloud has no opinion, because nobody asked it.</string>
 </resources>
