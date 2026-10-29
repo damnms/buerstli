@@ -21,6 +21,9 @@ jobs:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: scripts/changelog.sh check-updated "$BASE" HEAD
 
+      - name: Script tests
+        run: python3 -m unittest discover scripts
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

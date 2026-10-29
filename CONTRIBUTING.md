@@ -35,10 +35,19 @@ under `src/main/` changes without a changelog entry.
 
 1. Rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` and add a fresh empty `## [Unreleased]`.
 2. Set `versionName = "x.y.z"` and increase `versionCode` in `app/build.gradle.kts`.
-3. Commit, then `git tag vx.y.z && git push origin main vx.y.z`.
+3. Run `scripts/changelog.sh fastlane`. It writes the short "what's new" that F-Droid and
+   Obtainium show (`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, max. 500
+   characters) from the changelog section.
+4. Commit, then `git tag -a vx.y.z -m "Bürstli x.y.z" && git push origin main vx.y.z`.
 
-The release workflow checks that tag, app version and changelog agree, builds and signs the APK,
+The release workflow checks that tag, app version, changelog and store notes agree, builds and signs the APK,
 and publishes the changelog section as release notes.
+
+## Store listing
+
+Title, descriptions, icon and screenshots for F-Droid and Obtainium live in
+`fastlane/metadata/android/<locale>/` (English and German). Keep them in sync with the README's
+list of supported brushes.
 
 ## Ground rules
 

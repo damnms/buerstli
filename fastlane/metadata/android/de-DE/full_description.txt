@@ -1,0 +1,19 @@
+<p>Die offizielle App deiner Zahnbürste will ein Konto, eine Handynummer und einen Bestätigungscode. Um eine Zahnbürste einzustellen. Bürstli nicht. Es spricht per Bluetooth mit deiner Bürste, und das war's – die App hat nicht einmal die Berechtigung, ins Internet zu gehen.</p>
+
+<p><b>Unterstützte Bürsten</b></p>
+<ul>
+<li><b>Laifen Wave (LFTB01)</b> – an einer echten Bürste getestet: Akku, alle vier Modi mit Stärke, Weite und Tempo, Modus wechseln, Putzdauer, 30-Sekunden-Signal, Hochfrequenz (der versteckte vierte Modus), Putzen starten und stoppen vom Handy aus.</li>
+<li><b>Philips Sonicare</b> (klassische Modelle wie DiamondClean, Prestige, ExpertClean, Kids) – experimentell und nur lesend: Akku, Zustand, Modus, Intensität, Putzzeit und Bürstenkopf-Verschleiss.</li>
+</ul>
+
+<p><b>Deine Bürste wird noch nicht unterstützt?</b> Bürstli erkennt andere Laifen-Modelle, die Philips Sonicare 7100 und Oral-B und kann in etwa einer Minute einen Bericht aufnehmen – es hört nur zu, an der Bürste wird nichts verändert. Den Bericht schickst du per Messenger, E-Mail oder über GitHub an die Entwickler, ganz ohne Technik-Kenntnisse.</p>
+
+<p><b>Ehrlich in allem</b></p>
+<ul>
+<li>Eine Einstellung gilt erst als gespeichert, wenn die Bürste den neuen Wert selbst meldet.</li>
+<li>Experimentelle Treiber lesen nur, sie verändern nie etwas an deiner Bürste.</li>
+<li>„Für Nerds: Protokoll" zeigt jeden Bluetooth-Schritt. Es bleibt auf deinem Handy.</li>
+<li>Geschrieben mit Hilfe eines KI-Assistenten und Schritt für Schritt an einer echten Bürste getestet.</li>
+</ul>
+
+<p>Nicht mit Laifen, Philips oder Procter &amp; Gamble (Oral-B) verbunden. Alle Marken gehören ihren jeweiligen Inhabern und werden nur zur Beschreibung der Kompatibilität genannt.</p>

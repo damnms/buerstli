@@ -4,6 +4,7 @@
 #   changelog.sh notes VERSION          print the release notes of VERSION
 #   changelog.sh check-release VERSION  tag, app version and changelog must agree
 #   changelog.sh check-updated BASE HEAD  user-visible code changed => CHANGELOG.md too
+#   changelog.sh fastlane               write the store "what's new" for the current app version
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -20,6 +21,18 @@ app_version() {
   sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts
 }
 
+app_version_code() {
+  sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts
+}
+
+store_changelog() { # path of the F-Droid/Obtainium "what's new" for the current version code
+  echo "fastlane/metadata/android/en-US/changelogs/$(app_version_code).txt"
+}
+
+store_text() {
+  section "$1" | python3 scripts/fastlane_changelog.py
+}
+
 case "${1:-}" in
   notes)
     notes=$(section "$2")
@@ -33,7 +46,11 @@ case "${1:-}" in
     grep -qE "^## \[$version\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$" "$CHANGELOG" ||
       { echo "$CHANGELOG has no '## [$version] - YYYY-MM-DD' heading" >&2; exit 1; }
     [ -n "$(section "$version")" ] || { echo "Section [$version] in $CHANGELOG is empty" >&2; exit 1; }
-    echo "Version $version: tag, app and changelog agree."
+    file=$(store_changelog)
+    [ -f "$file" ] || { echo "$file is missing, run: scripts/changelog.sh fastlane" >&2; exit 1; }
+    [ "$(cat "$file")" = "$(store_text "$version")" ] ||
+      { echo "$file doesn't match CHANGELOG.md, run: scripts/changelog.sh fastlane" >&2; exit 1; }
+    echo "Version $version: tag, app, changelog and store notes agree."
     ;;
   check-updated)
     base="$2" head="$3"
@@ -51,7 +68,15 @@ case "${1:-}" in
     fi
     echo "Changelog check passed."
     ;;
+  fastlane)
+    version=$(app_version)
+    [ -n "$(section "$version")" ] || { echo "No entries for [$version] in $CHANGELOG" >&2; exit 1; }
+    file=$(store_changelog)
+    store_text "$version" > "$file"
+    echo "Wrote $file ($(wc -c < "$file") bytes):"
+    cat "$file"
+    ;;
   *)
-    sed -n '2,7p' "$0"; exit 2
+    sed -n '2,8p' "$0"; exit 2
     ;;
 esac
