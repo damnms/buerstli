@@ -6,6 +6,8 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-29
+
 ### Added
 - Philips Sonicare (classic models such as DiamondClean, Prestige, ExpertClean, Kids):
   experimental, read-only support for battery, status, mode, intensity, brushing time and brush
