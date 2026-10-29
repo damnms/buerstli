@@ -12,7 +12,7 @@ import io.github.damnms.buerstli.hex
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
 import java.util.UUID
 
@@ -90,12 +90,17 @@ internal class AndroidBrushLink(
         fun ms() = System.currentTimeMillis() - t0
         try {
             if (!start()) throw IOException("Bluetooth refused the operation")
-            val value = withTimeout(OPERATION_TIMEOUT_MS) { result.await() }
+            // withTimeoutOrNull, not withTimeout: a cancellation from the caller (e.g. its own
+            // timeout) must propagate as cancellation, not turn into "brush did not answer".
+            val value = withTimeoutOrNull(OPERATION_TIMEOUT_MS) { result.await() } ?: run {
+                diag.log("$name: NO ANSWER after ${ms()} ms")
+                throw IOException("brush did not answer")
+            }
             diag.log("$name: ok after ${ms()} ms" + if (value.isNotEmpty()) " -> ${value.hex()}" else "")
             value
-        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-            diag.log("$name: NO ANSWER after ${ms()} ms")
-            throw IOException("brush did not answer")
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            diag.log("$name: cancelled after ${ms()} ms")
+            throw e
         } catch (e: IOException) {
             diag.log("$name: FAILED after ${ms()} ms: ${e.message}")
             throw e

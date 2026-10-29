@@ -1,12 +1,19 @@
 # Changelog
 
+## 0.3.2
+- Connecting is much faster: Bürstli now asks the brush for its state instead of waiting up
+  to 10 s for it to send it on its own. (Plain Bluetooth reads only return filler.)
+- Fix: saving the brushing time showed "connection lost" although it worked. The brush only
+  acknowledges this command, so Bürstli now asks for the state to confirm it.
+- Fix: a timeout while confirming was misreported as "connection lost".
+
 ## 0.3.1
 - "For nerds: log" with timings of scanning, connecting and every Bluetooth operation.
   Stays on the phone, copy it to report problems.
 
 ## 0.3.0
 - Show and change the brushing time (1–5 minutes in half-minute steps).
-- Found out that the Wave V1 does report its brushing time in the status packet.
+- Read the brushing time from the status packet (field documented by laifen-toolbox).
 
 ## 0.2.1
 - Fix: saving showed "the brush ignored that" although it worked. The brush applies a change

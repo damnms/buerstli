@@ -3,6 +3,7 @@ package io.github.damnms.buerstli.drivers.laifen
 import io.github.damnms.buerstli.domain.BrushCommand.ChangeBrushingDuration
 import io.github.damnms.buerstli.domain.BrushCommand.ChangeModeSettings
 import io.github.damnms.buerstli.domain.BrushLink
+import io.github.damnms.buerstli.domain.BrushSession
 import io.github.damnms.buerstli.domain.CommandResult
 import io.github.damnms.buerstli.domain.ModeSettings
 import io.github.damnms.buerstli.domain.ParameterKind.RANGE
@@ -11,6 +12,7 @@ import io.github.damnms.buerstli.domain.ParameterKind.STRENGTH
 import io.github.damnms.buerstli.domain.Validation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -22,59 +24,68 @@ import java.util.UUID
 class LaifenWaveV1SessionTest {
 
     /**
-     * A pretend brush behind a [BrushLink]: answers reads with its status packet and,
-     * if [acceptsWrites], applies mode-settings commands like the real one does.
+     * A pretend LFTB01-P, modelled on the diagnostics log of the real one:
+     * - a plain GATT read returns filler, never the state;
+     * - the state arrives as a notification when asked with READ_STATE;
+     * - after a mode-settings write the brush pushes its state by itself,
+     *   after a brushing-time write it only sends an acknowledgement;
+     * - with [staleStates], the first states after a write still show the old values.
      */
     private class FakeBrush(
         var status: ByteArray,
         val acceptsWrites: Boolean = true,
-        /** Like the real brush: reads right after a write still return the old status. */
-        val staleReadsAfterWrite: Int = 0,
+        val staleStates: Int = 0,
     ) : BrushLink {
         val writes = mutableListOf<ByteArray>()
         val notificationsEnabled = mutableListOf<UUID>()
         var failWrites = false
+        var session: BrushSession? = null
         private var pending: ByteArray? = null
         private var staleLeft = 0
 
-        override suspend fun read(characteristic: UUID): ByteArray {
+        val commands get() = writes.filterNot { it.contentEquals(Packets.READ_STATE) }
+
+        override suspend fun read(characteristic: UUID): ByteArray = Packets.GATT_READ_FILLER
+
+        override suspend fun enableNotifications(characteristic: UUID) {
+            notificationsEnabled += characteristic
+        }
+
+        override suspend fun write(characteristic: UUID, data: ByteArray) {
+            if (failWrites) throw IOException("brush fell asleep")
+            writes += data
+            when (data[1].toInt()) {
+                0x0A -> pushState()
+                0x04 -> { accept(data); pushState() }
+                0x05 -> { accept(data); notify(Packets.ACK_DURATION) }
+            }
+        }
+
+        private fun accept(cmd: ByteArray) {
+            if (!acceptsWrites) return
+            pending = apply(status, cmd)
+            staleLeft = staleStates
+        }
+
+        private fun pushState() {
             pending?.let {
                 if (staleLeft-- <= 0) {
                     status = it
                     pending = null
                 }
             }
-            return status.copyOf()
+            notify(status)
         }
 
-        override suspend fun write(characteristic: UUID, data: ByteArray) {
-            if (failWrites) throw IOException("brush fell asleep")
-            writes += data
-            if (!acceptsWrites) return
-            if (staleReadsAfterWrite == 0) {
-                status = apply(status, data)
-            } else {
-                pending = apply(status, data)
-                staleLeft = staleReadsAfterWrite
-            }
-        }
+        fun notify(value: ByteArray) = session!!.onNotification(LaifenWaveV1Codec.CHARACTERISTIC, value.copyOf())
 
         fun applied(cmd: ByteArray) = apply(status, cmd)
-
-        override suspend fun enableNotifications(characteristic: UUID) {
-            notificationsEnabled += characteristic
-        }
 
         private fun apply(status: ByteArray, cmd: ByteArray): ByteArray {
             val out = status.copyOf()
             when (cmd[1].toInt()) {
-                0x04 -> { // mode settings
-                    val base = 5 + 3 * cmd[4]
-                    out[base] = cmd[5]; out[base + 1] = cmd[6]; out[base + 2] = cmd[7]
-                }
-                0x05 -> { // brushing duration
-                    out[20] = cmd[4]; out[21] = cmd[5]
-                }
+                0x04 -> { val base = 5 + 3 * cmd[4]; out[base] = cmd[5]; out[base + 1] = cmd[6]; out[base + 2] = cmd[7] }
+                0x05 -> { out[20] = cmd[4]; out[21] = cmd[5] }
             }
             var cs = 0
             for (i in 0 until out.lastIndex) cs = cs xor (out[i].toInt() and 0xFF)
@@ -85,127 +96,130 @@ class LaifenWaveV1SessionTest {
 
     private fun settings(s: Int, r: Int, sp: Int) = ModeSettings.of(STRENGTH to s, RANGE to r, SPEED to sp)
 
-    @Test
-    fun `start subscribes to notifications and reads the current status`() = runTest {
-        val brush = FakeBrush(Packets.MODE2_ACTIVE)
-        val session = LaifenWaveV1Driver.open(brush)
+    private suspend fun connect(brush: FakeBrush): BrushSession =
+        LaifenWaveV1Driver.open(brush).also { brush.session = it; it.start() }
 
-        session.start()
+    @Test
+    fun `start subscribes and asks for the state instead of waiting for it`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
 
         assertEquals(listOf(LaifenWaveV1Codec.CHARACTERISTIC), brush.notificationsEnabled)
+        assertArrayEquals(Packets.READ_STATE, brush.writes.first())
         assertEquals(94, session.state.value.batteryPercent)
         assertEquals(1, session.state.value.activeModeIndex)
     }
 
     @Test
     fun `notifications from the brush update the state`() = runTest {
-        val session = LaifenWaveV1Driver.open(FakeBrush(Packets.MODE2_ACTIVE)).apply { start() }
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
 
-        session.onNotification(LaifenWaveV1Codec.CHARACTERISTIC, Packets.MODE3_ACTIVE)
+        brush.notify(Packets.MODE3_ACTIVE)
 
         assertEquals(2, session.state.value.activeModeIndex)
     }
 
     @Test
-    fun `garbage notifications are ignored`() = runTest {
-        val session = LaifenWaveV1Driver.open(FakeBrush(Packets.MODE2_ACTIVE)).apply { start() }
+    fun `acknowledgements and other packets are ignored`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
         val before = session.state.value
 
-        session.onNotification(LaifenWaveV1Codec.CHARACTERISTIC, Packets.hex("AA-04-01-01-00-AE"))
+        brush.notify(Packets.ACK_DURATION)
+        brush.notify(Packets.hex("AA-01-02-09-02-00-08-59-04-04-03-00-03-F3"))
 
         assertEquals(before, session.state.value)
     }
 
     @Test
-    fun `valid change is written, read back and confirmed`() = runTest {
+    fun `valid mode change is written and confirmed`() = runTest {
         val brush = FakeBrush(Packets.MODE3_ACTIVE)
-        val session = LaifenWaveV1Driver.open(brush).apply { start() }
+        val session = connect(brush)
 
-        val result = session.execute(ChangeModeSettings(2, settings(6, 6, 5)))
-
-        assertEquals(CommandResult.Confirmed, result)
-        assertArrayEquals(Packets.SET_MODE3_666_TO_665, brush.writes.single())
+        assertEquals(CommandResult.Confirmed, session.execute(ChangeModeSettings(2, settings(6, 6, 5))))
+        assertArrayEquals(Packets.SET_MODE3_666_TO_665, brush.commands.single())
         assertEquals(settings(6, 6, 5), session.state.value.modes[2])
-    }
-
-    @Test
-    fun `out-of-range values never reach the brush`() = runTest {
-        val brush = FakeBrush(Packets.MODE2_ACTIVE)
-        val session = LaifenWaveV1Driver.open(brush).apply { start() }
-
-        val result = session.execute(ChangeModeSettings(0, settings(15, 5, 5)))
-
-        assertEquals(CommandResult.Invalid(Validation.OutOfRange(STRENGTH, 15, 1..10)), result)
-        assertTrue(brush.writes.isEmpty())
-    }
-
-    @Test
-    fun `unknown mode never reaches the brush`() = runTest {
-        val brush = FakeBrush(Packets.MODE2_ACTIVE)
-        val session = LaifenWaveV1Driver.open(brush).apply { start() }
-
-        assertEquals(CommandResult.UnknownMode(7), session.execute(ChangeModeSettings(7, settings(5, 5, 5))))
-        assertTrue(brush.writes.isEmpty())
-    }
-
-    @Test
-    fun `a brush that ignores the write is reported as not applied`() = runTest {
-        val session = LaifenWaveV1Driver.open(FakeBrush(Packets.MODE2_ACTIVE, acceptsWrites = false)).apply { start() }
-
-        assertEquals(CommandResult.NotApplied, session.execute(ChangeModeSettings(0, settings(4, 1, 5))))
-    }
-
-    @Test
-    fun `a lost connection during the write is reported as failure`() = runTest {
-        val brush = FakeBrush(Packets.MODE2_ACTIVE).apply { failWrites = true }
-        val session = LaifenWaveV1Driver.open(brush).apply { start() }
-
-        val result = session.execute(ChangeModeSettings(0, settings(4, 1, 5)))
-
-        assertTrue(result is CommandResult.Failed)
     }
 
     @Test
     fun `a brush that applies the change a moment later is still confirmed`() = runTest {
-        // Found on the real LFTB01-P: the first reads after a write return the old values.
-        val session = LaifenWaveV1Driver.open(FakeBrush(Packets.MODE3_ACTIVE, staleReadsAfterWrite = 3)).apply { start() }
+        val brush = FakeBrush(Packets.MODE3_ACTIVE, staleStates = 2)
+        val session = connect(brush)
 
         assertEquals(CommandResult.Confirmed, session.execute(ChangeModeSettings(2, settings(6, 6, 5))))
-        assertEquals(settings(6, 6, 5), session.state.value.modes[2])
     }
 
     @Test
-    fun `confirmation may also arrive as a notification`() = runTest {
+    fun `brushing time is confirmed by asking for the state, since the brush only acknowledges`() = runTest {
+        // Found in the app's log: after AA-05 the brush sends AA-05-02-01-00-AC and no state.
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+
+        assertEquals(CommandResult.Confirmed, session.execute(ChangeBrushingDuration(150)))
+        assertArrayEquals(Packets.SET_DURATION_150, brush.commands.single())
+        assertEquals(150, session.state.value.brushingDurationSeconds)
+    }
+
+    @Test
+    fun `confirmation may also arrive as a pushed notification`() = runTest {
         val brush = FakeBrush(Packets.MODE3_ACTIVE, acceptsWrites = false)
-        val session = LaifenWaveV1Driver.open(brush).apply { start() }
+        val session = connect(brush)
 
         launch {
             delay(400)
-            session.onNotification(LaifenWaveV1Codec.CHARACTERISTIC, brush.applied(Packets.SET_MODE3_666_TO_665))
+            brush.notify(brush.applied(Packets.SET_MODE3_666_TO_665))
         }
 
         assertEquals(CommandResult.Confirmed, session.execute(ChangeModeSettings(2, settings(6, 6, 5))))
     }
 
     @Test
-    fun `brushing duration is written, confirmed and shown`() = runTest {
-        val brush = FakeBrush(Packets.MODE2_ACTIVE, staleReadsAfterWrite = 2)
-        val session = LaifenWaveV1Driver.open(brush).apply { start() }
+    fun `a brush that ignores the write is reported as not applied, not as a lost connection`() = runTest {
+        val session = connect(FakeBrush(Packets.MODE2_ACTIVE, acceptsWrites = false))
 
-        assertEquals(CommandResult.Confirmed, session.execute(ChangeBrushingDuration(150)))
-        assertArrayEquals(Packets.SET_DURATION_150, brush.writes.single())
-        assertEquals(150, session.state.value.brushingDurationSeconds)
+        assertEquals(CommandResult.NotApplied, session.execute(ChangeModeSettings(0, settings(4, 1, 5))))
     }
 
     @Test
-    fun `invalid brushing duration never reaches the brush`() = runTest {
+    fun `out-of-range values never reach the brush`() = runTest {
         val brush = FakeBrush(Packets.MODE2_ACTIVE)
-        val session = LaifenWaveV1Driver.open(brush).apply { start() }
+        val session = connect(brush)
+
+        assertEquals(
+            CommandResult.Invalid(Validation.OutOfRange(STRENGTH, 15, 1..10)),
+            session.execute(ChangeModeSettings(0, settings(15, 5, 5))),
+        )
+        assertTrue(brush.commands.isEmpty())
+    }
+
+    @Test
+    fun `unknown mode never reaches the brush`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+
+        assertEquals(CommandResult.UnknownMode(7), session.execute(ChangeModeSettings(7, settings(5, 5, 5))))
+        assertTrue(brush.commands.isEmpty())
+    }
+
+    @Test
+    fun `invalid brushing time never reaches the brush`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
 
         assertEquals(
             CommandResult.Invalid(Validation.InvalidDuration(75, 60..300, 30)),
             session.execute(ChangeBrushingDuration(75)),
         )
-        assertTrue(brush.writes.isEmpty())
+        assertTrue(brush.commands.isEmpty())
+    }
+
+    @Test
+    fun `a lost connection during the write is reported as failure`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = connect(brush)
+        brush.failWrites = true
+
+        assertTrue(session.execute(ChangeModeSettings(0, settings(4, 1, 5))) is CommandResult.Failed)
     }
 }

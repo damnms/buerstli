@@ -16,7 +16,7 @@ import java.util.UUID
  * Status:  AA 0A 02 [len] [payload] [xor]
  *          payload: active mode, 4 x (strength, range, speed), flight mode, battery %, ?,
  *                   brushing duration in seconds (16 bit big-endian), ...
- *          The duration field was found on 2026-10-29: earlier work assumed V1 doesn't report it.
+ *          (Documented in laifen-toolbox/docs/PROTOCOL.md, verified here on 2026-10-29.)
  * Command: AA 04 01 04 [mode] [strength] [range] [speed] [xor]
  *          All three values at once; the brush rejects single-value writes.
  * Command: AA 05 01 02 [seconds hi] [seconds lo] [xor]   brushing duration
@@ -25,6 +25,12 @@ import java.util.UUID
 object LaifenWaveV1Codec {
     val SERVICE: UUID = UUID.fromString("0000ff01-0000-1000-8000-00805f9b34fb")
     val CHARACTERISTIC: UUID = UUID.fromString("0000ff02-0000-1000-8000-00805f9b34fb")
+
+    /**
+     * Asks for the state; the brush answers with a status notification. A plain GATT read of
+     * the characteristic does NOT return the state, only filler (01 02 03 ... on the LFTB01-P).
+     */
+    val READ_STATE: ByteArray = byteArrayOf(0xAA.toByte(), 0x0A, 0x00, 0x00, 0xA0.toByte())
 
     const val MODE_COUNT = 4
     private const val HEADER = 4

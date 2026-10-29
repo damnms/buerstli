@@ -64,4 +64,14 @@ class LaifenWaveV1CodecTest {
         assertArrayEquals(Packets.SET_DURATION_150, LaifenWaveV1Codec.encodeBrushingDuration(150))
         assertArrayEquals(hex("AA-05-01-02-00-78-D4"), LaifenWaveV1Codec.encodeBrushingDuration(120))
     }
+
+    @Test
+    fun `asks for the state with the documented read command`() {
+        assertArrayEquals(Packets.READ_STATE, LaifenWaveV1Codec.READ_STATE)
+    }
+
+    @Test
+    fun `filler from a plain GATT read is not a status`() {
+        assertNull(LaifenWaveV1Codec.decodeStatus(Packets.GATT_READ_FILLER))
+    }
 }

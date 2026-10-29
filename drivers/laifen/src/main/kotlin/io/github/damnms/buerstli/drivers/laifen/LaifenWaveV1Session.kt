@@ -11,10 +11,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
 import java.util.UUID
 
+/**
+ * How the LFTB01-P behaves (from the app's diagnostics log and laifen-toolbox/docs/PROTOCOL.md):
+ * - The state only arrives as a notification: when asked with READ_STATE, after mode-settings
+ *   writes, after button presses, and about every 10 s on its own. GATT reads return filler.
+ * - A brushing-time write is only acknowledged, the new state has to be asked for.
+ */
 internal class LaifenWaveV1Session(
     private val link: BrushLink,
     private val capabilities: Capabilities,
@@ -23,16 +31,24 @@ internal class LaifenWaveV1Session(
     private val _state = MutableStateFlow(BrushState.UNKNOWN)
     override val state: StateFlow<BrushState> = _state.asStateFlow()
 
+    /** Counts status packets, so we can wait for the next one even if it repeats the last. */
+    private val statusCount = MutableStateFlow(0)
+
     private val ch = LaifenWaveV1Codec.CHARACTERISTIC
 
     override suspend fun start() {
         link.enableNotifications(ch)
-        refresh()
+        repeat(START_ATTEMPTS) {
+            if (requestStatus()) return
+        }
+        // No answer yet: the brush will still push its state within ~10 s on its own.
     }
 
     override fun onNotification(characteristic: UUID, value: ByteArray) {
         if (characteristic != ch) return
-        LaifenWaveV1Codec.decodeStatus(value)?.let { _state.value = it }
+        val status = LaifenWaveV1Codec.decodeStatus(value) ?: return
+        _state.value = status
+        statusCount.update { it + 1 }
     }
 
     override suspend fun execute(command: BrushCommand): CommandResult = when (command) {
@@ -61,17 +77,16 @@ internal class LaifenWaveV1Session(
     }
 
     /**
-     * Trust, but verify: only report success once the brush reports the new values itself.
-     * The real brush applies a write with a short delay, so the confirmation may come from
-     * a later read or from a notification, whichever is first.
+     * Trust, but verify: success only once the brush reports the new values itself, either pushed
+     * on its own or in answer to READ_STATE. The brush may apply a change with a short delay.
      */
     private suspend fun writeAndConfirm(command: ByteArray, applied: (BrushState) -> Boolean): CommandResult =
         try {
             link.write(ch, command)
             val confirmed = withTimeoutOrNull(CONFIRM_TIMEOUT_MS) {
                 while (!applied(_state.value)) {
-                    delay(POLL_INTERVAL_MS)
-                    if (!applied(_state.value)) refresh()
+                    delay(SETTLE_MS)
+                    if (!applied(_state.value)) requestStatus()
                 }
                 true
             }
@@ -80,20 +95,17 @@ internal class LaifenWaveV1Session(
             CommandResult.Failed(e.message ?: "connection lost")
         }
 
-    /** Reads the status. A read right after a write may return an ack instead, so try a few times. */
-    private suspend fun refresh(): BrushState? {
-        repeat(READ_ATTEMPTS) {
-            LaifenWaveV1Codec.decodeStatus(link.read(ch))?.let {
-                _state.value = it
-                return it
-            }
-        }
-        return null
+    /** Asks for the state and waits for the answer. Returns false if none came in time. */
+    private suspend fun requestStatus(): Boolean {
+        val before = statusCount.value
+        link.write(ch, LaifenWaveV1Codec.READ_STATE)
+        return withTimeoutOrNull(STATUS_TIMEOUT_MS) { statusCount.first { it > before } } != null
     }
 
     private companion object {
-        const val READ_ATTEMPTS = 3
-        const val POLL_INTERVAL_MS = 250L
-        const val CONFIRM_TIMEOUT_MS = 3_000L
+        const val START_ATTEMPTS = 2
+        const val SETTLE_MS = 500L          // laifen-toolbox waits 500 ms after a write, too
+        const val STATUS_TIMEOUT_MS = 1_500L
+        const val CONFIRM_TIMEOUT_MS = 5_000L
     }
 }
