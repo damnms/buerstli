@@ -6,6 +6,8 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-29
+
 ### Added
 - Install and stay up to date with Obtainium, straight from the GitHub releases (see README).
 
