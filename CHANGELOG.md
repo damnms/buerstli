@@ -6,6 +6,8 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-30
+
 ### Added
 - Oral-B (iO, Genius, Smart, Pro, Triumph): experimental support that only listens to what the
   brush broadcasts, without connecting – status, mode, brushing time, pressure and mouth area.
