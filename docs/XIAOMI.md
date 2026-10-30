@@ -15,7 +15,7 @@ should answer.
   paired with Mi Home once, otherwise it only sends an empty payload.
 - **T700:** encrypted. Reading it needs the device's bindkey, which normally comes from the
   Xiaomi cloud account.
-- **T501** (not recognized yet): a parser log in
+- **T501** (product id `0x3B94`): a parser log in
   [xiaomi-ble #356](https://github.com/Bluetooth-Devices/xiaomi-ble/issues/356) shows
   "Registered and bound, Standard certification, Encryption" and object ids the parser does not
   know.

@@ -17,9 +17,10 @@ object Drivers {
     private const val PROCTER_AND_GAMBLE_COMPANY_ID = 0x00DC
 
     // Xiaomi: every Xiaomi device sends MiBeacon service data under 0xFE95; bytes 2-3 are the
-    // product id (little-endian). Toothbrush ids from ble_monitor: M1S-T500, T700, T700i.
+    // product id (little-endian). Toothbrush ids from ble_monitor: M1S-T500, T700, T700i;
+    // T501 from a real advertisement in Bluetooth-Devices/xiaomi-ble#356.
     private val XIAOMI_SERVICE = UUID.fromString("0000fe95-0000-1000-8000-00805f9b34fb")
-    private val XIAOMI_TOOTHBRUSHES = setOf(0x0489, 0x0806, 0x1790)
+    private val XIAOMI_TOOTHBRUSHES = setOf(0x0489, 0x0806, 0x1790, 0x3B94)
 
     private fun xiaomiProductId(data: ByteArray?): Int? =
         if (data == null || data.size < 4) null else (data[2].toInt() and 0xFF) or ((data[3].toInt() and 0xFF) shl 8)

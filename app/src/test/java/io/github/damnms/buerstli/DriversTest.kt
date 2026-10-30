@@ -84,6 +84,15 @@ class DriversTest {
     }
 
     @Test
+    fun `the Xiaomi T501 is recognized from a real advertisement`() {
+        // Frame control and product id (0x3B94) of a real T501 advertisement, from
+        // Bluetooth-Devices/xiaomi-ble#356. Only these four bytes; the rest of the
+        // owner's packet is left out.
+        val t501 = byteArrayOf(0x48, 0x59, 0x94.toByte(), 0x3B)
+        assertEquals(Recognition.Unsupported("Xiaomi"), recognize(Advertisement(null, serviceData = mapOf(xiaomi to t501))))
+    }
+
+    @Test
     fun `other Xiaomi devices are not toothbrushes`() {
         assertEquals(Recognition.Unknown, recognize(miBeacon(0x045B))) // a temperature sensor
         assertEquals(Recognition.Unknown, recognize(Advertisement(null, serviceData = mapOf(xiaomi to byteArrayOf(0x30)))))

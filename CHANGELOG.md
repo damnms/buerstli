@@ -6,6 +6,9 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Recognizes the Xiaomi T501.
+
 ## [0.9.0] - 2026-10-30
 
 ### Added
