@@ -1,5 +1,5 @@
 [versions]
-agp = "8.7.3"
+agp = "9.5.0"
 kotlin = "2.4.21"
 coroutines = "1.11.0"
 composeBom = "2024.12.01"
@@ -23,6 +23,5 @@ junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

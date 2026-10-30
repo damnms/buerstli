@@ -15,6 +15,7 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
 import io.github.damnms.buerstli.Diagnostics
+import io.github.damnms.buerstli.ble.manufacturerMap
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -121,10 +122,7 @@ class BrushRecorder(
         val cb = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 val record = result.scanRecord ?: return
-                val manufacturer = buildMap {
-                    val data = record.manufacturerSpecificData ?: return@buildMap
-                    for (i in 0 until data.size()) put(data.keyAt(i), data.valueAt(i))
-                }
+                val manufacturer = record.manufacturerMap()
                 val sample = AdvertisementSample(
                     timeMs = now(),
                     rssi = result.rssi,

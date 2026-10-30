@@ -91,10 +91,7 @@ class BleConnector(
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 val record = result.scanRecord
                 val name = record?.deviceName ?: result.device.name
-                val manufacturer = buildMap {
-                    val data = record?.manufacturerSpecificData ?: return@buildMap
-                    for (i in 0 until data.size()) put(data.keyAt(i), data.valueAt(i))
-                }
+                val manufacturer = record.manufacturerMap()
                 val ad = Advertisement(name, record?.serviceUuids?.map { it.uuid } ?: emptyList(), manufacturer)
                 when (val recognition = registry.recognize(ad)) {
                     is Recognition.Supported -> scope.launch {

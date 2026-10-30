@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -12,7 +11,7 @@ val keystorePath: String? = System.getenv("BUERSTLI_KEYSTORE")
 
 android {
     namespace = "io.github.damnms.buerstli"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.damnms.buerstli"

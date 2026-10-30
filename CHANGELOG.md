@@ -6,6 +6,10 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- Updated the build tools underneath (Kotlin 2.4, Gradle 9.8, Android Gradle Plugin 9.5). Nothing
+  should look or behave differently – if something does, please report it.
+
 ### Fixed
 - Privacy: the "For nerds" log no longer shows the address part of brush names (e.g.
   "LFTB01-P-XXXX"), so it can be shared safely, too.

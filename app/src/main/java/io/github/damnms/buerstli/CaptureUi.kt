@@ -2,7 +2,6 @@ package io.github.damnms.buerstli
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,6 +29,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import io.github.damnms.buerstli.capture.CaptureState
 
 private const val NEW_BRUSH_ISSUE = "https://github.com/damnms/buerstli/issues/new?template=new-brush.yml"
@@ -114,7 +114,7 @@ private fun Done(brand: String, state: CaptureState.Done, actions: Actions) {
             onClick = {
                 clipboard.setText(AnnotatedString(text))
                 try {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(NEW_BRUSH_ISSUE)))
+                    context.startActivity(Intent(Intent.ACTION_VIEW, NEW_BRUSH_ISSUE.toUri()))
                 } catch (_: ActivityNotFoundException) {
                     // No browser: the report is in the clipboard anyway.
                 }
