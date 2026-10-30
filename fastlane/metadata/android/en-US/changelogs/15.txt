@@ -1,0 +1,6 @@
+Added:
+- Recognizes Oclean and Xiaomi (T500, T700, T700i) brushes.
+- "My brush isn't supported": pick any brush from the devices nearby and record a report for it (Playbrush, usmile, Ailoria, MOVA, Tesla, …). Reports now include service data, too.
+
+Fixed:
+- Privacy: reports could show part of the brush's Bluetooth address in raw bytes.
