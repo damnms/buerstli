@@ -22,7 +22,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Laifen | Wave (LFTB02), Wave Pro, LFTB01-SE/-C | `LFTB…` | 🔍 recognized, not supported yet | |
 | Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only | battery, status, mode, intensity, brushing time, brush head wear |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
-| Oral-B | iO and others | `Oral-B…` | 🔍 recognized, not supported yet | |
+| Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens only (no connection) | status, mode, brushing time, pressure, mouth area – no battery level |
 
 ### Laifen Wave: the hidden fourth mode
 
@@ -47,8 +47,8 @@ e-mail or as a [GitHub issue](../../issues/new?template=new-brush.yml).
 
 The protocols have been researched by others already, which makes a driver much more likely:
 [philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble/blob/main/docs/BLE_PROTOCOL.md)
-and [oralb-ha](https://github.com/thomasgregg/oralb-ha/blob/main/docs/protocol.md). Bürstli only
-ships drivers that someone has tested on a real brush.
+and [oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble). Experimental drivers are built on
+that research and only read; they become "tested" once an owner confirms them with Bürstli.
 
 Got another brush? [CONTRIBUTING.md](CONTRIBUTING.md) explains how to add it.
 The architecture is described in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -104,7 +104,9 @@ with real captured packets in the unit tests.
 The protocol knowledge comes from earlier interoperability work, which deserves all the credit:
 [UrbanTechIO/Laifen](https://github.com/UrbanTechIO/Laifen) (Home Assistant integration) and
 [marc-alexis-com/laifen-toolbox](https://github.com/marc-alexis-com/laifen-toolbox) (Linux CLI), and for
-Philips Sonicare [mtheli/philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble) (Home Assistant integration, MIT).
+Philips Sonicare [mtheli/philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble) (Home Assistant integration, MIT),
+and for Oral-B [Bluetooth-Devices/oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble) (the library behind Home
+Assistant's Oral-B integration, MIT), whose test suite also provides the real advertisements our tests use.
 No code was copied from either, and none from the official app.
 
 ## How this was made

@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
@@ -20,6 +21,7 @@ import io.github.damnms.buerstli.hex
 import io.github.damnms.buerstli.domain.BrushSession
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.DriverRegistry
+import io.github.damnms.buerstli.domain.NoLink
 import io.github.damnms.buerstli.domain.Recognition
 import io.github.damnms.buerstli.domain.ToothbrushDriver
 import kotlinx.coroutines.CoroutineScope
@@ -89,10 +91,8 @@ class BleConnector(
 
         val cb = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                val record = result.scanRecord
-                val name = record?.deviceName ?: result.device.name
-                val manufacturer = record.manufacturerMap()
-                val ad = Advertisement(name, record?.serviceUuids?.map { it.uuid } ?: emptyList(), manufacturer)
+                val ad = result.toAdvertisement()
+                val name = ad.name
                 when (val recognition = registry.recognize(ad)) {
                     is Recognition.Supported -> scope.launch {
                         if (scanCallback == null) return@launch // someone else won the race
@@ -100,7 +100,8 @@ class BleConnector(
                         val shown = name?.let { AddressMask(result.device.address).text(it) }
                         diag.log("found $shown (${result.rssi} dBm) -> ${driver.model.brand} ${driver.model.name}")
                         stopScan()
-                        connect(result.device, name ?: result.device.address, driver)
+                        if (driver.passive) listen(result.device, name ?: result.device.address, driver, ad)
+                        else connect(result.device, name ?: result.device.address, driver)
                     }
                     is Recognition.Unsupported -> scope.launch {
                         if (scanCallback == null || unsupportedGrace != null) return@launch
@@ -142,19 +143,96 @@ class BleConnector(
     fun disconnect() {
         diag.log("disconnect requested")
         stopScan()
+        if (passiveScan != null) {
+            stopListening(sleeping = true)
+            return
+        }
         gatt?.disconnect() ?: run { _state.value = Connection.Idle }
     }
 
     /** Back to the start screen, e.g. after a report was recorded. */
     fun reset() {
         stopScan()
+        stopListening(sleeping = false)
         closeGatt()
         _state.value = Connection.Idle
     }
 
     fun close() {
         stopScan()
+        stopListening(sleeping = false)
         closeGatt()
+    }
+
+    // --- passive drivers: no connection, only advertisements ---
+
+    private var passiveScan: ScanCallback? = null
+    private var silence: Job? = null
+    private var lastAdHex: String? = null
+
+    private fun listen(device: BluetoothDevice, name: String, driver: ToothbrushDriver, first: Advertisement) {
+        val scanner = adapter?.bluetoothLeScanner ?: run { _state.value = Connection.BluetoothOff; return }
+        val mask = AddressMask(device.address)
+        val s = driver.open(NoLink)
+        session = s
+        diag.log("listening (passive, no connection)")
+        fun feed(ad: Advertisement) {
+            val hex = ad.manufacturerData.entries.joinToString(" ") { (id, data) -> "%04X:".format(id) + mask.hex(data) }
+            if (hex != lastAdHex) {
+                lastAdHex = hex
+                diag.log("advertisement $hex")
+            }
+            s.onAdvertisement(ad)
+            restartSilence(name, driver, s)
+        }
+        feed(first)
+        _state.value = Connection.Connected(name, driver, s, device)
+        val cb = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                val ad = result.toAdvertisement()
+                scope.launch { if (passiveScan != null) feed(ad) }
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                scope.launch {
+                    diag.log("passive scan FAILED: error $errorCode")
+                    stopListening(sleeping = false)
+                    _state.value = Connection.Failed("scan error $errorCode")
+                }
+            }
+        }
+        passiveScan = cb
+        val filter = ScanFilter.Builder().setDeviceAddress(device.address).build()
+        scanner.startScan(listOf(filter), ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), cb)
+    }
+
+    /** No advertisement for a while: the brush went to sleep or out of range. */
+    private fun restartSilence(name: String, driver: ToothbrushDriver, s: BrushSession) {
+        silence?.cancel()
+        silence = scope.launch {
+            delay(PASSIVE_SILENCE_MS)
+            diag.log("no advertisements for ${PASSIVE_SILENCE_MS / 1000} s")
+            stopListening(sleeping = false)
+            _state.value = Connection.Disconnected(name, driver, s.state.value)
+        }
+    }
+
+    private fun stopListening(sleeping: Boolean) {
+        silence?.cancel()
+        silence = null
+        val cb = passiveScan ?: return
+        passiveScan = null
+        lastAdHex = null
+        try {
+            adapter?.bluetoothLeScanner?.stopScan(cb)
+        } catch (_: IllegalStateException) {
+            // Bluetooth was turned off meanwhile.
+        }
+        if (sleeping) {
+            val c = _state.value as? Connection.Connected
+            if (c != null) _state.value = Connection.Disconnected(c.name, c.driver, c.session.state.value)
+        }
+        session = null
     }
 
     private fun stopScan() {
@@ -277,5 +355,6 @@ class BleConnector(
         // The brush can take a while to advertise again after a disconnect.
         const val SCAN_TIMEOUT_MS = 30_000L
         const val UNSUPPORTED_GRACE_MS = 4_000L
+        const val PASSIVE_SILENCE_MS = 30_000L
     }
 }

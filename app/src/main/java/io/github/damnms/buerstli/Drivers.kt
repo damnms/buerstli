@@ -3,6 +3,7 @@ package io.github.damnms.buerstli
 import io.github.damnms.buerstli.domain.DriverRegistry
 import io.github.damnms.buerstli.domain.KnownBrush
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
+import io.github.damnms.buerstli.drivers.oralb.OralBPassiveDriver
 import io.github.damnms.buerstli.drivers.sonicare.SonicareClassicDriver
 import java.util.UUID
 
@@ -18,6 +19,7 @@ object Drivers {
         drivers = listOf(
             LaifenWaveV1Driver,
             SonicareClassicDriver, // experimental, read-only
+            OralBPassiveDriver, // experimental, listens only
         ),
         // Recognized, but no driver yet: Bürstli offers to record a report instead.
         knownUnsupported = listOf(

@@ -170,7 +170,7 @@ private fun ConnectionContent(
         )
         is Connection.Connected -> {
             BrushHeader(connection.name, connection.driver)
-            if (connection.driver.supportLevel == SupportLevel.EXPERIMENTAL) ExperimentalNote(actions)
+            if (connection.driver.supportLevel == SupportLevel.EXPERIMENTAL) ExperimentalNote(connection.driver.passive, actions)
             if (brushState == null) {
                 Busy(stringResource(R.string.waiting_for_status), null)
             } else {
@@ -237,7 +237,7 @@ private fun BrushView(
     actions: Actions,
 ) {
     val switches = driver.capabilities.switches
-    InfoCard {
+    if (state.batteryPercent != null || Switch.MOTOR in switches) InfoCard {
         state.batteryPercent?.let { battery ->
             Text(stringResource(R.string.battery), style = MaterialTheme.typography.labelLarge)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -391,14 +391,34 @@ private fun DurationCard(
 }
 
 @Composable
-private fun ExperimentalNote(actions: Actions) {
+private fun ExperimentalNote(passive: Boolean, actions: Actions) {
     InfoCard {
         Text(stringResource(R.string.experimental_note), style = MaterialTheme.typography.bodyMedium)
+        if (passive) Text(stringResource(R.string.passive_note), style = MaterialTheme.typography.bodySmall)
         OutlinedButton(onClick = actions.captureConnected) { Text(stringResource(R.string.capture_this_brush)) }
     }
 }
 
-/** Read-only values that some brushes report (Sonicare): shown only when present. */
+/** Mode names as the brands call them; product names, not translated. */
+private fun modeLabel(mode: io.github.damnms.buerstli.domain.ModeName): String = when (mode) {
+    io.github.damnms.buerstli.domain.ModeName.CLEAN -> "Clean"
+    io.github.damnms.buerstli.domain.ModeName.WHITE_PLUS -> "White+"
+    io.github.damnms.buerstli.domain.ModeName.GUM_HEALTH -> "Gum Health"
+    io.github.damnms.buerstli.domain.ModeName.DEEP_CLEAN_PLUS -> "Deep Clean+"
+    io.github.damnms.buerstli.domain.ModeName.DAILY_CLEAN -> "Daily Clean"
+    io.github.damnms.buerstli.domain.ModeName.MASSAGE -> "Massage"
+    io.github.damnms.buerstli.domain.ModeName.WHITEN -> "Whitening"
+    io.github.damnms.buerstli.domain.ModeName.DEEP_CLEAN -> "Deep Clean"
+    io.github.damnms.buerstli.domain.ModeName.TURBO -> "Turbo"
+    io.github.damnms.buerstli.domain.ModeName.GUM_CARE -> "Gum Care"
+    io.github.damnms.buerstli.domain.ModeName.INTENSE -> "Intense"
+    io.github.damnms.buerstli.domain.ModeName.SUPER_SENSITIVE -> "Super Sensitive"
+    io.github.damnms.buerstli.domain.ModeName.SMART_ADAPT -> "Smart Adapt"
+    io.github.damnms.buerstli.domain.ModeName.SENSITIVE -> "Sensitive"
+    io.github.damnms.buerstli.domain.ModeName.TONGUE_CARE -> "Tongue Care"
+}
+
+/** Read-only values that some brushes report (Sonicare, Oral-B): shown only when present. */
 @Composable
 private fun InfoReadings(state: BrushState) {
     val rows = buildList {
@@ -413,16 +433,8 @@ private fun InfoReadings(state: BrushState) {
                 },
             ))
         }
-        state.modeName?.let {
-            add(R.string.info_mode to when (it) {
-                io.github.damnms.buerstli.domain.ModeName.CLEAN -> "Clean"
-                io.github.damnms.buerstli.domain.ModeName.WHITE_PLUS -> "White+"
-                io.github.damnms.buerstli.domain.ModeName.GUM_HEALTH -> "Gum Health"
-                io.github.damnms.buerstli.domain.ModeName.DEEP_CLEAN_PLUS -> "Deep Clean+"
-                io.github.damnms.buerstli.domain.ModeName.SENSITIVE -> "Sensitive"
-                io.github.damnms.buerstli.domain.ModeName.TONGUE_CARE -> "Tongue Care"
-            })
-        }
+        state.modelName?.let { add(R.string.info_model to it) }
+        state.modeName?.let { add(R.string.info_mode to modeLabel(it)) }
         state.intensity?.let {
             add(R.string.info_intensity to stringResource(
                 when (it) {
@@ -438,6 +450,13 @@ private fun InfoReadings(state: BrushState) {
             add(R.string.info_brushing_time to text)
         }
         state.brushHeadWearPercent?.let { add(R.string.info_head_wear to stringResource(R.string.info_head_wear_value, it)) }
+        state.pressureHigh?.let {
+            add(R.string.info_pressure to stringResource(if (it) R.string.pressure_high else R.string.pressure_ok))
+        }
+        state.sector?.let { sector ->
+            val count = state.sectorCount
+            add(R.string.info_sector to if (count != null) stringResource(R.string.sector_of, sector, count) else "$sector")
+        }
     }
     if (rows.isEmpty()) return
     InfoCard {

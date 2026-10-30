@@ -103,4 +103,11 @@
     <string name="intensity_low">low</string>
     <string name="intensity_medium">medium</string>
     <string name="intensity_high">high</string>
+    <string name="info_model">Model</string>
+    <string name="info_pressure">Pressure</string>
+    <string name="pressure_ok">fine</string>
+    <string name="pressure_high">too high!</string>
+    <string name="info_sector">Area</string>
+    <string name="sector_of">%1$d of %2$d</string>
+    <string name="passive_note">Bürstli only listens to what this brush broadcasts, without connecting. It doesn\'t broadcast its battery level.</string>
 </resources>

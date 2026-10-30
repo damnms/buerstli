@@ -102,4 +102,11 @@
     <string name="intensity_low">niedrig</string>
     <string name="intensity_medium">mittel</string>
     <string name="intensity_high">hoch</string>
+    <string name="info_model">Modell</string>
+    <string name="info_pressure">Andruck</string>
+    <string name="pressure_ok">gut</string>
+    <string name="pressure_high">zu hoch!</string>
+    <string name="info_sector">Bereich</string>
+    <string name="sector_of">%1$d von %2$d</string>
+    <string name="passive_note">Bürstli hört nur mit, was diese Bürste sendet, ohne sich zu verbinden. Den Akkustand sendet sie dabei nicht.</string>
 </resources>

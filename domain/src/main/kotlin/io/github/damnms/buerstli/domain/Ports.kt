@@ -22,6 +22,14 @@ interface BrushLink {
     suspend fun enableNotifications(characteristic: UUID)
 }
 
+/** The link of a passive session: there is no connection, so every operation fails. */
+object NoLink : BrushLink {
+    private fun none(): Nothing = throw java.io.IOException("passive driver: no connection")
+    override suspend fun read(characteristic: UUID): ByteArray = none()
+    override suspend fun write(characteristic: UUID, data: ByteArray) = none()
+    override suspend fun enableNotifications(characteristic: UUID) = none()
+}
+
 /** Everything Bürstli knows about one brush model. One driver per protocol. */
 interface ToothbrushDriver {
     val model: BrushModel
@@ -32,6 +40,12 @@ interface ToothbrushDriver {
 
     /** Some brushes need Bluetooth pairing; Android then asks the user once. */
     val mayNeedPairing: Boolean get() = false
+
+    /**
+     * A passive driver never connects: everything comes from the brush's advertisements, which the
+     * adapter feeds into [BrushSession.onAdvertisement]. Its session is opened with [NoLink].
+     */
+    val passive: Boolean get() = false
 
     /** Starts talking to a connected brush. */
     fun open(link: BrushLink): BrushSession
@@ -46,6 +60,9 @@ interface BrushSession {
 
     /** Called by the adapter for every notification the brush sends. */
     fun onNotification(characteristic: UUID, value: ByteArray)
+
+    /** Called by the adapter for every advertisement of this brush (passive drivers). */
+    fun onAdvertisement(advertisement: Advertisement) {}
 
     suspend fun execute(command: BrushCommand): CommandResult
 }

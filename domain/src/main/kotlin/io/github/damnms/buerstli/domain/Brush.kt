@@ -40,6 +40,13 @@ data class BrushState(
     val brushingSeconds: Int? = null,
     /** How worn the brush head is, 0-100. */
     val brushHeadWearPercent: Int? = null,
+    /** True if the brush reports too much pressure right now. */
+    val pressureHigh: Boolean? = null,
+    /** Area of the mouth the brush guides you through right now (1-based), and how many there are. */
+    val sector: Int? = null,
+    val sectorCount: Int? = null,
+    /** The exact model, for brushes that say it (e.g. "iO Series"). */
+    val modelName: String? = null,
 ) {
     companion object {
         val UNKNOWN = BrushState()
@@ -72,6 +79,13 @@ enum class Access { READ_ONLY, READ_WRITE }
 
 enum class Activity { OFF, STANDBY, BRUSHING, PAUSED, CHARGING }
 
-enum class ModeName { CLEAN, WHITE_PLUS, GUM_HEALTH, DEEP_CLEAN_PLUS, SENSITIVE, TONGUE_CARE }
+enum class ModeName {
+    // Philips Sonicare
+    CLEAN, WHITE_PLUS, GUM_HEALTH, DEEP_CLEAN_PLUS,
+    // Oral-B
+    DAILY_CLEAN, MASSAGE, WHITEN, DEEP_CLEAN, TURBO, GUM_CARE, INTENSE, SUPER_SENSITIVE, SMART_ADAPT,
+    // both
+    SENSITIVE, TONGUE_CARE,
+}
 
 enum class Intensity { LOW, MEDIUM, HIGH }

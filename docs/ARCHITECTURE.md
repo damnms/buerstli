@@ -37,7 +37,8 @@ Rules, enforced by Gradle module boundaries:
 | **Brush** | A physical toothbrush. |
 | **Model** | A brush type with one protocol, e.g. Laifen Wave (LFTB01). |
 | **Driver** | Code that recognizes a model and speaks its protocol. One per protocol. |
-| **Session** | A live conversation with one connected brush. |
+| **Session** | A live conversation with one brush: over a connection, or by listening to its advertisements (passive drivers). |
+| **Passive driver** | Never connects; decodes what the brush broadcasts (e.g. Oral-B). Read-only by nature. |
 | **Mode** | A brushing program on the brush (Mode 1, 2, …). |
 | **Parameter** | A knob of a mode: strength, range, speed, … |
 | **Capabilities** | What a model can do; the UI is generated from them. |

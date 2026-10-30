@@ -3,6 +3,7 @@ package io.github.damnms.buerstli
 import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.domain.Recognition
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
+import io.github.damnms.buerstli.drivers.oralb.OralBPassiveDriver
 import io.github.damnms.buerstli.drivers.sonicare.SonicareClassicDriver
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -47,12 +48,12 @@ class DriversTest {
     }
 
     @Test
-    fun `Oral-B by name or manufacturer id`() {
-        assertEquals(Recognition.Unsupported("Oral-B"), recognize(Advertisement("Oral-B Toothbrush")))
+    fun `Oral-B with broadcast data gets the passive driver, by name alone it stays unsupported`() {
         assertEquals(
-            Recognition.Unsupported("Oral-B"),
-            recognize(Advertisement(null, manufacturerData = mapOf(0x00DC to byteArrayOf(1)))),
+            Recognition.Supported(OralBPassiveDriver),
+            recognize(Advertisement(null, manufacturerData = mapOf(0x00DC to byteArrayOf(2, 1, 8, 2, 0x20, 0, 0, 1, 1, 0, 4)))),
         )
+        assertEquals(Recognition.Unsupported("Oral-B"), recognize(Advertisement("Oral-B Toothbrush")))
     }
 
     @Test

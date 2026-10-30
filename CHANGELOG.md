@@ -6,6 +6,12 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Oral-B (iO, Genius, Smart, Pro, Triumph): experimental support that only listens to what the
+  brush broadcasts, without connecting – status, mode, brushing time, pressure and mouth area.
+  Oral-B brushes don't broadcast their battery level. Built on oralb-ble, the library behind Home
+  Assistant's Oral-B integration, and tested against real recordings from its test suite.
+
 ## [0.6.3] - 2026-10-30
 
 ### Changed

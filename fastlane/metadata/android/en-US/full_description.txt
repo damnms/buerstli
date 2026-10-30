@@ -4,9 +4,10 @@
 <ul>
 <li><b>Laifen Wave (LFTB01)</b> – tested on a real brush: battery, all four modes with strength, range and speed, switching modes, brushing time, 30-second nudge, high frequency (the hidden fourth mode), start and stop from the phone.</li>
 <li><b>Philips Sonicare</b> (classic models such as DiamondClean, Prestige, ExpertClean, Kids) – experimental and read-only: battery, status, mode, intensity, brushing time and brush head wear.</li>
+<li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimental, listens without connecting: status, mode, brushing time, pressure and mouth area.</li>
 </ul>
 
-<p><b>Your brush isn't supported yet?</b> Bürstli recognizes other Laifen models, Philips Sonicare 7100 and Oral-B, and can record a report in about a minute – it only listens, nothing on the brush is changed. Send it to the developers by messenger, e-mail or on GitHub, no technical knowledge needed.</p>
+<p><b>Your brush isn't supported yet?</b> Bürstli recognizes other Laifen models and the Philips Sonicare 7100, and can record a report in about a minute – it only listens, nothing on the brush is changed. Send it to the developers by messenger, e-mail or on GitHub, no technical knowledge needed.</p>
 
 <p><b>Honest about everything</b></p>
 <ul>
