@@ -70,6 +70,9 @@ class Actions(
     val startCapture: () -> Unit,
     val finishCapture: () -> Unit,
     val captureConnected: () -> Unit,
+    val openPicker: () -> Unit,
+    val closePicker: () -> Unit,
+    val pick: (Nearby) -> Unit,
 )
 
 class DurationUi(val draft: Int?, val save: SaveStatus?)
@@ -83,6 +86,7 @@ fun MainScreen(
     duration: DurationUi,
     switchSave: Map<Switch, SaveStatus>,
     capture: io.github.damnms.buerstli.capture.CaptureState,
+    nearby: List<Nearby>?,
     logLines: List<String>,
     permissionGranted: Boolean,
     permissionDenied: Boolean,
@@ -100,7 +104,11 @@ fun MainScreen(
             if (!permissionGranted) {
                 PermissionCard(permissionDenied, actions.requestPermission)
             } else {
-                ConnectionContent(connection, brushState, drafts, saveStatus, duration, switchSave, capture, actions)
+                if (nearby != null && capture is io.github.damnms.buerstli.capture.CaptureState.Idle) {
+                    PickerContent(nearby, actions)
+                } else {
+                    ConnectionContent(connection, brushState, drafts, saveStatus, duration, switchSave, capture, actions)
+                }
             }
             if (logLines.isNotEmpty()) LogCard(logLines)
             Spacer(Modifier.height(8.dp))
@@ -161,7 +169,12 @@ private fun ConnectionContent(
     }
     when (connection) {
         is Connection.FoundUnsupported -> CaptureContent(connection.brand, capture, actions)
-        Connection.Idle -> FindButton(actions.find)
+        Connection.Idle -> {
+            FindButton(actions.find)
+            TextButton(onClick = actions.openPicker, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.picker_open))
+            }
+        }
         Connection.Scanning -> Busy(stringResource(R.string.scanning), stringResource(R.string.scanning_hint))
         is Connection.Connecting -> Busy(
             stringResource(R.string.connecting, connection.name),
@@ -188,12 +201,17 @@ private fun ConnectionContent(
             )
             brushState?.let { BrushView(connection.driver, it, drafts, saveStatus, duration, switchSave, editable = false, actions) }
         }
-        Connection.NotFound -> Message(
-            stringResource(R.string.not_found),
-            stringResource(R.string.not_found_hint),
-            stringResource(R.string.try_again),
-            actions.find,
-        )
+        Connection.NotFound -> {
+            Message(
+                stringResource(R.string.not_found),
+                stringResource(R.string.not_found_hint),
+                stringResource(R.string.try_again),
+                actions.find,
+            )
+            TextButton(onClick = actions.openPicker, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.picker_open))
+            }
+        }
         Connection.BluetoothOff -> Message(stringResource(R.string.bluetooth_off), null, stringResource(R.string.try_again), actions.find)
         Connection.NoBluetooth -> Message(stringResource(R.string.no_bluetooth), null, null, null)
         is Connection.Unsupported -> Message(
@@ -388,6 +406,30 @@ private fun DurationCard(
             }
         }
         (ui.save as? SaveStatus.Done)?.let { SaveResult(it.result) }
+    }
+}
+
+/** Pick a brush Bürstli doesn't recognize from the Bluetooth devices nearby. */
+@Composable
+private fun PickerContent(nearby: List<Nearby>, actions: Actions) {
+    InfoCard {
+        Text(stringResource(R.string.picker_title), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.picker_hint), style = MaterialTheme.typography.bodySmall)
+        if (nearby.isEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CircularProgressIndicator(Modifier.size(20.dp))
+                Text(stringResource(R.string.picker_searching))
+            }
+        }
+        nearby.forEach { device ->
+            OutlinedButton(onClick = { actions.pick(device) }, modifier = Modifier.fillMaxWidth()) {
+                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Text(device.name, fontWeight = FontWeight.Bold)
+                    Text("${device.rssi} dBm", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        TextButton(onClick = actions.closePicker) { Text(stringResource(R.string.capture_cancel)) }
     }
 }
 

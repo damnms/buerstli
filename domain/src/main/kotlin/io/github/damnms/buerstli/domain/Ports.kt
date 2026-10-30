@@ -9,6 +9,8 @@ data class Advertisement(
     val serviceUuids: List<UUID> = emptyList(),
     /** Manufacturer-specific data by Bluetooth company id. */
     val manufacturerData: Map<Int, ByteArray> = emptyMap(),
+    /** Service data by service UUID (e.g. Xiaomi's MiBeacon under 0xFE95). */
+    val serviceData: Map<UUID, ByteArray> = emptyMap(),
 )
 
 /**

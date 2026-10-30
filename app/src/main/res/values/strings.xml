@@ -118,4 +118,8 @@
     <string name="switch_bristle_protection">Bristle protection</string>
     <string name="switch_lift_to_wake">Lift to wake</string>
     <string name="switch_readonly_hint">Shown only – Bürstli doesn\'t change this yet.</string>
+    <string name="picker_open">My brush isn\'t supported</string>
+    <string name="picker_title">Which one is your brush?</string>
+    <string name="picker_hint">Switch your brush on and hold it close to the phone – it is usually at the top. The list shows Bluetooth devices nearby; it stays on this phone and only the one you pick goes into a report.</string>
+    <string name="picker_searching">Looking for devices nearby…</string>
 </resources>

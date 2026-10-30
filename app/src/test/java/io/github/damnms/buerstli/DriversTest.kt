@@ -70,6 +70,25 @@ class DriversTest {
         )
     }
 
+    private val xiaomi = UUID.fromString("0000fe95-0000-1000-8000-00805f9b34fb")
+
+    /** MiBeacon service data: frame control (2 bytes), product id (2 bytes, LE), … */
+    private fun miBeacon(productId: Int) =
+        Advertisement(null, serviceData = mapOf(xiaomi to byteArrayOf(0x30, 0x58, productId.toByte(), (productId shr 8).toByte(), 0x01)))
+
+    @Test
+    fun `Xiaomi toothbrushes are recognized by their product id`() {
+        listOf(0x0489, 0x0806, 0x1790).forEach {
+            assertEquals(Recognition.Unsupported("Xiaomi"), recognize(miBeacon(it)))
+        }
+    }
+
+    @Test
+    fun `other Xiaomi devices are not toothbrushes`() {
+        assertEquals(Recognition.Unknown, recognize(miBeacon(0x045B))) // a temperature sensor
+        assertEquals(Recognition.Unknown, recognize(Advertisement(null, serviceData = mapOf(xiaomi to byteArrayOf(0x30)))))
+    }
+
     @Test
     fun `random devices are ignored`() {
         assertEquals(Recognition.Unknown, recognize(Advertisement("JBL Flip 5")))

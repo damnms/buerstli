@@ -117,4 +117,8 @@
     <string name="switch_bristle_protection">Borstenschutz</string>
     <string name="switch_lift_to_wake">Anheben zum Aufwecken</string>
     <string name="switch_readonly_hint">Nur Anzeige – das ändert Bürstli noch nicht.</string>
+    <string name="picker_open">Meine Bürste wird nicht unterstützt</string>
+    <string name="picker_title">Welche ist deine Bürste?</string>
+    <string name="picker_hint">Schalte die Bürste ein und halte sie nah ans Handy – sie steht dann meist ganz oben. Die Liste zeigt Bluetooth-Geräte in der Nähe; sie bleibt auf diesem Handy, und nur das Gerät, das du antippst, kommt in einen Bericht.</string>
+    <string name="picker_searching">Suche Geräte in der Nähe…</string>
 </resources>

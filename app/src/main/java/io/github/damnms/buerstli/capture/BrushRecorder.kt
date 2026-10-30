@@ -129,11 +129,13 @@ class BrushRecorder(
                     rssi = result.rssi,
                     serviceUuids = record.serviceUuids?.map { it.uuid } ?: emptyList(),
                     manufacturerData = manufacturer,
+                    serviceData = record.serviceData?.mapKeys { it.key.uuid } ?: emptyMap(),
                 )
                 synchronized(ads) {
                     val last = ads.lastOrNull()
                     val changed = last == null || last.serviceUuids != sample.serviceUuids ||
-                        last.manufacturerData.mapValues { it.value.toList() } != manufacturer.mapValues { it.value.toList() }
+                        last.manufacturerData.mapValues { it.value.toList() } != manufacturer.mapValues { it.value.toList() } ||
+                        last.serviceData.mapValues { it.value.toList() } != sample.serviceData.mapValues { it.value.toList() }
                     if (changed && ads.size < MAX_ADS) ads += sample
                 }
             }

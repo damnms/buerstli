@@ -16,6 +16,14 @@ object Drivers {
     private const val PHILIPS_COMPANY_ID = 477
     private const val PROCTER_AND_GAMBLE_COMPANY_ID = 0x00DC
 
+    // Xiaomi: every Xiaomi device sends MiBeacon service data under 0xFE95; bytes 2-3 are the
+    // product id (little-endian). Toothbrush ids from ble_monitor: M1S-T500, T700, T700i.
+    private val XIAOMI_SERVICE = UUID.fromString("0000fe95-0000-1000-8000-00805f9b34fb")
+    private val XIAOMI_TOOTHBRUSHES = setOf(0x0489, 0x0806, 0x1790)
+
+    private fun xiaomiProductId(data: ByteArray?): Int? =
+        if (data == null || data.size < 4) null else (data[2].toInt() and 0xFF) or ((data[3].toInt() and 0xFF) shl 8)
+
     // From the Oclean Home Assistant integration (Giallo1O/ha-oclean-integration).
     private val OCLEAN_SERVICE = UUID.fromString("8082caa8-41a6-4021-91c6-56f9b954cc18")
 
@@ -39,6 +47,7 @@ object Drivers {
             KnownBrush("Oclean") { ad ->
                 ad.name?.startsWith("Oclean", ignoreCase = true) == true || OCLEAN_SERVICE in ad.serviceUuids
             },
+            KnownBrush("Xiaomi") { ad -> xiaomiProductId(ad.serviceData[XIAOMI_SERVICE]) in XIAOMI_TOOTHBRUSHES },
             KnownBrush("Oral-B") { ad ->
                 ad.name?.startsWith("Oral-B") == true || PROCTER_AND_GAMBLE_COMPANY_ID in ad.manufacturerData
             },

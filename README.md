@@ -22,6 +22,8 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Laifen | Wave Pro (LFTB02) | `LFTB02-S-…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, pressure warning, Pro features (shown) |
 | Laifen | SE family, kids' TC51 | `LFTB01-SE…`, `LFTB01-C…` | 🔍 recognized, not supported yet | |
 | Oclean | X Pro, Z1, Y-series, … | `Oclean…` | 🔍 recognized, not supported yet | |
+| Xiaomi | T500, T700, T700i | MiBeacon product id | 🔍 recognized, not supported yet | |
+| Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
 | Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only | battery, status, mode, intensity, brushing time, brush head wear |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
 | Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens only (no connection) | status, mode, brushing time, pressure, mouth area – no battery level |
@@ -43,7 +45,8 @@ mode 4 is active switches to mode 3 first, like the official app does.
 brushes, but not yet tried with Bürstli. Experimental drivers only read, they change nothing.
 
 Got one of the brushes marked 🔍 or 🧪? You can help without any technical knowledge: open Bürstli,
-tap **Find my brush**, then **Let's go**. Bürstli listens to your brush for about a minute –
+tap **Find my brush**, then **Let's go**. Bürstli doesn't know your brush at all? Tap **My brush isn't
+supported** and pick it from the list of Bluetooth devices nearby. Bürstli listens to your brush for about a minute –
 it only reads, nothing on the brush is changed – and gives you a report to send by messenger,
 e-mail or as a [GitHub issue](../../issues/new?template=new-brush.yml).
 

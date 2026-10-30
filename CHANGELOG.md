@@ -7,6 +7,10 @@ All notable changes to Bürstli are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Xiaomi T500, T700 and T700i are recognized by their product id.
+- "My brush isn't supported": pick any brush from a list of Bluetooth devices nearby and record a
+  report for it – for Playbrush, usmile, Ailoria, MOVA, Tesla and anything else Bürstli doesn't
+  know yet. Reports now also include the brush's service data.
 - Oclean brushes are recognized. Bürstli can't show anything for them yet, but a report recorded
   in the app helps to change that.
 

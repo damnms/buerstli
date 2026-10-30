@@ -150,6 +150,15 @@ class BleConnector(
         gatt?.disconnect() ?: run { _state.value = Connection.Idle }
     }
 
+    /** A brush the owner picked by hand: offer the report for it, like for a known brush. */
+    fun offerReport(device: BluetoothDevice, name: String) {
+        stopScan()
+        stopListening(sleeping = false)
+        closeGatt()
+        diag.log("picked by hand: ${AddressMask(device.address).text(name)}")
+        _state.value = Connection.FoundUnsupported(name, name, device)
+    }
+
     /** Back to the start screen, e.g. after a report was recorded. */
     fun reset() {
         stopScan()

@@ -109,4 +109,20 @@ class CaptureReportTest {
         assertFalse(laifen.contains("1DEE"))
         assertTrue(laifen.contains("\"LFTB01-P-XXXX\""))
     }
+
+    @Test
+    fun `service data is part of the report, masked like everything else`() {
+        val text = CaptureReport(
+            appVersion = "0.8.0", phone = "x", brand = "Unknown", deviceName = "Y10",
+            address = "C0:00:00:01:1D:EE",
+            advertisements = listOf(
+                AdvertisementSample(
+                    500, -50, emptyList(), emptyMap(),
+                    serviceData = mapOf(uuid16(0xFE95) to byteArrayOf(0x30, 0x58, 0x89.toByte(), 0x04, 0xEE.toByte(), 0x1D, 0x01)),
+                ),
+            ),
+            services = emptyList(), notifications = emptyList(),
+        ).render()
+        assertTrue(text.contains("service data 0xFE95: 30-58-89-04-XX-XX-XX"))
+    }
 }

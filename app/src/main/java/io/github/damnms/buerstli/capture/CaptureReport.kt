@@ -22,7 +22,7 @@ data class CaptureReport(
     fun render(): String = buildString {
         appendLine("# Bürstli capture report")
         appendLine()
-        appendLine("- Brush: $brand, Bluetooth name \"${deviceName?.let { textMasked(it) } ?: "?"}\", address ${mask.address()}")
+        appendLine("- Brush: ${textMasked(brand)}, Bluetooth name \"${deviceName?.let { textMasked(it) } ?: "?"}\", address ${mask.address()}")
         appendLine("- App: Bürstli $appVersion")
         appendLine("- Phone: $phone")
         problems.forEach { appendLine("- Problem: $it") }
@@ -33,6 +33,7 @@ data class CaptureReport(
             val parts = mutableListOf("${seconds(a.timeMs)} rssi ${a.rssi}")
             if (a.serviceUuids.isNotEmpty()) parts += "services " + a.serviceUuids.joinToString { short(it) }
             a.manufacturerData.forEach { (id, data) -> parts += "manufacturer ${hex16(id)}: ${hexMasked(data)}" }
+            a.serviceData.forEach { (uuid, data) -> parts += "service data ${short(uuid)}: ${hexMasked(data)}" }
             appendLine("- " + parts.joinToString(" · "))
         }
 
@@ -95,6 +96,7 @@ data class AdvertisementSample(
     val rssi: Int,
     val serviceUuids: List<UUID>,
     val manufacturerData: Map<Int, ByteArray>,
+    val serviceData: Map<UUID, ByteArray> = emptyMap(),
 )
 
 data class ServiceDump(val uuid: UUID, val characteristics: List<CharacteristicDump>)

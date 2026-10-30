@@ -49,6 +49,22 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
         recorder.start(c.device, c.name, "${c.driver.model.brand} ${c.driver.model.name}")
     }
 
+    private val nearbyScanner = io.github.damnms.buerstli.ble.NearbyScanner(app, viewModelScope, diagnostics)
+    val nearby: StateFlow<List<Nearby>?> = nearbyScanner.list
+
+    fun openPicker() {
+        connector.reset()
+        nearbyScanner.start()
+    }
+
+    fun closePicker() = nearbyScanner.stop()
+
+    fun pick(device: Nearby) {
+        val bt = nearbyScanner.device(device.address)
+        nearbyScanner.stop()
+        if (bt != null) connector.offerReport(bt, device.name)
+    }
+
     fun finishCapture() {
         recorder.stop()
         connector.reset()
@@ -156,6 +172,7 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        nearbyScanner.stop()
         recorder.stop()
         connector.close()
     }
