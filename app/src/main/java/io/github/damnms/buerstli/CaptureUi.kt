@@ -1,6 +1,7 @@
 package io.github.damnms.buerstli
 
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Intent
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -22,15 +23,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import io.github.damnms.buerstli.capture.CaptureState
+import kotlinx.coroutines.launch
 
 private const val NEW_BRUSH_ISSUE = "https://github.com/damnms/buerstli/issues/new?template=new-brush.yml"
 
@@ -88,7 +91,8 @@ private fun Running(state: CaptureState.Running) {
 @Composable
 private fun Done(brand: String, state: CaptureState.Done, actions: Actions) {
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     val text = state.report.render()
     var show by rememberSaveable { mutableStateOf(false) }
     val subject = stringResource(R.string.capture_share_subject, brand)
@@ -112,11 +116,13 @@ private fun Done(brand: String, state: CaptureState.Done, actions: Actions) {
         ) { Text(stringResource(R.string.capture_send), style = MaterialTheme.typography.titleMedium) }
         OutlinedButton(
             onClick = {
-                clipboard.setText(AnnotatedString(text))
-                try {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, NEW_BRUSH_ISSUE.toUri()))
-                } catch (_: ActivityNotFoundException) {
-                    // No browser: the report is in the clipboard anyway.
+                scope.launch {
+                    clipboard.setClipEntry(ClipData.newPlainText("Bürstli report", text).toClipEntry())
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, NEW_BRUSH_ISSUE.toUri()))
+                    } catch (_: ActivityNotFoundException) {
+                        // No browser: the report is in the clipboard anyway.
+                    }
                 }
             },
         ) { Text(stringResource(R.string.capture_github)) }

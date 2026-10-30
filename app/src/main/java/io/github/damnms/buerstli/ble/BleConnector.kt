@@ -182,7 +182,7 @@ class BleConnector(
     private fun connect(device: BluetoothDevice, name: String, driver: ToothbrushDriver) {
         _state.value = Connection.Connecting(name, driver)
         diag.log("connecting")
-        gatt = device.connectGatt(appContext, false, Callback(name, driver), BluetoothDevice.TRANSPORT_LE)
+        gatt = device.connectLe(appContext, Callback(name, driver))
     }
 
     private inner class Callback(val name: String, val driver: ToothbrushDriver) : BluetoothGattCallback() {

@@ -32,8 +32,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import android.content.ClipData
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.toClipEntry
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -558,12 +561,16 @@ private fun Message(text: String, hint: String?, action: String?, onAction: (() 
 @Composable
 private fun LogCard(lines: List<String>) {
     var open by rememberSaveable { mutableStateOf(false) }
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     InfoCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { open = !open }) { Text(stringResource(R.string.log_title)) }
             if (open) {
-                TextButton(onClick = { clipboard.setText(AnnotatedString(lines.joinToString("\n"))) }) {
+                TextButton(onClick = {
+                    val text = lines.joinToString("\n")
+                    scope.launch { clipboard.setClipEntry(ClipData.newPlainText("Bürstli log", text).toClipEntry()) }
+                }) {
                     Text(stringResource(R.string.log_copy))
                 }
             }

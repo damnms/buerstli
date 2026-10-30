@@ -15,6 +15,7 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
 import io.github.damnms.buerstli.Diagnostics
+import io.github.damnms.buerstli.ble.connectLe
 import io.github.damnms.buerstli.ble.manufacturerMap
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -152,7 +153,10 @@ class BrushRecorder(
         _state.value = CaptureState.Running(brand, CaptureState.Phase.CONNECTING, 0, 0f)
         connected = CompletableDeferred()
         discovered = CompletableDeferred()
-        val g = device.connectGatt(appContext, false, callback, BluetoothDevice.TRANSPORT_LE)
+        val g = device.connectLe(appContext, callback) ?: run {
+            problems += "Android refused to connect"
+            return emptyList()
+        }
         gatt = g
         if (withTimeoutOrNull(CONNECT_TIMEOUT_MS) { connected!!.await() } != true) {
             problems += "could not connect (is the brush awake and not connected to another app?)"
