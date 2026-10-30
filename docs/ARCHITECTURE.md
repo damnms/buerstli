@@ -68,8 +68,18 @@ nothing to persist.
 protocol we know. When the second brand arrives and doesn't fit, the interface changes then
 — not before.
 
-**ADR-6: Experimental drivers only on verified research, and read-only.** A driver may be added
-without a Bürstli tester if its protocol was documented *and verified on real brushes* by others
-(e.g. Sonicare by philips_sonicare_ble). It stays `EXPERIMENTAL` and read-only until an owner
-confirms it with Bürstli. For everything else, Bürstli recognizes the brush and lets its owner
-record a report in the app – also from an experimental driver, when something looks wrong.
+**ADR-6: Experimental drivers only on verified research, and they never change the brush.** A
+driver may be added without a Bürstli tester if its protocol was documented *and verified on real
+brushes* by others (e.g. Sonicare by philips_sonicare_ble). It stays `EXPERIMENTAL` and read-only
+until an owner confirms it with Bürstli: every capability is `Access.READ_ONLY`.
+
+Read-only means that nothing on the brush changes, not that nothing is sent. Some protocols can't
+be read at all without messages (a handshake, subscribing, asking for values, acknowledging what
+arrived). An experimental driver may send those, but only the messages the verified
+implementation sends on real brushes for reading. Anything that changes the brush stays excluded:
+settings, modes, resets, firmware, flight mode, and vendor-level binding that replaces the vendor
+app's pairing (e.g. Xiaomi's). Standard Bluetooth pairing through Android, which the user
+confirms, is not such a change. When in doubt, it counts as a change.
+
+For everything else, Bürstli recognizes the brush and lets its owner record a report in the app –
+also from an experimental driver, when something looks wrong.

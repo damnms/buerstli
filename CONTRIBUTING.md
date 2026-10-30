@@ -16,7 +16,9 @@ on real brushes by someone else (see ADR-6 in [docs/ARCHITECTURE.md](docs/ARCHIT
    Write tests for decoding, recognizing the device name, and every command.
 3. **Implement** a `Codec`, a `ToothbrushDriver` and a `BrushSession` until the tests pass.
    Start as `SupportLevel.EXPERIMENTAL`, and **read-only**: every capability `Access.READ_ONLY`,
-   no commands. Writes are only enabled after someone tried them on a real brush.
+   and nothing that changes the brush. Messages a protocol needs just to be read (handshake,
+   subscribe, query, acknowledge) are fine if the verified implementation sends them too (ADR-6).
+   Changes are only enabled after someone tried them on a real brush.
 4. **Register** the driver in `app/.../Drivers.kt` and add the module to `app/build.gradle.kts`.
 5. **Try it** on the brush. If everything works, switch to `VERIFIED` and update the
    support table in the README.

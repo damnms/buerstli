@@ -47,8 +47,8 @@ Owners must know this before they start.
 
 ## Rules
 
-Binding means writing to the brush, so **ADR-6 applies**: nothing is implemented until an
-owner tests it with Bürstli. Bürstli implements from the protocol descriptions only and copies
+Binding changes the brush (new keys, no longer bound to Mi Home), so under **ADR-6** it is not
+allowed for an experimental driver: nothing is implemented until an owner tests it with Bürstli. Bürstli implements from the protocol descriptions only and copies
 no code, neither from Mi Home nor from other projects.
 
 ## What the first report should answer
