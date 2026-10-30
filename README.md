@@ -21,6 +21,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, edit and switch modes, brushing time, 30-second nudge, high frequency, start/stop; flight mode shown |
 | Laifen | Wave Pro (LFTB02) | `LFTB02-S-…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, pressure warning, Pro features (shown) |
 | Laifen | SE family, kids' TC51 | `LFTB01-SE…`, `LFTB01-C…` | 🔍 recognized, not supported yet | |
+| Oclean | X Pro, Z1, Y-series, … | `Oclean…` | 🔍 recognized, not supported yet | |
 | Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only | battery, status, mode, intensity, brushing time, brush head wear |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
 | Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens only (no connection) | status, mode, brushing time, pressure, mouth area – no battery level |
@@ -47,9 +48,11 @@ it only reads, nothing on the brush is changed – and gives you a report to sen
 e-mail or as a [GitHub issue](../../issues/new?template=new-brush.yml).
 
 The protocols have been researched by others already, which makes a driver much more likely:
-[philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble/blob/main/docs/BLE_PROTOCOL.md)
-and [oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble). Experimental drivers are built on
-that research and only read; they become "tested" once an owner confirms them with Bürstli.
+[philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble/blob/main/docs/BLE_PROTOCOL.md),
+[oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble) and, for Oclean,
+[ha-oclean-integration](https://github.com/Giallo1O/ha-oclean-integration/blob/main/docs/BLE-PROTOCOL-REFERENCE.md).
+Experimental drivers are built on that research and only read; they become "tested" once an owner
+confirms them with Bürstli.
 
 Got another brush? [CONTRIBUTING.md](CONTRIBUTING.md) explains how to add it.
 The architecture is described in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

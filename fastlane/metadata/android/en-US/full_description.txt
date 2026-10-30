@@ -8,7 +8,7 @@
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimental, listens without connecting: status, mode, brushing time, pressure and mouth area.</li>
 </ul>
 
-<p><b>Your brush isn't supported yet?</b> Bürstli recognizes the Laifen SE family, the Laifen kids' brush and the Philips Sonicare 7100, and can record a report in about a minute – it only listens, nothing on the brush is changed. Send it to the developers by messenger, e-mail or on GitHub, no technical knowledge needed.</p>
+<p><b>Your brush isn't supported yet?</b> Bürstli recognizes the Laifen SE family, the Laifen kids' brush, the Philips Sonicare 7100 and Oclean, and can record a report in about a minute – it only listens, nothing on the brush is changed. Send it to the developers by messenger, e-mail or on GitHub, no technical knowledge needed.</p>
 
 <p><b>Honest about everything</b></p>
 <ul>

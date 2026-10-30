@@ -6,6 +6,10 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Oclean brushes are recognized. Bürstli can't show anything for them yet, but a report recorded
+  in the app helps to change that.
+
 ## [0.8.0] - 2026-10-30
 
 ### Added

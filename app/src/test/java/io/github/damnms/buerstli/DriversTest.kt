@@ -62,6 +62,15 @@ class DriversTest {
     }
 
     @Test
+    fun `Oclean is recognized by name or service, no driver yet`() {
+        assertEquals(Recognition.Unsupported("Oclean"), recognize(Advertisement("Oclean X Pro")))
+        assertEquals(
+            Recognition.Unsupported("Oclean"),
+            recognize(Advertisement(null, listOf(UUID.fromString("8082caa8-41a6-4021-91c6-56f9b954cc18")))),
+        )
+    }
+
+    @Test
     fun `random devices are ignored`() {
         assertEquals(Recognition.Unknown, recognize(Advertisement("JBL Flip 5")))
     }

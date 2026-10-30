@@ -16,6 +16,9 @@ object Drivers {
     private const val PHILIPS_COMPANY_ID = 477
     private const val PROCTER_AND_GAMBLE_COMPANY_ID = 0x00DC
 
+    // From the Oclean Home Assistant integration (Giallo1O/ha-oclean-integration).
+    private val OCLEAN_SERVICE = UUID.fromString("8082caa8-41a6-4021-91c6-56f9b954cc18")
+
     val registry = DriverRegistry(
         drivers = listOf(
             LaifenWaveV1Driver,
@@ -30,6 +33,11 @@ object Drivers {
                 ad.name?.let { "Sonicare" in it || it.startsWith("Philips OHC") } == true ||
                     SONICARE_CLASSIC in ad.serviceUuids || SONICARE_CONDOR in ad.serviceUuids ||
                     PHILIPS_COMPANY_ID in ad.manufacturerData
+            },
+            // Oclean: session data needs query commands, which experimental drivers don't send
+            // (ADR-6). Reports first, to see what the brush tells without being asked.
+            KnownBrush("Oclean") { ad ->
+                ad.name?.startsWith("Oclean", ignoreCase = true) == true || OCLEAN_SERVICE in ad.serviceUuids
             },
             KnownBrush("Oral-B") { ad ->
                 ad.name?.startsWith("Oral-B") == true || PROCTER_AND_GAMBLE_COMPANY_ID in ad.manufacturerData
