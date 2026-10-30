@@ -1,0 +1,6 @@
+Changed:
+- Updated tools and libraries (Kotlin 2.4, Gradle 9.8, Android Gradle Plugin 9.5, Compose 2026.09). If anything behaves differently, please report it.
+- Targets Android 17 and uses its new Bluetooth connection API there.
+
+Fixed:
+- Privacy: the "For nerds" log no longer shows the address part of brush names (e.g. "LFTB01-P-XXXX"), so it can be shared safely, too.

@@ -6,12 +6,12 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-10-30
+
 ### Changed
-- Updated the build tools and libraries underneath (Kotlin 2.4, Gradle 9.8, Android Gradle
-  Plugin 9.5, Jetpack Compose 2026.09). On Android 17, Bürstli now connects to the brush with
-  Android's new Bluetooth connection API. Nothing should look or behave differently – if something
-  does, please report it.
-- Bürstli now targets Android 17, so Android 16 and 17 no longer run it in compatibility mode.
+- Updated tools and libraries (Kotlin 2.4, Gradle 9.8, Android Gradle Plugin 9.5, Compose
+  2026.09). If anything behaves differently, please report it.
+- Targets Android 17 and uses its new Bluetooth connection API there.
 
 ### Fixed
 - Privacy: the "For nerds" log no longer shows the address part of brush names (e.g.
