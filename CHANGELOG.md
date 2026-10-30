@@ -14,6 +14,10 @@ All notable changes to Bürstli are documented here. The format follows
 - Oclean brushes are recognized. Bürstli can't show anything for them yet, but a report recorded
   in the app helps to change that.
 
+### Fixed
+- Privacy: reports could still show the address part of a brush name in the raw bytes (for
+  example "1DEE" in the device-name value) even though the text next to it was masked.
+
 ## [0.8.0] - 2026-10-30
 
 ### Added

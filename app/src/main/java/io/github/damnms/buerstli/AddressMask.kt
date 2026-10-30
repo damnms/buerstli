@@ -19,15 +19,22 @@ class AddressMask(private val address: String) {
         return if (bytes != null) (parts.take(3) + listOf("XX", "XX", "XX")).joinToString(":") else "XX"
     }
 
+    /**
+     * What gives the device away inside raw data: its address bytes (forwards and reversed) and
+     * the address suffixes written as ASCII text, like the "1DEE" in a name "LFTB01-P-1DEE".
+     */
+    private val patterns: List<ByteArray> = bytes?.let { a ->
+        val device = a.copyOfRange(3, 6)
+        val asText = suffixes(a).flatMap { listOf(it.uppercase(), it.lowercase()) }.map { it.toByteArray(Charsets.US_ASCII) }
+        listOf(device, device.reversedArray()) + asText
+    } ?: emptyList()
+
     fun hex(data: ByteArray): String {
         val masked = BooleanArray(data.size)
-        bytes?.let { a ->
-            val device = a.copyOfRange(3, 6)
-            for (pattern in listOf(device, device.reversedArray())) {
-                for (i in 0..data.size - 3) {
-                    if (data[i] == pattern[0] && data[i + 1] == pattern[1] && data[i + 2] == pattern[2]) {
-                        masked[i] = true; masked[i + 1] = true; masked[i + 2] = true
-                    }
+        for (pattern in patterns) {
+            for (i in 0..data.size - pattern.size) {
+                if (pattern.indices.all { data[i + it] == pattern[it] }) {
+                    for (j in pattern.indices) masked[i + j] = true
                 }
             }
         }
@@ -39,10 +46,12 @@ class AddressMask(private val address: String) {
     fun text(text: String): String {
         val a = bytes ?: return text
         var out = text
-        for (count in listOf(3, 2)) {
-            val suffix = a.takeLast(count).joinToString("") { String.format(Locale.ROOT, "%02X", it.toInt() and 0xFF) }
-            out = out.replace(suffix, "X".repeat(suffix.length), ignoreCase = true)
-        }
+        for (suffix in suffixes(a)) out = out.replace(suffix, "X".repeat(suffix.length), ignoreCase = true)
         return out
+    }
+
+    /** The last three and the last two address bytes as hex text, longest first: "011DEE", "1DEE". */
+    private fun suffixes(a: ByteArray): List<String> = listOf(3, 2).map { count ->
+        a.takeLast(count).joinToString("") { String.format(Locale.ROOT, "%02X", it.toInt() and 0xFF) }
     }
 }

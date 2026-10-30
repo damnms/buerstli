@@ -30,4 +30,12 @@ class AddressMaskTest {
         assertEquals("XX", none.address())
         assertEquals("LFTB01-P-1DEE", none.text("LFTB01-P-1DEE"))
     }
+
+    // Found in a real report: the device name characteristic holds "LFTB01-P-1DEE" as ASCII, so its
+    // hex showed 31-44-45-45 ("1DEE") although the text next to it was masked.
+    @Test
+    fun `address suffixes written as text are masked in the hex, too`() {
+        assertEquals("4C-46-54-42-30-31-2D-50-2D-XX-XX-XX-XX", mask.hex("LFTB01-P-1DEE".toByteArray()))
+        assertEquals("XX-XX-XX-XX-XX-XX", mask.hex("011dee".toByteArray()))
+    }
 }
