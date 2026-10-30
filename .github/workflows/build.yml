@@ -25,6 +25,9 @@ jobs:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: scripts/changelog.sh check-updated "$BASE" HEAD
 
+      - name: Verify Gradle wrapper
+        run: scripts/verify-gradle-wrapper.sh
+
       - name: Script tests
         run: python3 -m unittest discover scripts
 

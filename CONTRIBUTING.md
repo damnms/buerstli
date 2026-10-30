@@ -52,6 +52,9 @@ list of supported brushes.
 ## Ground rules
 
 - `./gradlew test lintDebug assembleDebug` must pass.
+- Update Gradle with `./gradlew wrapper --gradle-version X --gradle-distribution-sha256-sum <official sum>`
+  (run it twice). CI checks the wrapper jar and the checksum against gradle.org
+  (`scripts/verify-gradle-wrapper.sh`).
 - The release build must stay reproducible (CI builds it twice and compares). If a change breaks
   this, find out why before merging; F-Droid relies on it.
 - No `INTERNET` permission, no analytics, no accounts. Ever.
