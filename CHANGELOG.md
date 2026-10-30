@@ -6,6 +6,8 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-30
+
 ### Added
 - Laifen Wave Pro (LFTB02): experimental support that only listens – battery, brushing time,
   brushing or idle, pressure warning, and its Pro features as a display. Built on what the Home

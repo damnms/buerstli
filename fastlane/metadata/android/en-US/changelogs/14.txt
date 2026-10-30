@@ -1,0 +1,2 @@
+Added:
+- Laifen Wave Pro (LFTB02): experimental support that only listens – battery, brushing time, brushing or idle, pressure warning, and its Pro features as a display. Built on what the Home Assistant integration UrbanTechIO/Laifen confirmed on a real Wave Pro and on the frame format described by laifen-toolbox. Other brushes named LFTB02 may show nothing: please send a report.
