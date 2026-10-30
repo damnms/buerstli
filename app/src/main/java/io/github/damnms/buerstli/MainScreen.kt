@@ -251,9 +251,10 @@ private fun BrushView(
             }
         }
     }
-    InfoReadings(state)
-    val toggles = listOf(Switch.REMINDER_30S, Switch.HIGH_FREQUENCY, Switch.FLIGHT_MODE)
-        .filter { it in switches && state.switches[it] != null }
+    InfoReadings(state, showTargetDuration = driver.capabilities.brushingDuration == null)
+    // Every on/off setting the driver reports, in a stable order; the motor has its own button.
+    val toggles = Switch.entries
+        .filter { it != Switch.MOTOR && it in switches && state.switches[it] != null }
     if (toggles.isNotEmpty()) {
         InfoCard {
             toggles.forEach { sw ->
@@ -420,7 +421,7 @@ private fun modeLabel(mode: io.github.damnms.buerstli.domain.ModeName): String =
 
 /** Read-only values that some brushes report (Sonicare, Oral-B): shown only when present. */
 @Composable
-private fun InfoReadings(state: BrushState) {
+private fun InfoReadings(state: BrushState, showTargetDuration: Boolean) {
     val rows = buildList {
         state.activity?.let {
             add(R.string.info_activity to stringResource(
@@ -448,6 +449,12 @@ private fun InfoReadings(state: BrushState) {
             val target = state.brushingDurationSeconds
             val text = "%d:%02d".format(s / 60, s % 60) + (target?.let { " / %d:%02d".format(it / 60, it % 60) } ?: "")
             add(R.string.info_brushing_time to text)
+        }
+        // Brushes whose brushing time is only read (not editable in a card of its own).
+        if (showTargetDuration && state.brushingSeconds == null) {
+            state.brushingDurationSeconds?.let { d ->
+                add(R.string.duration_title to stringResource(R.string.duration_value, d / 60, d % 60))
+            }
         }
         state.brushHeadWearPercent?.let { add(R.string.info_head_wear to stringResource(R.string.info_head_wear_value, it)) }
         state.pressureHigh?.let {
@@ -502,6 +509,13 @@ private fun SwitchRow(
         Switch.REMINDER_30S -> R.string.switch_reminder to R.string.switch_reminder_hint
         Switch.HIGH_FREQUENCY -> R.string.switch_hf to R.string.switch_hf_hint
         Switch.FLIGHT_MODE -> R.string.flight_mode to R.string.switch_flight_hint
+        Switch.DEEP_CLEAN -> R.string.switch_deep_clean to R.string.switch_readonly_hint
+        Switch.ANTI_SPLASH -> R.string.switch_anti_splash to R.string.switch_readonly_hint
+        Switch.POWER_RAMP_UP -> R.string.switch_power_ramp_up to R.string.switch_readonly_hint
+        Switch.SPIN_DRY -> R.string.switch_spin_dry to R.string.switch_readonly_hint
+        Switch.PRESSURE_WARNING -> R.string.switch_pressure_warning to R.string.switch_readonly_hint
+        Switch.BRISTLE_PROTECTION -> R.string.switch_bristle_protection to R.string.switch_readonly_hint
+        Switch.LIFT_TO_WAKE -> R.string.switch_lift_to_wake to R.string.switch_readonly_hint
         Switch.MOTOR -> return
     }
     Row(verticalAlignment = Alignment.CenterVertically) {

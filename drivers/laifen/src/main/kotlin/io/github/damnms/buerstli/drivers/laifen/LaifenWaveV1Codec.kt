@@ -95,13 +95,14 @@ object LaifenWaveV1Codec {
         return body + xor(body, body.size).toByte()
     }
 
-    /** Null for switches that can't be written (flight mode: command never tested). */
+    /** Null for switches the V1 can't write (flight mode: never tested; others: not on the V1). */
     fun encodeSwitch(switch: Switch, on: Boolean): ByteArray? {
         val code = when (switch) {
             Switch.REMINDER_30S -> 0x0B
             Switch.HIGH_FREQUENCY -> 0x0E
             Switch.MOTOR -> 0x0F
-            Switch.FLIGHT_MODE -> return null
+            // Flight mode: command never tested. Wave Pro features: not on the V1.
+            else -> return null
         }
         val body = byteArrayOf(0xAA.toByte(), code.toByte(), 0x01, 0x01, if (on) 0x01 else 0x00)
         return body + xor(body, body.size).toByte()

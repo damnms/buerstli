@@ -3,11 +3,12 @@
 <p><b>Unterstützte Bürsten</b></p>
 <ul>
 <li><b>Laifen Wave (LFTB01)</b> – an einer echten Bürste getestet: Akku, alle vier Modi mit Stärke, Weite und Tempo, Modus wechseln, Putzdauer, 30-Sekunden-Signal, Hochfrequenz (der versteckte vierte Modus), Putzen starten und stoppen vom Handy aus.</li>
+<li><b>Laifen Wave Pro (LFTB02)</b> – experimentell, hört nur mit: Akku, Putzdauer, putzt oder bereit, Andruck-Warnung und die Pro-Funktionen.</li>
 <li><b>Philips Sonicare</b> (klassische Modelle wie DiamondClean, Prestige, ExpertClean, Kids) – experimentell und nur lesend: Akku, Zustand, Modus, Intensität, Putzzeit und Bürstenkopf-Verschleiss.</li>
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimentell, hört nur mit, ohne Verbindung: Zustand, Modus, Putzzeit, Andruck und Kieferbereich.</li>
 </ul>
 
-<p><b>Deine Bürste wird noch nicht unterstützt?</b> Bürstli erkennt andere Laifen-Modelle und die Philips Sonicare 7100 und kann in etwa einer Minute einen Bericht aufnehmen – es hört nur zu, an der Bürste wird nichts verändert. Den Bericht schickst du per Messenger, E-Mail oder über GitHub an die Entwickler, ganz ohne Technik-Kenntnisse.</p>
+<p><b>Deine Bürste wird noch nicht unterstützt?</b> Bürstli erkennt die Laifen-SE-Familie, die Laifen-Kinderzahnbürste und die Philips Sonicare 7100 und kann in etwa einer Minute einen Bericht aufnehmen – es hört nur zu, an der Bürste wird nichts verändert. Den Bericht schickst du per Messenger, E-Mail oder über GitHub an die Entwickler, ganz ohne Technik-Kenntnisse.</p>
 
 <p><b>Ehrlich in allem</b></p>
 <ul>

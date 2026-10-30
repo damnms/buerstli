@@ -2,6 +2,7 @@ package io.github.damnms.buerstli
 
 import io.github.damnms.buerstli.domain.DriverRegistry
 import io.github.damnms.buerstli.domain.KnownBrush
+import io.github.damnms.buerstli.drivers.laifen.LaifenWaveProDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
 import io.github.damnms.buerstli.drivers.oralb.OralBPassiveDriver
 import io.github.damnms.buerstli.drivers.sonicare.SonicareClassicDriver
@@ -18,6 +19,7 @@ object Drivers {
     val registry = DriverRegistry(
         drivers = listOf(
             LaifenWaveV1Driver,
+            LaifenWaveProDriver, // experimental, listens only
             SonicareClassicDriver, // experimental, read-only
             OralBPassiveDriver, // experimental, listens only
         ),

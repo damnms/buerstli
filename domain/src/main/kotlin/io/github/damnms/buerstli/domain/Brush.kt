@@ -73,6 +73,15 @@ enum class Switch {
 
     /** The motor is running, i.e. the brush is brushing. */
     MOTOR,
+
+    // Laifen Wave Pro features
+    DEEP_CLEAN,
+    ANTI_SPLASH,
+    POWER_RAMP_UP,
+    SPIN_DRY,
+    PRESSURE_WARNING,
+    BRISTLE_PROTECTION,
+    LIFT_TO_WAKE,
 }
 
 enum class Access { READ_ONLY, READ_WRITE }

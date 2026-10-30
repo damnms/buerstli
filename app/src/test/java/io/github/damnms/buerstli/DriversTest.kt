@@ -2,6 +2,7 @@ package io.github.damnms.buerstli
 
 import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.domain.Recognition
+import io.github.damnms.buerstli.drivers.laifen.LaifenWaveProDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
 import io.github.damnms.buerstli.drivers.oralb.OralBPassiveDriver
 import io.github.damnms.buerstli.drivers.sonicare.SonicareClassicDriver
@@ -18,8 +19,12 @@ class DriversTest {
     }
 
     @Test
+    fun `Laifen LFTB02 gets the experimental Wave Pro driver`() {
+        assertEquals(Recognition.Supported(LaifenWaveProDriver), recognize(Advertisement("LFTB02-S-412B")))
+    }
+
+    @Test
     fun `other Laifen models are recognized but unsupported`() {
-        assertEquals(Recognition.Unsupported("Laifen"), recognize(Advertisement("LFTB02-S-412B")))
         assertEquals(Recognition.Unsupported("Laifen"), recognize(Advertisement("LFTB01-SE-0001")))
     }
 
