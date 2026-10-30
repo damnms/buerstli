@@ -87,6 +87,9 @@ class LaifenWaveProTest {
         assertNull(LaifenFrame.decode(byteArrayOf(0x5A, 0xC1.toByte(), 0x03)))
         assertNull(LaifenFrame.decode(frame(0x5A, 2, 0x0103, ByteArray(36)).copyOf(20)))
         assertNull(LaifenFrame.decode(Packets.MODE2_ACTIVE)) // AA 0A 02 14 … is the V1 state
+        // Only the checksum byte missing: must not be read past the end.
+        val full = frame(0x5A, 2, 0x0103, ByteArray(36))
+        assertNull(LaifenFrame.decode(full.copyOf(full.size - 1)))
     }
 
     // --- Wave Pro status ---

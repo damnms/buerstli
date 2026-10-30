@@ -27,6 +27,14 @@ object Packets {
     /** Acknowledgement the brush sends after a brushing-time write (seen in the app's log). */
     val ACK_DURATION = hex("AA-05-02-01-00-AC")
 
+    /**
+     * From Bürstli's own log on the same LFTB01-P (2026-10-30): brushing time set to 5:00 in the
+     * app, written as [SET_DURATION_300], confirmed by the brush in this state (bytes 20-21 = 300).
+     * Mode 3 active; the fourth mode (high frequency) has strength 20.
+     */
+    val DURATION_300 = hex("AA-0A-02-14-02-0A-01-01-04-06-06-01-01-0A-14-01-01-00-57-01-01-2C-01-00-DE")
+    val SET_DURATION_300 = hex("AA-05-01-02-01-2C-81")
+
     /** Commands that were written by hand and accepted by the brush. */
     val SET_DURATION_150 = hex("AA-05-01-02-00-96-3A")
     val SET_MODE3_666_TO_665 = hex("AA-04-01-04-02-06-06-05-AC")

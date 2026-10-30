@@ -67,6 +67,29 @@ class LaifenWaveV1CodecTest {
     }
 
     @Test
+    fun `brushing times above 255 seconds use both bytes, read and written`() {
+        assertEquals(300, LaifenWaveV1Codec.decodeStatus(Packets.DURATION_300)!!.brushingDurationSeconds)
+        assertArrayEquals(Packets.SET_DURATION_300, LaifenWaveV1Codec.encodeBrushingDuration(300))
+    }
+
+    @Test
+    fun `the fourth mode is high frequency, a fifth one does not exist`() {
+        assertEquals(settings(20, 1, 1), LaifenWaveV1Codec.decodeStatus(Packets.DURATION_300)!!.modes[3])
+        val fifthModeActive = Packets.DURATION_300.copyOf().also {
+            it[4] = 4
+            it[it.lastIndex] = (it[it.lastIndex].toInt() xor 2 xor 4).toByte() // keep the checksum valid
+        }
+        assertNull(LaifenWaveV1Codec.decodeStatus(fifthModeActive))
+    }
+
+    @Test
+    fun `a packet that claims more bytes than it has is rejected`() {
+        // Length 0x15 instead of 0x14: the checksum would sit one byte past the end.
+        val tooLong = Packets.DURATION_300.copyOf().also { it[3] = 0x15 }
+        assertNull(LaifenWaveV1Codec.decodeStatus(tooLong))
+    }
+
+    @Test
     fun `encodes exactly the duration command that was verified on the brush`() {
         assertArrayEquals(Packets.SET_DURATION_150, LaifenWaveV1Codec.encodeBrushingDuration(150))
         assertArrayEquals(hex("AA-05-01-02-00-78-D4"), LaifenWaveV1Codec.encodeBrushingDuration(120))
