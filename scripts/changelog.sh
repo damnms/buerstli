@@ -75,6 +75,11 @@ case "${1:-}" in
     store_text "$version" > "$file"
     echo "Wrote $file ($(wc -c < "$file") bytes):"
     cat "$file"
+    if grep -q '^More: ' "$file"; then
+      echo >&2
+      echo "WARNING: the changelog section is longer than the 500 characters stores show, so it was" >&2
+      echo "         cut and entries are MISSING above. Shorten the entries in $CHANGELOG instead." >&2
+    fi
     ;;
   *)
     sed -n '2,8p' "$0"; exit 2
