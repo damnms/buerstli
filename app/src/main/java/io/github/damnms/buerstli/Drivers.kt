@@ -43,8 +43,8 @@ object Drivers {
                     SONICARE_CLASSIC in ad.serviceUuids || SONICARE_CONDOR in ad.serviceUuids ||
                     PHILIPS_COMPANY_ID in ad.manufacturerData
             },
-            // Oclean: session data needs query commands, which experimental drivers don't send
-            // (ADR-6). Reports first, to see what the brush tells without being asked.
+            // Oclean: session data needs query commands. ADR-6 allows them for reading, but a driver
+            // waits for an owner who tests it. Reports first, to see what the brush tells unasked.
             KnownBrush("Oclean") { ad ->
                 ad.name?.startsWith("Oclean", ignoreCase = true) == true || OCLEAN_SERVICE in ad.serviceUuids
             },

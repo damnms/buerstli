@@ -190,7 +190,10 @@ private fun ConnectionContent(
                 BrushView(connection.driver, brushState, drafts, saveStatus, duration, switchSave, editable = true, actions)
             }
             OutlinedButton(onClick = actions.disconnect) { Text(stringResource(R.string.disconnect)) }
-            TextButton(onClick = actions.captureConnected) { Text(stringResource(R.string.capture_this_brush)) }
+            // Experimental brushes already offer the report in their note above.
+            if (connection.driver.supportLevel != SupportLevel.EXPERIMENTAL) {
+                TextButton(onClick = actions.captureConnected) { Text(stringResource(R.string.capture_this_brush)) }
+            }
         }
         is Connection.Disconnected -> {
             Message(

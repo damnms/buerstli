@@ -6,6 +6,9 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- Experimental brushes showed the report button twice.
+
 ## [0.10.0] - 2026-10-31
 
 ### Added
