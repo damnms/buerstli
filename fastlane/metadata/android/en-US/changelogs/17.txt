@@ -1,0 +1,6 @@
+Added:
+- Reports for nerds: “record until I stop”, chosen before the start, listens for up to 10 minutes, e.g. a whole brushing session. The screen stays on while a report is recorded.
+
+Fixed:
+- A report now ends as soon as the brush disconnects, instead of waiting out its time.
+- Experimental brushes showed the report button twice.

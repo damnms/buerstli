@@ -6,6 +6,8 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-31
+
 ### Added
 - Reports for nerds: “record until I stop”, chosen before the start, listens for up to 10 minutes,
   e.g. a whole brushing session. The screen stays on while a report is recorded.
