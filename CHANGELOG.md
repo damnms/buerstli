@@ -9,6 +9,10 @@ All notable changes to Bürstli are documented here. The format follows
 ### Added
 - Recognizes the Xiaomi T501.
 
+### Changed
+- Philips Sonicare: confirmed on a real DiamondClean 9000 – thanks to my awesome brother! Other
+  Sonicare models stay experimental.
+
 ## [0.9.0] - 2026-10-30
 
 ### Added

@@ -4,7 +4,7 @@
 <ul>
 <li><b>Laifen Wave (LFTB01)</b> – an einer echten Bürste getestet: Akku, alle vier Modi mit Stärke, Weite und Tempo, Modus wechseln, Putzdauer, 30-Sekunden-Signal, Hochfrequenz (der versteckte vierte Modus), Putzen starten und stoppen vom Handy aus.</li>
 <li><b>Laifen Wave Pro (LFTB02)</b> – experimentell, hört nur mit: Akku, Putzdauer, putzt oder bereit, Andruck-Warnung und die Pro-Funktionen.</li>
-<li><b>Philips Sonicare</b> (klassische Modelle wie DiamondClean, Prestige, ExpertClean, Kids) – experimentell und nur lesend: Akku, Zustand, Modus, Intensität, Putzzeit und Bürstenkopf-Verschleiss.</li>
+<li><b>Philips Sonicare</b> (klassische Modelle wie DiamondClean, Prestige, ExpertClean, Kids) – experimentell und nur lesend, an einer echten DiamondClean 9000 bestätigt: Akku, Zustand, Modus, Intensität, Putzzeit und Bürstenkopf-Verschleiss.</li>
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimentell, hört nur mit, ohne Verbindung: Zustand, Modus, Putzzeit, Andruck und Kieferbereich.</li>
 </ul>
 

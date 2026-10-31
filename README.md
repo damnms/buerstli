@@ -24,7 +24,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Oclean | X Pro, Z1, Y-series, … | `Oclean…` | 🔍 recognized, not supported yet | |
 | Xiaomi | T500, T501, T700, T700i | MiBeacon product id | 🔍 recognized, not supported yet | |
 | Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
-| Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only | battery, status, mode, intensity, brushing time, brush head wear |
+| Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only; ✅ confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear (not seen on a real brush yet) |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
 | Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens only (no connection) | status, mode, brushing time, pressure, mouth area – no battery level |
 

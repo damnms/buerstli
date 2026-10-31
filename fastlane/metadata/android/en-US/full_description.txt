@@ -4,7 +4,7 @@
 <ul>
 <li><b>Laifen Wave (LFTB01)</b> – tested on a real brush: battery, all four modes with strength, range and speed, switching modes, brushing time, 30-second nudge, high frequency (the hidden fourth mode), start and stop from the phone.</li>
 <li><b>Laifen Wave Pro (LFTB02)</b> – experimental, listens only: battery, brushing time, brushing or idle, pressure warning and its Pro features.</li>
-<li><b>Philips Sonicare</b> (classic models such as DiamondClean, Prestige, ExpertClean, Kids) – experimental and read-only: battery, status, mode, intensity, brushing time and brush head wear.</li>
+<li><b>Philips Sonicare</b> (classic models such as DiamondClean, Prestige, ExpertClean, Kids) – experimental and read-only, confirmed on a real DiamondClean 9000: battery, status, mode, intensity, brushing time and brush head wear.</li>
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimental, listens without connecting: status, mode, brushing time, pressure and mouth area.</li>
 </ul>
 

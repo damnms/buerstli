@@ -27,8 +27,10 @@ import java.io.IOException
 import java.util.UUID
 
 /**
- * Values follow the formats in philips_sonicare_ble/docs/BLE_PROTOCOL.md. There are no captures
- * from a real brush yet: when someone sends a report, its values belong in here.
+ * Values follow the formats in philips_sonicare_ble/docs/BLE_PROTOCOL.md. [diamondClean9000] holds
+ * real values from a DiamondClean 9000 (HX960X, firmware 1.5.3), taken from Bürstli 0.9.0's log and
+ * report on 2026-10-31; what the phone showed was checked on screenshots. [diamondClean] is made up
+ * and covers what that brush doesn't send, like brush head wear.
  */
 class SonicareTest {
 
@@ -68,6 +70,21 @@ class SonicareTest {
             ROUTINE_LENGTH to u16(120),
             HEAD_LIMIT to u16(21600),
             HEAD_USAGE to u16(5400),
+        ),
+    )
+
+    /** Exactly what the HX960X answered in Bürstli's log, in standby. Its head has no chip: 0/0. */
+    private fun diamondClean9000() = FakeSonicare(
+        mutableMapOf(
+            HANDLE_STATE to byteArrayOf(0x01),
+            BATTERY to byteArrayOf(0x62),
+            BRUSHING_STATE to byteArrayOf(0x00),
+            BRUSHING_MODE to byteArrayOf(0x01),
+            INTENSITY to byteArrayOf(0x01),
+            BRUSHING_TIME to byteArrayOf(0x00, 0x00),
+            ROUTINE_LENGTH to byteArrayOf(0xC8.toByte(), 0x00),
+            HEAD_LIMIT to byteArrayOf(0x00, 0x00),
+            HEAD_USAGE to byteArrayOf(0x00, 0x00),
         ),
     )
 
@@ -120,6 +137,37 @@ class SonicareTest {
         assertEquals(0, s.brushingSeconds)
         assertEquals(120, s.brushingDurationSeconds)
         assertEquals(25, s.brushHeadWearPercent)
+    }
+
+    @Test
+    fun `a real DiamondClean 9000 in standby reads as the phone showed it`() = runTest {
+        val s = SonicareClassicDriver.open(diamondClean9000()).apply { start() }.state.value
+
+        assertEquals(98, s.batteryPercent)
+        assertEquals(Activity.STANDBY, s.activity) // "bereit"
+        assertEquals(ModeName.WHITE_PLUS, s.modeName)
+        assertEquals(Intensity.MEDIUM, s.intensity)
+        assertEquals(0, s.brushingSeconds)
+        assertEquals(200, s.brushingDurationSeconds) // "0:00 / 3:20"
+        assertNull(s.brushHeadWearPercent) // no chip in the head: show nothing rather than 0 %
+    }
+
+    @Test
+    fun `a real DiamondClean 9000 counts up while brushing`() = runTest {
+        val session = SonicareClassicDriver.open(diamondClean9000()).apply { start() }
+
+        // State and brushing times as the brush sent them in the report while brushing,
+        // the battery notification from the log.
+        session.onNotification(HANDLE_STATE, byteArrayOf(0x02))
+        session.onNotification(BRUSHING_STATE, byteArrayOf(0x01))
+        session.onNotification(BRUSHING_TIME, byteArrayOf(0x25, 0x00))
+        session.onNotification(BRUSHING_TIME, byteArrayOf(0x26, 0x00))
+        session.onNotification(BATTERY, byteArrayOf(0x61))
+
+        val s = session.state.value
+        assertEquals(Activity.BRUSHING, s.activity) // "putzt"
+        assertEquals(38, s.brushingSeconds) // "0:38 / 3:20"
+        assertEquals(97, s.batteryPercent)
     }
 
     @Test
