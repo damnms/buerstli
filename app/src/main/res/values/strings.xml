@@ -72,6 +72,10 @@
     <string name="capture_phase_connecting">Connecting to the brush…</string>
     <string name="capture_phase_reading">Reading the brush…</string>
     <string name="capture_phase_notifications">Almost done… keep the brush running.</string>
+    <string name="capture_phase_until_stopped">Recording… as long as you like.</string>
+    <string name="capture_running_for">Running for %1$d:%2$02d · stops by itself after 10 min</string>
+    <string name="capture_stop_now">Stop and create the report</string>
+    <string name="capture_keep_going">For nerds: keep recording until I stop</string>
     <string name="capture_seconds">%1$d s left</string>
     <string name="capture_pairing_hint">If your phone asks whether to pair: tap “Pair”.</string>
     <string name="capture_done_title">Done – thank you!</string>

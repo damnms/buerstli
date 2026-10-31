@@ -14,6 +14,8 @@ data class CaptureReport(
     val services: List<ServiceDump>,
     val notifications: List<NotificationSample>,
     val problems: List<String> = emptyList(),
+    val listenedSeconds: Int = 30,
+    val untilStopped: Boolean = false,
 ) {
     private val mask = io.github.damnms.buerstli.AddressMask(address)
     private fun hexMasked(bytes: ByteArray) = mask.hex(bytes)
@@ -25,6 +27,7 @@ data class CaptureReport(
         appendLine("- Brush: ${textMasked(brand)}, Bluetooth name \"${deviceName?.let { textMasked(it) } ?: "?"}\", address ${mask.address()}")
         appendLine("- App: Bürstli $appVersion")
         appendLine("- Phone: $phone")
+        appendLine("- Listened for notifications: $listenedSeconds s" + if (untilStopped) ", until stopped" else "")
         problems.forEach { appendLine("- Problem: $it") }
 
         appendLine()

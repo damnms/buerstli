@@ -65,6 +65,10 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
         if (bt != null) connector.offerReport(bt, device.name)
     }
 
+    fun keepRecording() = recorder.keepRecording()
+
+    fun finishRecording() = recorder.finishRecording()
+
     fun finishCapture() {
         recorder.stop()
         connector.reset()

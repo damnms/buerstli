@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,6 +28,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -42,7 +44,7 @@ private const val NEW_BRUSH_ISSUE = "https://github.com/damnms/buerstli/issues/n
 fun CaptureContent(brand: String, state: CaptureState, actions: Actions) {
     when (state) {
         CaptureState.Idle -> Intro(brand, actions)
-        is CaptureState.Running -> Running(state)
+        is CaptureState.Running -> Running(state, actions)
         is CaptureState.Done -> Done(brand, state, actions)
         is CaptureState.Failed -> Box {
             Text(stringResource(R.string.capture_failed, state.reason), style = MaterialTheme.typography.titleMedium)
@@ -69,22 +71,40 @@ private fun Intro(brand: String, actions: Actions) {
 }
 
 @Composable
-private fun Running(state: CaptureState.Running) {
+private fun Running(state: CaptureState.Running, actions: Actions) {
+    // A recording can run for minutes; a dimmed screen must not end it.
+    val view = LocalView.current
+    DisposableEffect(view) {
+        view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
     Box {
         val text = when (state.phase) {
             CaptureState.Phase.ADVERTISEMENTS -> R.string.capture_phase_ads
             CaptureState.Phase.CONNECTING -> R.string.capture_phase_connecting
             CaptureState.Phase.READING -> R.string.capture_phase_reading
-            CaptureState.Phase.NOTIFICATIONS -> R.string.capture_phase_notifications
+            CaptureState.Phase.NOTIFICATIONS ->
+                if (state.untilStopped) R.string.capture_phase_until_stopped else R.string.capture_phase_notifications
         }
         Text(stringResource(text), style = MaterialTheme.typography.titleMedium)
-        if (state.secondsLeft > 0) {
-            LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth().height(8.dp))
-            Text(stringResource(R.string.capture_seconds, state.secondsLeft))
-        } else {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(8.dp))
+        when {
+            state.untilStopped -> {
+                LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth().height(8.dp))
+                Text(stringResource(R.string.capture_running_for, state.elapsedSeconds / 60, state.elapsedSeconds % 60))
+                Button(onClick = actions.finishRecording, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.capture_stop_now))
+                }
+            }
+            state.secondsLeft > 0 -> {
+                LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth().height(8.dp))
+                Text(stringResource(R.string.capture_seconds, state.secondsLeft))
+            }
+            else -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(8.dp))
         }
         Text(stringResource(R.string.capture_pairing_hint), style = MaterialTheme.typography.bodySmall)
+        if (state.phase == CaptureState.Phase.NOTIFICATIONS && !state.untilStopped) {
+            TextButton(onClick = actions.keepRecording) { Text(stringResource(R.string.capture_keep_going)) }
+        }
     }
 }
 

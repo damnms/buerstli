@@ -69,6 +69,8 @@ class Actions(
     val setSwitch: (Switch, Boolean) -> Unit,
     val startCapture: () -> Unit,
     val finishCapture: () -> Unit,
+    val keepRecording: () -> Unit,
+    val finishRecording: () -> Unit,
     val captureConnected: () -> Unit,
     val openPicker: () -> Unit,
     val closePicker: () -> Unit,

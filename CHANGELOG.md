@@ -6,7 +6,12 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Reports for nerds: “keep recording until I stop” listens for up to 10 minutes, e.g. a whole
+  brushing session. The screen stays on while a report is recorded.
+
 ### Fixed
+- A report now ends as soon as the brush disconnects, instead of waiting out its time.
 - Experimental brushes showed the report button twice.
 
 ## [0.10.0] - 2026-10-31

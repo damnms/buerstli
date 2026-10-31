@@ -47,6 +47,13 @@ class CaptureReportTest {
     private val text = report.render()
 
     @Test
+    fun `says how long it listened, and whether until stopped`() {
+        assertTrue(text.contains("- Listened for notifications: 30 s"))
+        val long = report.copy(listenedSeconds = 205, untilStopped = true).render()
+        assertTrue(long.contains("- Listened for notifications: 205 s, until stopped"))
+    }
+
+    @Test
     fun `masks the device address`() {
         assertFalse(text.contains("01:1D:EE"))
         assertTrue(text.contains("C0:00:00:XX:XX:XX"))

@@ -30,7 +30,14 @@ import java.util.UUID
 
 sealed interface CaptureState {
     data object Idle : CaptureState
-    data class Running(val brand: String, val phase: Phase, val secondsLeft: Int, val progress: Float) : CaptureState
+    data class Running(
+        val brand: String,
+        val phase: Phase,
+        val secondsLeft: Int,
+        val progress: Float,
+        val untilStopped: Boolean = false,
+        val elapsedSeconds: Int = 0,
+    ) : CaptureState
     data class Done(val report: CaptureReport) : CaptureState
     data class Failed(val brand: String, val reason: String) : CaptureState
 
@@ -58,6 +65,8 @@ class BrushRecorder(
     private var gatt: BluetoothGatt? = null
     private var start = 0L
     private var brand = ""
+    private var clock = RecordingClock()
+    @Volatile private var limitReached = false
 
     private val ads = mutableListOf<AdvertisementSample>()
     private val notifications = mutableListOf<NotificationSample>()
@@ -74,6 +83,8 @@ class BrushRecorder(
     fun start(device: BluetoothDevice, name: String?, brand: String) {
         stop()
         ads.clear(); notifications.clear(); problems.clear(); linkDown = false
+        clock = RecordingClock()
+        limitReached = false
         start = System.currentTimeMillis()
         this.brand = brand
         diag.mark("capture: $brand (${name?.let { io.github.damnms.buerstli.AddressMask(device.address).text(it) }})")
@@ -93,11 +104,24 @@ class BrushRecorder(
                 services = services,
                 notifications = synchronized(notifications) { notifications.toList() },
                 problems = synchronized(problems) { problems.toList() },
+                listenedSeconds = clock.elapsed,
+                untilStopped = clock.untilStopped,
             )
             diag.log("capture done: ${report.advertisements.size} ads, ${services.size} services, ${report.notifications.size} notifications")
             _state.value = CaptureState.Done(report)
         }
     }
+
+    /** For people who know what they're doing: keep listening until they stop (at most 10 minutes). */
+    fun keepRecording() {
+        clock.keepGoing()
+        (_state.value as? CaptureState.Running)?.let {
+            _state.value = it.copy(untilStopped = true, secondsLeft = clock.secondsLeft, progress = clock.progress)
+        }
+    }
+
+    /** Ends a recording early and still creates the report (unlike [stop], which throws it away). */
+    fun finishRecording() = clock.finish()
 
     fun stop() {
         job?.cancel()
@@ -207,8 +231,20 @@ class BrushRecorder(
             }.exceptionOrNull()?.let { problems += "subscribe ${ch.uuid}: ${it.message}" }
         }
 
-        if (!linkDown) countdown(CaptureState.Phase.NOTIFICATIONS, NOTIFICATION_SECONDS)
+        listen()
         return dumps
+    }
+
+    /** Phase 3: notifications, until the clock says stop or the brush goes away. */
+    private suspend fun listen() {
+        while (clock.shouldContinue(linkDown)) {
+            _state.value = CaptureState.Running(
+                brand, CaptureState.Phase.NOTIFICATIONS, clock.secondsLeft, clock.progress,
+                clock.untilStopped, clock.elapsed,
+            )
+            delay(1_000)
+            clock.tick()
+        }
     }
 
     private suspend fun op(start: () -> Boolean): Result<ByteArray?> {
@@ -276,7 +312,13 @@ class BrushRecorder(
 
         private fun record(uuid: UUID, value: ByteArray) {
             synchronized(notifications) {
-                if (notifications.size < MAX_NOTIFICATIONS) notifications += NotificationSample(now(), uuid, value.copyOf())
+                val limit = clock.notificationLimit
+                if (notifications.size < limit) {
+                    notifications += NotificationSample(now(), uuid, value.copyOf())
+                } else if (!limitReached) {
+                    limitReached = true
+                    problems += "notification limit reached ($limit), later ones were dropped"
+                }
             }
         }
     }
@@ -299,10 +341,8 @@ class BrushRecorder(
     private companion object {
         val CCCD: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
         const val ADVERTISEMENT_SECONDS = 20
-        const val NOTIFICATION_SECONDS = 30
         const val CONNECT_TIMEOUT_MS = 20_000L
         const val OPERATION_TIMEOUT_MS = 4_000L
         const val MAX_ADS = 100
-        const val MAX_NOTIFICATIONS = 500
     }
 }
