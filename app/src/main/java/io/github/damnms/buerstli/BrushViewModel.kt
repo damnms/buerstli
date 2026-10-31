@@ -37,16 +37,16 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
     private val recorder = BrushRecorder(app, viewModelScope, diagnostics)
     val capture: StateFlow<CaptureState> = recorder.state
 
-    fun startCapture() {
+    fun startCapture(untilStopped: Boolean) {
         val found = connection.value as? Connection.FoundUnsupported ?: return
-        recorder.start(found.device, found.name, found.brand)
+        recorder.start(found.device, found.name, found.brand, untilStopped)
     }
 
     /** For brushes with a driver: a report helps when an experimental driver shows nonsense. */
-    fun captureConnected() {
+    fun captureConnected(untilStopped: Boolean) {
         val c = connection.value as? Connection.Connected ?: return
         connector.disconnect()
-        recorder.start(c.device, c.name, "${c.driver.model.brand} ${c.driver.model.name}")
+        recorder.start(c.device, c.name, "${c.driver.model.brand} ${c.driver.model.name}", untilStopped)
     }
 
     private val nearbyScanner = io.github.damnms.buerstli.ble.NearbyScanner(app, viewModelScope, diagnostics)
@@ -64,8 +64,6 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
         nearbyScanner.stop()
         if (bt != null) connector.offerReport(bt, device.name)
     }
-
-    fun keepRecording() = recorder.keepRecording()
 
     fun finishRecording() = recorder.finishRecording()
 

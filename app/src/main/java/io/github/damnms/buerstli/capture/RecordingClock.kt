@@ -2,23 +2,17 @@ package io.github.damnms.buerstli.capture
 
 /**
  * When the notification phase of a report ends. A normal report listens for [standardSeconds];
- * someone who knows what they're doing can keep it going until they stop it, up to [maxSeconds].
+ * chosen before the start, a recording runs [untilStopped] by its owner, at most [maxSeconds].
  * Plain Kotlin, so it can be tested without Bluetooth.
  */
 class RecordingClock(
+    val untilStopped: Boolean = false,
     private val standardSeconds: Int = 30,
     private val maxSeconds: Int = 600,
 ) {
     @Volatile var elapsed = 0
         private set
-    @Volatile var untilStopped = false
-        private set
     @Volatile private var finished = false
-
-    /** "Keep recording until I stop." */
-    fun keepGoing() {
-        untilStopped = true
-    }
 
     /** "Stop now" – ends the recording, the report is kept. */
     fun finish() {

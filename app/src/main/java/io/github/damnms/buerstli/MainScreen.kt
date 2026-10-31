@@ -67,11 +67,10 @@ class Actions(
     val saveDuration: () -> Unit,
     val discardDuration: () -> Unit,
     val setSwitch: (Switch, Boolean) -> Unit,
-    val startCapture: () -> Unit,
+    val startCapture: (untilStopped: Boolean) -> Unit,
     val finishCapture: () -> Unit,
-    val keepRecording: () -> Unit,
     val finishRecording: () -> Unit,
-    val captureConnected: () -> Unit,
+    val captureConnected: (untilStopped: Boolean) -> Unit,
     val openPicker: () -> Unit,
     val closePicker: () -> Unit,
     val pick: (Nearby) -> Unit,
@@ -194,7 +193,8 @@ private fun ConnectionContent(
             OutlinedButton(onClick = actions.disconnect) { Text(stringResource(R.string.disconnect)) }
             // Experimental brushes already offer the report in their note above.
             if (connection.driver.supportLevel != SupportLevel.EXPERIMENTAL) {
-                TextButton(onClick = actions.captureConnected) { Text(stringResource(R.string.capture_this_brush)) }
+                TextButton(onClick = { actions.captureConnected(false) }) { Text(stringResource(R.string.capture_this_brush)) }
+                TextButton(onClick = { actions.captureConnected(true) }) { Text(stringResource(R.string.capture_until_stopped)) }
             }
         }
         is Connection.Disconnected -> {
@@ -443,7 +443,8 @@ private fun ExperimentalNote(passive: Boolean, actions: Actions) {
     InfoCard {
         Text(stringResource(R.string.experimental_note), style = MaterialTheme.typography.bodyMedium)
         if (passive) Text(stringResource(R.string.passive_note), style = MaterialTheme.typography.bodySmall)
-        OutlinedButton(onClick = actions.captureConnected) { Text(stringResource(R.string.capture_this_brush)) }
+        OutlinedButton(onClick = { actions.captureConnected(false) }) { Text(stringResource(R.string.capture_this_brush)) }
+        TextButton(onClick = { actions.captureConnected(true) }) { Text(stringResource(R.string.capture_until_stopped)) }
     }
 }
 

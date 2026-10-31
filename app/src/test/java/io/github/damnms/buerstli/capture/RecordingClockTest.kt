@@ -2,7 +2,6 @@ package io.github.damnms.buerstli.capture
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RecordingClockTest {
@@ -18,17 +17,13 @@ class RecordingClockTest {
     }
 
     @Test
-    fun `until stopped keeps listening past 30 seconds, up to 10 minutes`() {
-        val clock = RecordingClock()
-        repeat(10) { clock.tick() }
-        clock.keepGoing()
-        assertTrue(clock.untilStopped)
-        assertEquals(600, runOut(clock))
+    fun `chosen before the start, a recording runs until stopped, at most 10 minutes`() {
+        assertEquals(600, runOut(RecordingClock(untilStopped = true)))
     }
 
     @Test
     fun `finishing ends the recording right away, and the report is kept`() {
-        val clock = RecordingClock().apply { keepGoing() }
+        val clock = RecordingClock(untilStopped = true)
         repeat(205) { clock.tick() }
         clock.finish()
         assertFalse(clock.shouldContinue(linkDown = false))
@@ -36,28 +31,32 @@ class RecordingClockTest {
     }
 
     @Test
+    fun `finishing works in any phase, even before listening started`() {
+        val clock = RecordingClock(untilStopped = true)
+        clock.finish()
+        assertEquals(0, runOut(clock))
+    }
+
+    @Test
     fun `a brush that falls asleep ends the recording`() {
-        val clock = RecordingClock().apply { keepGoing() }
+        val clock = RecordingClock(untilStopped = true)
         assertEquals(42, runOut(clock) { clock.elapsed >= 42 })
     }
 
     @Test
     fun `progress and time left follow the chosen limit`() {
-        val clock = RecordingClock()
-        repeat(15) { clock.tick() }
-        assertEquals(15, clock.secondsLeft)
-        assertEquals(0.5f, clock.progress, 0.001f)
+        val normal = RecordingClock().apply { repeat(15) { tick() } }
+        assertEquals(15, normal.secondsLeft)
+        assertEquals(0.5f, normal.progress, 0.001f)
 
-        clock.keepGoing()
-        assertEquals(585, clock.secondsLeft)
-        assertEquals(0.025f, clock.progress, 0.001f)
+        val long = RecordingClock(untilStopped = true).apply { repeat(15) { tick() } }
+        assertEquals(585, long.secondsLeft)
+        assertEquals(0.025f, long.progress, 0.001f)
     }
 
     @Test
     fun `a long recording may keep more notifications`() {
-        val clock = RecordingClock()
-        assertEquals(500, clock.notificationLimit)
-        clock.keepGoing()
-        assertEquals(2000, clock.notificationLimit)
+        assertEquals(500, RecordingClock().notificationLimit)
+        assertEquals(2000, RecordingClock(untilStopped = true).notificationLimit)
     }
 }

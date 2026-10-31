@@ -63,9 +63,10 @@ private fun Intro(brand: String, actions: Actions) {
         )
         Text(stringResource(R.string.found_unsupported_text))
         Text(stringResource(R.string.capture_steps))
-        Button(onClick = actions.startCapture, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+        Button(onClick = { actions.startCapture(false) }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
             Text(stringResource(R.string.capture_start), style = MaterialTheme.typography.titleMedium)
         }
+        TextButton(onClick = { actions.startCapture(true) }) { Text(stringResource(R.string.capture_until_stopped)) }
         TextButton(onClick = actions.finishCapture) { Text(stringResource(R.string.capture_cancel)) }
     }
 }
@@ -88,12 +89,9 @@ private fun Running(state: CaptureState.Running, actions: Actions) {
         }
         Text(stringResource(text), style = MaterialTheme.typography.titleMedium)
         when {
-            state.untilStopped -> {
+            state.untilStopped && state.phase == CaptureState.Phase.NOTIFICATIONS -> {
                 LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth().height(8.dp))
                 Text(stringResource(R.string.capture_running_for, state.elapsedSeconds / 60, state.elapsedSeconds % 60))
-                Button(onClick = actions.finishRecording, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.capture_stop_now))
-                }
             }
             state.secondsLeft > 0 -> {
                 LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth().height(8.dp))
@@ -102,8 +100,11 @@ private fun Running(state: CaptureState.Running, actions: Actions) {
             else -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(8.dp))
         }
         Text(stringResource(R.string.capture_pairing_hint), style = MaterialTheme.typography.bodySmall)
-        if (state.phase == CaptureState.Phase.NOTIFICATIONS && !state.untilStopped) {
-            TextButton(onClick = actions.keepRecording) { Text(stringResource(R.string.capture_keep_going)) }
+        // Stoppable from the first second: nobody should have to wait for the right moment.
+        if (state.untilStopped) {
+            Button(onClick = actions.finishRecording, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.capture_stop_now))
+            }
         }
     }
 }

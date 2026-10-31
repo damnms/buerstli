@@ -80,10 +80,10 @@ class BrushRecorder(
     @Volatile private var connected: CompletableDeferred<Boolean>? = null
     @Volatile private var discovered: CompletableDeferred<Boolean>? = null
 
-    fun start(device: BluetoothDevice, name: String?, brand: String) {
+    fun start(device: BluetoothDevice, name: String?, brand: String, untilStopped: Boolean = false) {
         stop()
         ads.clear(); notifications.clear(); problems.clear(); linkDown = false
-        clock = RecordingClock()
+        clock = RecordingClock(untilStopped)
         limitReached = false
         start = System.currentTimeMillis()
         this.brand = brand
@@ -112,14 +112,6 @@ class BrushRecorder(
         }
     }
 
-    /** For people who know what they're doing: keep listening until they stop (at most 10 minutes). */
-    fun keepRecording() {
-        clock.keepGoing()
-        (_state.value as? CaptureState.Running)?.let {
-            _state.value = it.copy(untilStopped = true, secondsLeft = clock.secondsLeft, progress = clock.progress)
-        }
-    }
-
     /** Ends a recording early and still creates the report (unlike [stop], which throws it away). */
     fun finishRecording() = clock.finish()
 
@@ -135,7 +127,7 @@ class BrushRecorder(
 
     private suspend fun countdown(phase: CaptureState.Phase, seconds: Int) {
         for (left in seconds downTo 1) {
-            _state.value = CaptureState.Running(brand, phase, left, 1f - left.toFloat() / seconds)
+            _state.value = CaptureState.Running(brand, phase, left, 1f - left.toFloat() / seconds, clock.untilStopped)
             delay(1_000)
         }
     }
@@ -176,7 +168,7 @@ class BrushRecorder(
     // --- Phase 2: connect, read everything readable, subscribe to everything ---
 
     private suspend fun readGatt(device: BluetoothDevice): List<ServiceDump> {
-        _state.value = CaptureState.Running(brand, CaptureState.Phase.CONNECTING, 0, 0f)
+        _state.value = CaptureState.Running(brand, CaptureState.Phase.CONNECTING, 0, 0f, clock.untilStopped)
         connected = CompletableDeferred()
         discovered = CompletableDeferred()
         val g = device.connectLe(appContext, callback) ?: run {
@@ -194,7 +186,7 @@ class BrushRecorder(
             return emptyList()
         }
 
-        _state.value = CaptureState.Running(brand, CaptureState.Phase.READING, 0, 0f)
+        _state.value = CaptureState.Running(brand, CaptureState.Phase.READING, 0, 0f, clock.untilStopped)
         val dumps = g.services.map { service ->
             ServiceDump(
                 uuid = service.uuid,

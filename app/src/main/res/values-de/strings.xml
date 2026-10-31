@@ -74,7 +74,7 @@
     <string name="capture_phase_until_stopped">Bürstli nimmt auf… so lange du willst.</string>
     <string name="capture_running_for">Läuft seit %1$d:%2$02d · stoppt nach 10 Min. von selbst</string>
     <string name="capture_stop_now">Stoppen und Bericht erstellen</string>
-    <string name="capture_keep_going">Für Nerds: weiter aufnehmen, bis ich stoppe</string>
+    <string name="capture_until_stopped">Für Nerds: aufnehmen, bis ich stoppe (max. 10 Min.)</string>
     <string name="capture_seconds">noch %1$d s</string>
     <string name="capture_pairing_hint">Falls dein Handy fragt, ob es koppeln soll: auf „Koppeln“ tippen.</string>
     <string name="capture_done_title">Fertig – danke!</string>
