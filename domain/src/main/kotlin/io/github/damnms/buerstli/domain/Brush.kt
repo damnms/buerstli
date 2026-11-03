@@ -47,6 +47,8 @@ data class BrushState(
     val sectorCount: Int? = null,
     /** The exact model, for brushes that say it (e.g. "iO Series"). */
     val modelName: String? = null,
+    /** Firmware as the brush reports it, written the way the vendor app shows it. */
+    val firmwareVersion: String? = null,
 ) {
     companion object {
         val UNKNOWN = BrushState()

@@ -18,7 +18,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 
 | Brand | Model | Bluetooth name | Status | Features |
 |---|---|---|---|---|
-| Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, edit and switch modes, brushing time, 30-second nudge, high frequency, start/stop, flight mode |
+| Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, edit and switch modes, brushing time, 30-second nudge, high frequency, start/stop, flight mode, firmware version |
 | Laifen | Wave Pro (LFTB02) | `LFTB02-S-…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, pressure warning, 30-second nudge, high frequency, flight mode, Pro features (shown) |
 | Laifen | Wave SE (LFTB01-SE) | `LFTB01-SE…` | 🧪 experimental, listens only | battery, modes, brushing time, brushing/idle, 30-second nudge, high frequency, flight mode (shown) |
 | Laifen | Kids TC51 (LFTB01-C) | `LFTB01-C…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, child lock, 30-second nudge, high frequency, flight mode, ramp-up, spin dry, pressure warning (shown) |
@@ -115,6 +115,8 @@ After battery % and one unknown byte follows the brushing time in seconds (16 bi
 Write mode settings: `AA 04 01 04 [mode] [strength] [range] [speed] [xor]`.
 Write brushing time: `AA 05 01 02 [seconds hi] [seconds lo] [xor]`.
 Flight mode: `AA 07 01 01 [01/00] [xor]`.
+Firmware version: `AA 01 00 00 AB` asks; the brush also sends it on its own right after
+connecting, e.g. `AA 01 02 09 02 00 08 59 04 04 03 00 03 F3` = `V2.0.8.Y44.303` (LFTB01-P).
 History (not used, see above): `AA 09 00 00 A3` asks; the brush sends one `AA 09 02 [len] …`
 notification per entry and deletes it. With nothing stored it answers `AA 09 02 01 00 A0`
 (seen on a real LFTB01-P). Short brushing sessions are not stored at all. Entry layout as the

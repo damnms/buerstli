@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
@@ -38,6 +39,7 @@ class LaifenWaveV1SessionTest {
         var status: ByteArray,
         val acceptsWrites: Boolean = true,
         val staleStates: Int = 0,
+        val version: ByteArray? = null,
     ) : BrushLink {
         val writes = mutableListOf<ByteArray>()
         val notificationsEnabled = mutableListOf<UUID>()
@@ -46,7 +48,9 @@ class LaifenWaveV1SessionTest {
         private var pending: ByteArray? = null
         private var staleLeft = 0
 
-        val commands get() = writes.filterNot { it.contentEquals(Packets.READ_STATE) }
+        val commands get() = writes.filterNot {
+            it.contentEquals(Packets.READ_STATE) || it.contentEquals(LaifenWaveV1Codec.READ_VERSION)
+        }
 
         override suspend fun read(characteristic: UUID): ByteArray = Packets.GATT_READ_FILLER
 
@@ -61,6 +65,7 @@ class LaifenWaveV1SessionTest {
             // 0x07 (flight mode) is undocumented: assume the stricter case, an acknowledgement only.
             when (data[1].toInt()) {
                 0x0A -> pushState()
+                0x01 -> version?.let { notify(it) }
                 0x04, 0x0E, 0x0F -> { accept(data); pushState() }
                 0x05, 0x07, 0x0B -> { accept(data); notify(ack(data[1])) }
             }
@@ -141,15 +146,16 @@ class LaifenWaveV1SessionTest {
     }
 
     @Test
-    fun `acknowledgements and other packets are ignored`() = runTest {
+    fun `acknowledgements are ignored, the version only adds the version`() = runTest {
         val brush = FakeBrush(Packets.MODE2_ACTIVE)
         val session = connect(brush)
         val before = session.state.value
 
         brush.notify(Packets.ACK_DURATION)
-        brush.notify(Packets.hex("AA-01-02-09-02-00-08-59-04-04-03-00-03-F3"))
-
         assertEquals(before, session.state.value)
+
+        brush.notify(Packets.VERSION)
+        assertEquals(before.copy(firmwareVersion = "V2.0.8.Y44.303"), session.state.value)
     }
 
     @Test
@@ -332,5 +338,34 @@ class LaifenWaveV1SessionTest {
         session.execute(SetSwitch(Switch.REMINDER_30S, true))
 
         assertTrue(brush.writes.none { it.size > 1 && it[1] == 0x09.toByte() })
+    }
+
+    @Test
+    fun `the version pushed on connect is kept when the state changes`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE)
+        val session = LaifenWaveV1Driver.open(brush).also { brush.session = it }
+        brush.notify(Packets.VERSION) // arrives before start() is done, as on the real brush
+        session.start()
+
+        brush.notify(Packets.MODE3_ACTIVE)
+        assertEquals("V2.0.8.Y44.303", session.state.value.firmwareVersion)
+        assertEquals(2, session.state.value.activeModeIndex)
+        assertTrue(brush.writes.none { it.contentEquals(LaifenWaveV1Codec.READ_VERSION) })
+    }
+
+    @Test
+    fun `asks for the version if the brush didn't send it`() = runTest {
+        val brush = FakeBrush(Packets.MODE2_ACTIVE, version = Packets.VERSION)
+        val session = connect(brush)
+
+        assertTrue(brush.writes.any { it.contentEquals(LaifenWaveV1Codec.READ_VERSION) })
+        assertEquals("V2.0.8.Y44.303", session.state.value.firmwareVersion)
+    }
+
+    @Test
+    fun `no version, no problem`() = runTest {
+        val session = connect(FakeBrush(Packets.MODE2_ACTIVE))
+        assertNull(session.state.value.firmwareVersion)
+        assertEquals(1, session.state.value.activeModeIndex)
     }
 }

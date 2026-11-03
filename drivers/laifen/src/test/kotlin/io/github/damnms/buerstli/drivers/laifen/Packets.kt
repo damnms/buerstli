@@ -38,4 +38,7 @@ object Packets {
     /** Commands that were written by hand and accepted by the brush. */
     val SET_DURATION_150 = hex("AA-05-01-02-00-96-3A")
     val SET_MODE3_666_TO_665 = hex("AA-04-01-04-02-06-06-05-AC")
+
+    /** Sent by a real LFTB01-P on its own right after connecting (2026-11-03). */
+    val VERSION = hex("AA-01-02-09-02-00-08-59-04-04-03-00-03-F3")
 }

@@ -107,6 +107,7 @@
     <string name="intensity_medium">mittel</string>
     <string name="intensity_high">hoch</string>
     <string name="info_model">Modell</string>
+    <string name="info_firmware">Firmware</string>
     <string name="info_pressure">Andruck</string>
     <string name="pressure_ok">gut</string>
     <string name="pressure_high">zu hoch!</string>

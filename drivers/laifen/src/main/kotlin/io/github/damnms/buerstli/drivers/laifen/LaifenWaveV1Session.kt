@@ -40,16 +40,29 @@ internal class LaifenWaveV1Session(
 
     override suspend fun start() {
         link.enableNotifications(ch)
-        repeat(START_ATTEMPTS) {
-            if (requestStatus()) return
+        for (attempt in 1..START_ATTEMPTS) {
+            if (requestStatus()) break
         }
         // No answer yet: the brush will still push its state within ~10 s on its own.
+
+        // The brush sends its version right after connecting; ask only if that was missed.
+        if (_state.value.firmwareVersion == null) {
+            try {
+                link.write(ch, LaifenWaveV1Codec.READ_VERSION)
+            } catch (e: IOException) {
+                // Nice to have: the session works without it.
+            }
+        }
     }
 
     override fun onNotification(characteristic: UUID, value: ByteArray) {
         if (characteristic != ch) return
+        LaifenWaveV1Codec.decodeVersion(value)?.let { version ->
+            _state.update { it.copy(firmwareVersion = version) }
+            return
+        }
         val status = LaifenWaveV1Codec.decodeStatus(value) ?: return
-        _state.value = status
+        _state.update { status.copy(firmwareVersion = it.firmwareVersion) }
         statusCount.update { it + 1 }
     }
 

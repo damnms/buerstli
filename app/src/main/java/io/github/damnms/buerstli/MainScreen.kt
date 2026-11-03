@@ -483,6 +483,7 @@ private fun InfoReadings(state: BrushState, showTargetDuration: Boolean) {
             ))
         }
         state.modelName?.let { add(R.string.info_model to it) }
+        state.firmwareVersion?.let { add(R.string.info_firmware to it) }
         state.modeName?.let { add(R.string.info_mode to modeLabel(it)) }
         state.intensity?.let {
             add(R.string.info_intensity to stringResource(

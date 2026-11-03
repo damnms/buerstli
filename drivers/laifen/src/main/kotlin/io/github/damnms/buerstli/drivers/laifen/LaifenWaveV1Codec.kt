@@ -23,6 +23,9 @@ import java.util.UUID
  * Command: AA 05 01 02 [seconds hi] [seconds lo] [xor]   brushing duration
  * Command: AA [code] 01 01 [01/00] [xor]   switches: 07 flight mode, 0B reminder, 0E high frequency,
  *          0F motor
+ * Version: AA 01 00 00 AB asks; the brush also sends it on its own right after connecting.
+ *          Answer AA 01 02 [len] [payload] [xor], 9 or 19 bytes, shown like the official app does
+ *          (e.g. "V2.0.8.Y44.303"). Read the same way by the official app.
  * Not sent on purpose: AA 09 00 00 A3 (history). The brush deletes every entry it hands out,
  * so asking would take it away from the official app. See README, "Not built yet".
  *
@@ -42,6 +45,9 @@ object LaifenWaveV1Codec {
      * the characteristic does NOT return the state, only filler (01 02 03 ... on the LFTB01-P).
      */
     val READ_STATE: ByteArray = byteArrayOf(0xAA.toByte(), 0x0A, 0x00, 0x00, 0xA0.toByte())
+
+    /** Asks for the firmware version; the answer is decoded by [decodeVersion]. */
+    val READ_VERSION: ByteArray = byteArrayOf(0xAA.toByte(), 0x01, 0x00, 0x00, 0xAB.toByte())
 
     const val MODE_COUNT = 4
     private const val HEADER = 4
@@ -77,6 +83,29 @@ object LaifenWaveV1Codec {
                 Switch.MOTOR to (u[p + 19] == 1),
             ),
         )
+    }
+
+    /**
+     * The firmware version, written like the official app: "V", then numbers, letters and dots
+     * in a fixed pattern per length. Null for anything else.
+     */
+    fun decodeVersion(data: ByteArray): String? {
+        if (data.size < HEADER + 1) return null
+        val u = IntArray(data.size) { data[it].toInt() and 0xFF }
+        if (u[0] != 0xAA || u[1] != 0x01) return null
+        val len = u[3]
+        val csIndex = HEADER + len
+        if (data.size <= csIndex || xor(data, csIndex) != u[csIndex]) return null
+
+        val v = u.copyOfRange(HEADER, csIndex)
+        fun n(vararg i: Int) = i.joinToString("") { v[it].toString() }
+        fun c(i: Int) = v[i].toChar()
+        return when (len) {
+            9 -> "V${n(0)}.${n(1)}.${n(2)}.${c(3)}${n(4, 5)}.${n(6, 7, 8)}"
+            19 -> "V${n(0)}.${n(1)}.${n(2, 3)}.${c(4)}${c(5)}${c(6)}.${c(7)}${n(8, 9)}." +
+                "${c(10)}${n(11, 12)}.${c(13)}${n(14, 15)}.${n(16, 17, 18)}"
+            else -> null
+        }
     }
 
     /** Expects settings already validated against the mode's spec. */

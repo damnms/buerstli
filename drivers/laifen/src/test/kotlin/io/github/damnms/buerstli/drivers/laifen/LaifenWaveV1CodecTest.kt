@@ -130,4 +130,30 @@ class LaifenWaveV1CodecTest {
         assertArrayEquals(hex("AA-07-01-01-01-AC"), LaifenWaveV1Codec.encodeSwitch(Switch.FLIGHT_MODE, true))
         assertArrayEquals(hex("AA-07-01-01-00-AD"), LaifenWaveV1Codec.encodeSwitch(Switch.FLIGHT_MODE, false))
     }
+
+    // --- firmware version ---
+
+    @Test
+    fun `reads the version of a real LFTB01-P like the official app shows it`() {
+        assertEquals("V2.0.8.Y44.303", LaifenWaveV1Codec.decodeVersion(Packets.VERSION))
+    }
+
+    @Test
+    fun `reads the long version format`() {
+        val payload = byteArrayOf(1, 2, 3, 4, 'A'.code.toByte(), 'B'.code.toByte(), 'C'.code.toByte(), 'D'.code.toByte(), 5, 6,
+            'E'.code.toByte(), 7, 8, 'F'.code.toByte(), 9, 0, 1, 2, 3)
+        val body = byteArrayOf(0xAA.toByte(), 0x01, 0x02, payload.size.toByte()) + payload
+        var cs = 0
+        for (b in body) cs = cs xor (b.toInt() and 0xFF)
+        assertEquals("V1.2.34.ABC.D56.E78.F90.123", LaifenWaveV1Codec.decodeVersion(body + cs.toByte()))
+    }
+
+    @Test
+    fun `asks for the version like the official app, ignores everything else`() {
+        assertArrayEquals(hex("AA-01-00-00-AB"), LaifenWaveV1Codec.READ_VERSION)
+        assertNull(LaifenWaveV1Codec.decodeVersion(Packets.MODE2_ACTIVE))
+        assertNull(LaifenWaveV1Codec.decodeVersion(Packets.VERSION.copyOf().also { it[it.lastIndex] = 0 }))
+        assertNull(LaifenWaveV1Codec.decodeVersion(hex("AA-01-02-01-07-AF"))) // unknown length
+        assertNull(LaifenWaveV1Codec.decodeStatus(Packets.VERSION))
+    }
 }
