@@ -6,18 +6,15 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-04
+
 ### Added
-- Laifen Wave (LFTB01): flight mode can now be switched in the app, not only on the brush.
-- Laifen Wave (LFTB01): shows the brush's firmware version, written like the official app does.
-- Laifen Wave SE (LFTB01-SE), experimental: listens and shows battery, modes, brushing time and
-  switches. Nobody has tried it on a real SE yet – reports welcome.
+- Laifen Wave: switch flight mode in the app, see the firmware version.
+- Laifen Wave SE and Kids TC51, experimental: battery, brushing time and switches. Reports welcome!
 - Laifen Wave Pro: also shows flight mode, the 30-second nudge and high frequency.
-- Laifen Kids TC51 (LFTB01-C), experimental: listens and shows battery, brushing time and
-  switches, including the child lock. Untried on a real TC51 – reports welcome.
 
 ### Fixed
-- Laifen Wave Pro: the brushing time is now that of the active mode, read as the brush sends it.
-  Times from 256 seconds on (e.g. 5 minutes) showed wrong before.
+- Laifen Wave Pro: brushing times over 4 minutes showed wrong.
 
 ## [0.11.0] - 2026-10-31
 

@@ -1,0 +1,7 @@
+Added:
+- Laifen Wave: switch flight mode in the app, see the firmware version.
+- Laifen Wave SE and Kids TC51, experimental: battery, brushing time and switches. Reports welcome!
+- Laifen Wave Pro: also shows flight mode, the 30-second nudge and high frequency.
+
+Fixed:
+- Laifen Wave Pro: brushing times over 4 minutes showed wrong.

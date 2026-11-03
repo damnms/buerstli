@@ -2,13 +2,15 @@
 
 <p><b>Supported brushes</b></p>
 <ul>
-<li><b>Laifen Wave (LFTB01)</b> – tested on a real brush: battery, all four modes with strength, range and speed, switching modes, brushing time, 30-second nudge, high frequency (the hidden fourth mode), start and stop from the phone.</li>
-<li><b>Laifen Wave Pro (LFTB02)</b> – experimental, listens only: battery, brushing time, brushing or idle, pressure warning and its Pro features.</li>
+<li><b>Laifen Wave (LFTB01)</b> – tested on a real brush: battery, all four modes with strength, range and speed, switching modes, brushing time, 30-second nudge, high frequency (the hidden fourth mode), start and stop from the phone, flight mode, firmware version.</li>
+<li><b>Laifen Wave Pro (LFTB02)</b> – experimental, listens only: battery, brushing time, brushing or idle, pressure warning, 30-second nudge, high frequency, flight mode and its Pro features.</li>
+<li><b>Laifen Wave SE (LFTB01-SE)</b> – experimental, listens only: battery, modes, brushing time, brushing or idle, 30-second nudge, high frequency, flight mode.</li>
+<li><b>Laifen Kids TC51 (LFTB01-C)</b> – experimental, listens only: battery, brushing time, brushing or idle, child lock, 30-second nudge, high frequency, flight mode and more.</li>
 <li><b>Philips Sonicare</b> (classic models such as DiamondClean, Prestige, ExpertClean, Kids) – experimental and read-only, confirmed on a real DiamondClean 9000: battery, status, mode, intensity, brushing time and brush head wear.</li>
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimental, listens without connecting: status, mode, brushing time, pressure and mouth area.</li>
 </ul>
 
-<p><b>Your brush isn't supported yet?</b> Bürstli recognizes the Laifen SE family, the Laifen kids' brush, the Philips Sonicare 7100, Oclean and Xiaomi brushes – and any other brush you simply pick from a list of nearby devices. Bürstli then records a report in about a minute – it only listens, nothing on the brush is changed. Send it to the developers by messenger, e-mail or on GitHub, no technical knowledge needed.</p>
+<p><b>Your brush isn't supported yet?</b> Bürstli recognizes the Philips Sonicare 7100, Oclean and Xiaomi brushes – and any other brush you simply pick from a list of nearby devices. Bürstli then records a report in about a minute – it only listens, nothing on the brush is changed. Send it to the developers by messenger, e-mail or on GitHub, no technical knowledge needed.</p>
 
 <p><b>Honest about everything</b></p>
 <ul>
