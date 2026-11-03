@@ -58,10 +58,11 @@ class LaifenWaveV1SessionTest {
             if (failWrites) throw IOException("brush fell asleep")
             writes += data
             // As documented: 0x04, 0x0E and 0x0F push the state, 0x05 and 0x0B only acknowledge.
+            // 0x07 (flight mode) is undocumented: assume the stricter case, an acknowledgement only.
             when (data[1].toInt()) {
                 0x0A -> pushState()
                 0x04, 0x0E, 0x0F -> { accept(data); pushState() }
-                0x05, 0x0B -> { accept(data); notify(ack(data[1])) }
+                0x05, 0x07, 0x0B -> { accept(data); notify(ack(data[1])) }
             }
         }
 
@@ -101,6 +102,7 @@ class LaifenWaveV1SessionTest {
                     out[4] = cmd[4]
                 }
                 0x05 -> { out[20] = cmd[4]; out[21] = cmd[5] }
+                0x07 -> out[4 + 13] = cmd[4]
                 0x0B -> out[4 + 15] = cmd[4]
                 0x0E -> out[4 + 18] = cmd[4]
                 0x0F -> out[4 + 19] = cmd[4]
@@ -264,12 +266,16 @@ class LaifenWaveV1SessionTest {
     }
 
     @Test
-    fun `flight mode is never written, it is read-only`() = runTest {
+    fun `flight mode is written and confirmed by asking for the state`() = runTest {
         val brush = FakeBrush(Packets.MODE2_ACTIVE)
         val session = connect(brush)
 
-        assertEquals(CommandResult.Unsupported, session.execute(SetSwitch(Switch.FLIGHT_MODE, true)))
-        assertTrue(brush.commands.isEmpty())
+        assertEquals(CommandResult.Confirmed, session.execute(SetSwitch(Switch.FLIGHT_MODE, true)))
+        assertArrayEquals(Packets.hex("AA-07-01-01-01-AC"), brush.commands.single())
+        assertEquals(true, session.state.value.switches[Switch.FLIGHT_MODE])
+
+        assertEquals(CommandResult.Confirmed, session.execute(SetSwitch(Switch.FLIGHT_MODE, false)))
+        assertEquals(false, session.state.value.switches[Switch.FLIGHT_MODE])
     }
 
     @Test

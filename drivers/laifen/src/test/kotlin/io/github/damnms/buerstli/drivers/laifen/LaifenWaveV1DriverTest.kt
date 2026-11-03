@@ -60,13 +60,13 @@ class LaifenWaveV1DriverTest {
     }
 
     @Test
-    fun `flight mode is only shown, the other switches can be changed`() {
+    fun `all four switches can be changed`() {
         assertEquals(
             mapOf(
                 Switch.REMINDER_30S to Access.READ_WRITE,
                 Switch.HIGH_FREQUENCY to Access.READ_WRITE,
                 Switch.MOTOR to Access.READ_WRITE,
-                Switch.FLIGHT_MODE to Access.READ_ONLY,
+                Switch.FLIGHT_MODE to Access.READ_WRITE,
             ),
             driver.capabilities.switches,
         )

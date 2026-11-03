@@ -124,4 +124,10 @@ class LaifenWaveV1CodecTest {
         assertArrayEquals(hex("AA-0F-01-01-01-A4"), LaifenWaveV1Codec.encodeSwitch(Switch.MOTOR, true))
         assertArrayEquals(hex("AA-0F-01-01-00-A5"), LaifenWaveV1Codec.encodeSwitch(Switch.MOTOR, false))
     }
+
+    @Test
+    fun `encodes flight mode`() {
+        assertArrayEquals(hex("AA-07-01-01-01-AC"), LaifenWaveV1Codec.encodeSwitch(Switch.FLIGHT_MODE, true))
+        assertArrayEquals(hex("AA-07-01-01-00-AD"), LaifenWaveV1Codec.encodeSwitch(Switch.FLIGHT_MODE, false))
+    }
 }

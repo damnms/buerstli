@@ -21,11 +21,14 @@ import java.util.UUID
  * Command: AA 04 01 04 [mode] [strength] [range] [speed] [xor]
  *          All three values at once; the brush rejects single-value writes.
  * Command: AA 05 01 02 [seconds hi] [seconds lo] [xor]   brushing duration
- * Command: AA [code] 01 01 [01/00] [xor]   switches: 0B reminder, 0E high frequency, 0F motor
+ * Command: AA [code] 01 01 [01/00] [xor]   switches: 07 flight mode, 0B reminder, 0E high frequency,
+ *          0F motor
  *
  * Payload layout and switch commands as documented (and confirmed on an LFTB01-P) in
  * laifen-toolbox/docs/PROTOCOL.md: 13 flight mode, 14 battery, 15 reminder, 16-17 brushing
  * time, 18 high frequency, 19 motor. A boolean is true only for exactly 01.
+ * The flight-mode code 07 is not in laifen-toolbox: found by analysing the official app for
+ * interoperability (only the protocol, no code taken over).
  * The checksum is the XOR of all preceding bytes.
  */
 object LaifenWaveV1Codec {
@@ -95,13 +98,14 @@ object LaifenWaveV1Codec {
         return body + xor(body, body.size).toByte()
     }
 
-    /** Null for switches the V1 can't write (flight mode: never tested; others: not on the V1). */
+    /** Null for switches the V1 doesn't have (the Wave Pro features). */
     fun encodeSwitch(switch: Switch, on: Boolean): ByteArray? {
         val code = when (switch) {
+            Switch.FLIGHT_MODE -> 0x07
             Switch.REMINDER_30S -> 0x0B
             Switch.HIGH_FREQUENCY -> 0x0E
             Switch.MOTOR -> 0x0F
-            // Flight mode: command never tested. Wave Pro features: not on the V1.
+            // Wave Pro features: not on the V1.
             else -> return null
         }
         val body = byteArrayOf(0xAA.toByte(), code.toByte(), 0x01, 0x01, if (on) 0x01 else 0x00)

@@ -6,6 +6,9 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Laifen Wave (LFTB01): flight mode can now be switched in the app, not only on the brush.
+
 ## [0.11.0] - 2026-10-31
 
 ### Added

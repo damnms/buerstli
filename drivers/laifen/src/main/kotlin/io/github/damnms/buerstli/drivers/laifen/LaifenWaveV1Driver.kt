@@ -45,9 +45,9 @@ object LaifenWaveV1Driver : ToothbrushDriver {
             Switch.REMINDER_30S to Access.READ_WRITE,
             Switch.HIGH_FREQUENCY to Access.READ_WRITE,
             Switch.MOTOR to Access.READ_WRITE,
-            // The flight-mode command was never tried on a real brush, and if it cuts Bluetooth
-            // we could lock ourselves out. Shown, not changed.
-            Switch.FLIGHT_MODE to Access.READ_ONLY,
+            // Flight mode only stops the button from waking the brush. Holding the button for two
+            // seconds ends it again, so writing it can't lock anyone out.
+            Switch.FLIGHT_MODE to Access.READ_WRITE,
         ),
     )
 
