@@ -2,6 +2,7 @@ package io.github.damnms.buerstli
 
 import io.github.damnms.buerstli.domain.DriverRegistry
 import io.github.damnms.buerstli.domain.KnownBrush
+import io.github.damnms.buerstli.drivers.laifen.LaifenTc51Driver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveProDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveSeDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
@@ -34,6 +35,7 @@ object Drivers {
             LaifenWaveV1Driver,
             LaifenWaveProDriver, // experimental, listens only
             LaifenWaveSeDriver, // experimental, listens only
+            LaifenTc51Driver, // experimental, listens only
             SonicareClassicDriver, // experimental, read-only
             OralBPassiveDriver, // experimental, listens only
         ),

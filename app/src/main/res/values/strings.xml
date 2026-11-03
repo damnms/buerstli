@@ -121,6 +121,7 @@
     <string name="switch_pressure_warning">Pressure warning</string>
     <string name="switch_bristle_protection">Bristle protection</string>
     <string name="switch_lift_to_wake">Lift to wake</string>
+    <string name="switch_child_lock">Child lock</string>
     <string name="switch_readonly_hint">Shown only – Bürstli doesn\'t change this yet.</string>
     <string name="picker_open">My brush isn\'t supported</string>
     <string name="picker_title">Which one is your brush?</string>

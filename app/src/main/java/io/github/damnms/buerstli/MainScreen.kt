@@ -564,6 +564,7 @@ private fun SwitchRow(
         Switch.PRESSURE_WARNING -> R.string.switch_pressure_warning to R.string.switch_readonly_hint
         Switch.BRISTLE_PROTECTION -> R.string.switch_bristle_protection to R.string.switch_readonly_hint
         Switch.LIFT_TO_WAKE -> R.string.switch_lift_to_wake to R.string.switch_readonly_hint
+        Switch.CHILD_LOCK -> R.string.switch_child_lock to R.string.switch_readonly_hint
         Switch.MOTOR -> return
     }
     Row(verticalAlignment = Alignment.CenterVertically) {

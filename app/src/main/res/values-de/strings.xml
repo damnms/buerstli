@@ -120,6 +120,7 @@
     <string name="switch_pressure_warning">Andruck-Warnung</string>
     <string name="switch_bristle_protection">Borstenschutz</string>
     <string name="switch_lift_to_wake">Anheben zum Aufwecken</string>
+    <string name="switch_child_lock">Kindersicherung</string>
     <string name="switch_readonly_hint">Nur Anzeige – das ändert Bürstli noch nicht.</string>
     <string name="picker_open">Meine Bürste wird nicht unterstützt</string>
     <string name="picker_title">Welche ist deine Bürste?</string>

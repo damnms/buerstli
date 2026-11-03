@@ -74,6 +74,9 @@ enum class Switch {
     /** The motor is running, i.e. the brush is brushing. */
     MOTOR,
 
+    /** The button does nothing until it's switched off again (Laifen kids' TC51). */
+    CHILD_LOCK,
+
     // Laifen Wave Pro features
     DEEP_CLEAN,
     ANTI_SPLASH,

@@ -2,6 +2,7 @@ package io.github.damnms.buerstli
 
 import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.domain.Recognition
+import io.github.damnms.buerstli.drivers.laifen.LaifenTc51Driver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveProDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveSeDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
@@ -30,8 +31,13 @@ class DriversTest {
     }
 
     @Test
+    fun `Laifen LFTB01-C gets the experimental TC51 driver`() {
+        assertEquals(Recognition.Supported(LaifenTc51Driver), recognize(Advertisement("LFTB01-C-0001")))
+    }
+
+    @Test
     fun `other Laifen models are recognized but unsupported`() {
-        assertEquals(Recognition.Unsupported("Laifen"), recognize(Advertisement("LFTB01-C-0001")))
+        assertEquals(Recognition.Unsupported("Laifen"), recognize(Advertisement("LFTB03-X-0001")))
     }
 
     @Test

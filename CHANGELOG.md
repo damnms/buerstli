@@ -11,6 +11,8 @@ All notable changes to Bürstli are documented here. The format follows
 - Laifen Wave SE (LFTB01-SE), experimental: listens and shows battery, modes, brushing time and
   switches. Nobody has tried it on a real SE yet – reports welcome.
 - Laifen Wave Pro: also shows flight mode, the 30-second nudge and high frequency.
+- Laifen Kids TC51 (LFTB01-C), experimental: listens and shows battery, brushing time and
+  switches, including the child lock. Untried on a real TC51 – reports welcome.
 
 ### Fixed
 - Laifen Wave Pro: the brushing time is now that of the active mode, read as the brush sends it.
