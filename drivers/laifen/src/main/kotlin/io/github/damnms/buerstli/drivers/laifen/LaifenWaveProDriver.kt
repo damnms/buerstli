@@ -29,6 +29,7 @@ object LaifenWaveProDriver : ToothbrushDriver {
     override val capabilities = Capabilities(
         modes = emptyList(),
         switches = listOf(
+            Switch.REMINDER_30S, Switch.HIGH_FREQUENCY, Switch.FLIGHT_MODE,
             Switch.DEEP_CLEAN, Switch.ANTI_SPLASH, Switch.POWER_RAMP_UP, Switch.SPIN_DRY,
             Switch.PRESSURE_WARNING, Switch.BRISTLE_PROTECTION, Switch.LIFT_TO_WAKE,
         ).associateWith { Access.READ_ONLY },

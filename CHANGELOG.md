@@ -10,6 +10,11 @@ All notable changes to Bürstli are documented here. The format follows
 - Laifen Wave (LFTB01): flight mode can now be switched in the app, not only on the brush.
 - Laifen Wave SE (LFTB01-SE), experimental: listens and shows battery, modes, brushing time and
   switches. Nobody has tried it on a real SE yet – reports welcome.
+- Laifen Wave Pro: also shows flight mode, the 30-second nudge and high frequency.
+
+### Fixed
+- Laifen Wave Pro: the brushing time is now that of the active mode, read as the brush sends it.
+  Times from 256 seconds on (e.g. 5 minutes) showed wrong before.
 
 ## [0.11.0] - 2026-10-31
 

@@ -39,13 +39,15 @@ class LaifenWaveProTest {
     }
 
     private fun status(
-        battery: Int = 75, durationSeconds: Int = 120, running: Int = 0,
+        battery: Int = 75, mode: Int = 1, durations: List<Int> = listOf(90, 120, 150, 180), running: Int = 0,
+        flight: Int = 0, reminder: Int = 1, hf: Int = 0,
         deepClean: Int = 1, antiSplash: Int = 0, rampUp: Int = 1, spinDry: Int = 0,
         overPressure: Int = 1, bristle: Int = 1, liftToWake: Int = 0,
     ): ByteArray {
         val p = ByteArray(36)
-        p[2] = battery.toByte()
-        p[5] = durationSeconds.toByte(); p[6] = (durationSeconds shr 8).toByte() // little-endian
+        p[0] = mode.toByte(); p[1] = flight.toByte(); p[2] = battery.toByte(); p[3] = reminder.toByte()
+        durations.forEachIndexed { m, s -> p[4 + 2 * m] = (s shr 8).toByte(); p[5 + 2 * m] = s.toByte() } // big-endian
+        p[12] = hf.toByte()
         p[13] = running.toByte()
         p[15] = deepClean.toByte(); p[16] = antiSplash.toByte()
         p[24] = rampUp.toByte(); p[25] = spinDry.toByte(); p[26] = overPressure.toByte()
@@ -107,6 +109,17 @@ class LaifenWaveProTest {
         assertEquals(true, s.switches[Switch.PRESSURE_WARNING])
         assertEquals(true, s.switches[Switch.BRISTLE_PROTECTION])
         assertEquals(false, s.switches[Switch.LIFT_TO_WAKE])
+        assertEquals(false, s.switches[Switch.FLIGHT_MODE])
+        assertEquals(true, s.switches[Switch.REMINDER_30S])
+        assertEquals(false, s.switches[Switch.HIGH_FREQUENCY])
+    }
+
+    @Test
+    fun `flight mode, reminder and high frequency are true only for exactly 01`() {
+        fun switches(f: Int, r: Int, h: Int) =
+            LaifenWaveProCodec.decode(LaifenFrame.decode(frame(0x5A, 2, 0x0103, status(flight = f, reminder = r, hf = h)))!!)!!.switches
+        assertEquals(listOf(true, true, true), switches(1, 1, 1).let { listOf(it[Switch.FLIGHT_MODE], it[Switch.REMINDER_30S], it[Switch.HIGH_FREQUENCY]) })
+        assertEquals(listOf(false, false, false), switches(2, 0, 0xFF).let { listOf(it[Switch.FLIGHT_MODE], it[Switch.REMINDER_30S], it[Switch.HIGH_FREQUENCY]) })
     }
 
     @Test
@@ -118,9 +131,12 @@ class LaifenWaveProTest {
     }
 
     @Test
-    fun `brushing time is 16 bit little-endian, so 5 minutes work`() {
-        val s = LaifenWaveProCodec.decode(LaifenFrame.decode(frame(0x5A, 2, 0x0103, status(durationSeconds = 300)))!!)!!
-        assertEquals(300, s.brushingDurationSeconds)
+    fun `brushing time is the active mode's, 16 bit big-endian, so 5 minutes work`() {
+        fun duration(mode: Int, durations: List<Int>) =
+            LaifenWaveProCodec.decode(LaifenFrame.decode(frame(0x5A, 2, 0x0103, status(mode = mode, durations = durations)))!!)!!.brushingDurationSeconds
+        assertEquals(300, duration(0, listOf(300, 0, 0, 0)))
+        assertEquals(180, duration(3, listOf(90, 120, 150, 180)))
+        assertNull(duration(7, listOf(90, 120, 150, 180))) // unknown mode: no guess
     }
 
     @Test
