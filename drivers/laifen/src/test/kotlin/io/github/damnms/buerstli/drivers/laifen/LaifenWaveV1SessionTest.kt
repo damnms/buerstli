@@ -38,7 +38,6 @@ class LaifenWaveV1SessionTest {
         var status: ByteArray,
         val acceptsWrites: Boolean = true,
         val staleStates: Int = 0,
-        val history: List<ByteArray> = emptyList(),
     ) : BrushLink {
         val writes = mutableListOf<ByteArray>()
         val notificationsEnabled = mutableListOf<UUID>()
@@ -47,9 +46,7 @@ class LaifenWaveV1SessionTest {
         private var pending: ByteArray? = null
         private var staleLeft = 0
 
-        val commands get() = writes.filterNot {
-            it.contentEquals(Packets.READ_STATE) || it.contentEquals(LaifenWaveV1Codec.READ_HISTORY)
-        }
+        val commands get() = writes.filterNot { it.contentEquals(Packets.READ_STATE) }
 
         override suspend fun read(characteristic: UUID): ByteArray = Packets.GATT_READ_FILLER
 
@@ -64,7 +61,6 @@ class LaifenWaveV1SessionTest {
             // 0x07 (flight mode) is undocumented: assume the stricter case, an acknowledgement only.
             when (data[1].toInt()) {
                 0x0A -> pushState()
-                0x09 -> history.forEach { notify(it) }
                 0x04, 0x0E, 0x0F -> { accept(data); pushState() }
                 0x05, 0x07, 0x0B -> { accept(data); notify(ack(data[1])) }
             }
@@ -329,44 +325,12 @@ class LaifenWaveV1SessionTest {
         assertEquals(false, session.state.value.switches[Switch.HIGH_FREQUENCY])
     }
 
-    // --- history ---
-
     @Test
-    fun `asks for the history after the state and collects every entry`() = runTest {
-        val brush = FakeBrush(
-            Packets.MODE2_ACTIVE,
-            history = listOf(
-                Packets.historyEntry(1, mode = 0, s = 3, r = 1, sp = 5, brushed = 95),
-                Packets.historyEntry(2, mode = 0xFF, s = 0, r = 0, sp = 0, brushed = 0), // empty slot
-                Packets.historyEntry(3, mode = 1, s = 4, r = 6, sp = 6, brushed = 121, target = 120),
-            ),
-        )
-        val session = connect(brush)
-
-        assertArrayEquals(Packets.READ_STATE, brush.writes.first())
-        assertArrayEquals(LaifenWaveV1Codec.READ_HISTORY, brush.writes[1])
-        assertEquals(listOf(3, 1), session.state.value.history.map { it.number })
-        assertEquals(94, session.state.value.batteryPercent)
-    }
-
-    @Test
-    fun `a new status keeps the history, a repeated entry replaces the old one`() = runTest {
-        val brush = FakeBrush(Packets.MODE2_ACTIVE, history = listOf(Packets.historyEntry(5, mode = 0, s = 3, r = 1, sp = 5, brushed = 60)))
-        val session = connect(brush)
-
-        brush.notify(Packets.MODE3_ACTIVE)
-        assertEquals(2, session.state.value.activeModeIndex)
-        assertEquals(1, session.state.value.history.size)
-
-        brush.notify(Packets.historyEntry(5, mode = 0, s = 3, r = 1, sp = 5, brushed = 75))
-        assertEquals(listOf(75), session.state.value.history.map { it.brushedSeconds })
-    }
-
-    @Test
-    fun `a brush that never answers the history still works`() = runTest {
+    fun `never asks for the history, the brush would delete it`() = runTest {
         val brush = FakeBrush(Packets.MODE2_ACTIVE)
         val session = connect(brush)
-        assertTrue(session.state.value.history.isEmpty())
-        assertEquals(1, session.state.value.activeModeIndex)
+        session.execute(SetSwitch(Switch.REMINDER_30S, true))
+
+        assertTrue(brush.writes.none { it.size > 1 && it[1] == 0x09.toByte() })
     }
 }

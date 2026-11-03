@@ -18,7 +18,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 
 | Brand | Model | Bluetooth name | Status | Features |
 |---|---|---|---|---|
-| Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, edit and switch modes, brushing time, 30-second nudge, high frequency, start/stop, flight mode, brushing history (🧪 experimental) |
+| Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, edit and switch modes, brushing time, 30-second nudge, high frequency, start/stop, flight mode |
 | Laifen | Wave Pro (LFTB02) | `LFTB02-S-…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, pressure warning, 30-second nudge, high frequency, flight mode, Pro features (shown) |
 | Laifen | Wave SE (LFTB01-SE) | `LFTB01-SE…` | 🧪 experimental, listens only | battery, modes, brushing time, brushing/idle, 30-second nudge, high frequency, flight mode (shown) |
 | Laifen | Kids TC51 (LFTB01-C) | `LFTB01-C…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, child lock, 30-second nudge, high frequency, flight mode, ramp-up, spin dry, pressure warning (shown) |
@@ -40,16 +40,16 @@ In Bürstli: turn on **High frequency**, then either press the button twice to c
 Mode 1 → 2 → 3 → 4, or tap **Use this mode** on the mode 4 card. Turning high frequency off while
 mode 4 is active switches to mode 3 first, like the official app does.
 
-### Laifen Wave: what the brush remembers
+### Not built yet: brushing history
 
-The Wave keeps its last brushing sessions on the brush itself: which mode, its settings, how long
-you brushed and how long was set. Bürstli reads them straight from the brush – no account, no
-cloud, nothing leaves your phone.
+The Wave remembers its brushing sessions – mode, settings, how long you brushed and how long was
+set – and hands them to an app that asks. Bürstli could show them, but there's a catch: the brush
+**deletes every entry once it has handed it out**, and it keeps no date. So Bürstli would have to
+store the history on your phone (it stores nothing today), and every entry it fetched would be
+gone for the official app.
 
-What the brush doesn't keep is a date. So Bürstli shows numbered entries without one, instead of
-doing what the official app does: stamping the moment it picked them up on every entry, even if
-you brushed three days ago. Still 🧪 experimental – built from how the official app reads them,
-not yet seen on a real brush.
+Worth it for you? Give the [brushing history issue](../../issues?q=is%3Aissue+%22brushing+history%22)
+a 👍. Enough thumbs, and it gets built.
 
 ### Testers wanted 🙋
 
@@ -115,7 +115,11 @@ After battery % and one unknown byte follows the brushing time in seconds (16 bi
 Write mode settings: `AA 04 01 04 [mode] [strength] [range] [speed] [xor]`.
 Write brushing time: `AA 05 01 02 [seconds hi] [seconds lo] [xor]`.
 Flight mode: `AA 07 01 01 [01/00] [xor]`.
-History: `AA 09 00 00 A3` asks, then one `AA 09 …` notification per entry (experimental).
+History (not used, see above): `AA 09 00 00 A3` asks; the brush sends one `AA 09 02 [len] …`
+notification per entry and deletes it. With nothing stored it answers `AA 09 02 01 00 A0`
+(seen on a real LFTB01-P). Short brushing sessions are not stored at all. Entry layout as the
+official app reads it: ?, number, mode (`FF` = empty), strength, range, speed, then the brushed
+seconds (length 8) or set seconds, brushed seconds and two unknown bytes (length 12+).
 The checksum is the XOR of all preceding bytes. Details in
 [`LaifenWaveV1Codec.kt`](drivers/laifen/src/main/kotlin/io/github/damnms/buerstli/drivers/laifen/LaifenWaveV1Codec.kt),
 with real captured packets in the unit tests.

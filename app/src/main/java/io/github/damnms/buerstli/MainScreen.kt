@@ -297,9 +297,6 @@ private fun BrushView(
     if (durationSpec != null && onBrushDuration != null) {
         DurationCard(durationSpec, onBrushDuration, duration, editable, actions)
     }
-    driver.capabilities.history?.let { level ->
-        HistoryCard(state.history, experimental = level == SupportLevel.EXPERIMENTAL)
-    }
     driver.capabilities.modes.forEach { spec ->
         ModeCard(
             spec = spec,
@@ -668,34 +665,6 @@ private fun LogCard(lines: List<String>) {
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
             )
-        }
-    }
-}
-
-@Composable
-private fun HistoryCard(history: List<io.github.damnms.buerstli.domain.BrushingRecord>, experimental: Boolean) {
-    fun time(s: Int) = "%d:%02d".format(s / 60, s % 60)
-    InfoCard {
-        Text(stringResource(R.string.history), style = MaterialTheme.typography.titleSmall)
-        Text(stringResource(R.string.history_hint), style = MaterialTheme.typography.bodySmall)
-        if (experimental) {
-            Text(stringResource(R.string.history_experimental), style = MaterialTheme.typography.bodySmall)
-        }
-        if (history.isEmpty()) {
-            Text(stringResource(R.string.history_empty), style = MaterialTheme.typography.bodyMedium)
-        }
-        history.forEach { r ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(
-                    r.modeIndex?.let { stringResource(R.string.history_entry, r.number, it + 1) }
-                        ?: stringResource(R.string.history_entry_unknown_mode, r.number),
-                )
-                Text(
-                    r.targetSeconds?.let { stringResource(R.string.history_time_of, time(r.brushedSeconds), time(it)) }
-                        ?: time(r.brushedSeconds),
-                    fontWeight = FontWeight.Bold,
-                )
-            }
         }
     }
 }

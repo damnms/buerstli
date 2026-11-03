@@ -38,18 +38,4 @@ object Packets {
     /** Commands that were written by hand and accepted by the brush. */
     val SET_DURATION_150 = hex("AA-05-01-02-00-96-3A")
     val SET_MODE3_666_TO_665 = hex("AA-04-01-04-02-06-06-05-AC")
-
-    /** A history entry as the official app reads it (not captured from a real brush yet). */
-    fun historyEntry(number: Int, mode: Int, s: Int, r: Int, sp: Int, brushed: Int, target: Int? = null): ByteArray {
-        val times = if (target == null) {
-            byteArrayOf((brushed shr 8).toByte(), brushed.toByte())
-        } else {
-            byteArrayOf((target shr 8).toByte(), target.toByte(), (brushed shr 8).toByte(), brushed.toByte(), 0, 0)
-        }
-        val payload = byteArrayOf(0, number.toByte(), mode.toByte(), s.toByte(), r.toByte(), sp.toByte()) + times
-        val body = byteArrayOf(0xAA.toByte(), 0x09, 0x02, payload.size.toByte()) + payload
-        var cs = 0
-        for (b in body) cs = cs xor (b.toInt() and 0xFF)
-        return body + cs.toByte()
-    }
 }

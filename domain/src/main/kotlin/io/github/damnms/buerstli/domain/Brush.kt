@@ -16,8 +16,6 @@ data class Capabilities(
     val brushingDuration: DurationSpec? = null,
     /** On/off settings the model reports, and whether Bürstli may change them. */
     val switches: Map<Switch, Access> = emptyMap(),
-    /** Null if the brush keeps no brushing history; EXPERIMENTAL until checked on a real brush. */
-    val history: SupportLevel? = null,
 ) {
     fun mode(index: Int): ModeSpec? = modes.firstOrNull { it.index == index }
 }
@@ -49,28 +47,11 @@ data class BrushState(
     val sectorCount: Int? = null,
     /** The exact model, for brushes that say it (e.g. "iO Series"). */
     val modelName: String? = null,
-    /** Brushing sessions the brush remembers, highest number first. */
-    val history: List<BrushingRecord> = emptyList(),
 ) {
     companion object {
         val UNKNOWN = BrushState()
     }
 }
-
-/**
- * One brushing session as the brush remembers it. Brushes keep no date or time, so neither does
- * this: a timestamp would only be the moment Bürstli heard about it.
- */
-data class BrushingRecord(
-    /** The brush's own number for the entry. */
-    val number: Int,
-    /** Null if the brush named a mode Bürstli doesn't know. */
-    val modeIndex: Int?,
-    val settings: ModeSettings,
-    val brushedSeconds: Int,
-    /** The brushing time that was set, for brushes that store it. */
-    val targetSeconds: Int? = null,
-)
 
 /** Allowed brushing durations, e.g. 60..300 s in 30 s steps. */
 data class DurationSpec(val seconds: IntRange, val stepSeconds: Int) {

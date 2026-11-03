@@ -122,13 +122,6 @@
     <string name="switch_bristle_protection">Bristle protection</string>
     <string name="switch_lift_to_wake">Lift to wake</string>
     <string name="switch_child_lock">Child lock</string>
-    <string name="history">Brushing history</string>
-    <string name="history_hint">Straight from the brush, no cloud at all. It doesn\'t know when you brushed – only for how long. The official app just slaps on the time it picked them up.</string>
-    <string name="history_experimental">Still experimental. Something looks off? Copy the log and let us know.</string>
-    <string name="history_empty">The brush hasn\'t told us anything yet.</string>
-    <string name="history_entry">No. %1$d · Mode %2$d</string>
-    <string name="history_entry_unknown_mode">No. %1$d</string>
-    <string name="history_time_of">%1$s of %2$s</string>
     <string name="switch_readonly_hint">Shown only – Bürstli doesn\'t change this yet.</string>
     <string name="picker_open">My brush isn\'t supported</string>
     <string name="picker_title">Which one is your brush?</string>

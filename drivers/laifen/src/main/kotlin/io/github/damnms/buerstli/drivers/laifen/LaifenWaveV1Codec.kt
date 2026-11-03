@@ -1,7 +1,6 @@
 package io.github.damnms.buerstli.drivers.laifen
 
 import io.github.damnms.buerstli.domain.BrushState
-import io.github.damnms.buerstli.domain.BrushingRecord
 import io.github.damnms.buerstli.domain.ModeSettings
 import io.github.damnms.buerstli.domain.ParameterKind.RANGE
 import io.github.damnms.buerstli.domain.ParameterKind.SPEED
@@ -24,10 +23,8 @@ import java.util.UUID
  * Command: AA 05 01 02 [seconds hi] [seconds lo] [xor]   brushing duration
  * Command: AA [code] 01 01 [01/00] [xor]   switches: 07 flight mode, 0B reminder, 0E high frequency,
  *          0F motor
- * History: AA 09 00 00 [xor] asks; each entry comes as AA 09 [?] [len] [payload] [xor]:
- *          ?, number, mode (FF = empty), strength, range, speed, then either brushed seconds
- *          (len 8) or set seconds, brushed seconds, ?, ? (len 12+), times 16 bit big-endian.
- *          Read the same way by the official app; not confirmed on a real brush yet.
+ * Not sent on purpose: AA 09 00 00 A3 (history). The brush deletes every entry it hands out,
+ * so asking would take it away from the official app. See README, "Not built yet".
  *
  * Payload layout and switch commands as documented (and confirmed on an LFTB01-P) in
  * laifen-toolbox/docs/PROTOCOL.md: 13 flight mode, 14 battery, 15 reminder, 16-17 brushing
@@ -46,15 +43,9 @@ object LaifenWaveV1Codec {
      */
     val READ_STATE: ByteArray = byteArrayOf(0xAA.toByte(), 0x0A, 0x00, 0x00, 0xA0.toByte())
 
-    /** Asks for the brushing history; the brush answers with one notification per entry. */
-    val READ_HISTORY: ByteArray = byteArrayOf(0xAA.toByte(), 0x09, 0x00, 0x00, 0xA3.toByte())
-
     const val MODE_COUNT = 4
     private const val HEADER = 4
     private const val MIN_PAYLOAD = 20
-    private const val SHORT_ENTRY = 8
-    private const val LONG_ENTRY = 12
-    private const val EMPTY = 0xFF
 
     fun decodeStatus(data: ByteArray): BrushState? {
         if (data.size < HEADER + MIN_PAYLOAD + 1) return null
@@ -85,32 +76,6 @@ object LaifenWaveV1Codec {
                 Switch.HIGH_FREQUENCY to (u[p + 18] == 1),
                 Switch.MOTOR to (u[p + 19] == 1),
             ),
-        )
-    }
-
-    /** One history entry, or null for anything else (including empty slots). */
-    fun decodeHistoryEntry(data: ByteArray): BrushingRecord? {
-        if (data.size < HEADER + 1) return null
-        val u = IntArray(data.size) { data[it].toInt() and 0xFF }
-        if (u[0] != 0xAA || u[1] != 0x09) return null
-
-        val len = u[3]
-        val csIndex = HEADER + len
-        if (data.size <= csIndex) return null
-        if (xor(data, csIndex) != u[csIndex]) return null
-        val short = len == SHORT_ENTRY
-        if (!short && len < LONG_ENTRY) return null
-
-        val p = HEADER
-        val mode = u[p + 2]
-        if (mode == EMPTY) return null
-        fun be16(i: Int) = (u[i] shl 8) or u[i + 1]
-        return BrushingRecord(
-            number = u[p + 1],
-            modeIndex = mode.takeIf { it in 0 until MODE_COUNT },
-            settings = ModeSettings.of(STRENGTH to u[p + 3], RANGE to u[p + 4], SPEED to u[p + 5]),
-            brushedSeconds = if (short) be16(p + 6) else be16(p + 8),
-            targetSeconds = if (short) null else be16(p + 6),
         )
     }
 

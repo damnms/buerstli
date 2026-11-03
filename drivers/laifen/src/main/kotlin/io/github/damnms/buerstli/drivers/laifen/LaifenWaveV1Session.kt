@@ -40,29 +40,16 @@ internal class LaifenWaveV1Session(
 
     override suspend fun start() {
         link.enableNotifications(ch)
-        for (attempt in 1..START_ATTEMPTS) {
-            if (requestStatus()) break
+        repeat(START_ATTEMPTS) {
+            if (requestStatus()) return
         }
         // No answer yet: the brush will still push its state within ~10 s on its own.
-
-        // The history is nice to have: if the brush doesn't answer, nothing else depends on it.
-        try {
-            link.write(ch, LaifenWaveV1Codec.READ_HISTORY)
-        } catch (e: IOException) {
-            // Shows up in the diagnostics log; the session works without it.
-        }
     }
 
     override fun onNotification(characteristic: UUID, value: ByteArray) {
         if (characteristic != ch) return
-        LaifenWaveV1Codec.decodeHistoryEntry(value)?.let { entry ->
-            _state.update { s ->
-                s.copy(history = (s.history.filterNot { it.number == entry.number } + entry).sortedByDescending { it.number })
-            }
-            return
-        }
         val status = LaifenWaveV1Codec.decodeStatus(value) ?: return
-        _state.update { status.copy(history = it.history) }
+        _state.value = status
         statusCount.update { it + 1 }
     }
 
