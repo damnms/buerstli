@@ -27,7 +27,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
 | Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only; ✅ confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear (not seen on a real brush yet) |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
-| Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens only (no connection) | status, mode, brushing time, pressure, mouth area – no battery level |
+| Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens only (no connection) | status, mode, brushing time, pressure, mouth area, exact iO series – no battery level ([notes](docs/ORAL-B.md)) |
 
 ### Laifen Wave: the hidden fourth mode
 
@@ -54,7 +54,8 @@ a 👍. Enough thumbs, and it gets built.
 ### Testers wanted 🙋
 
 🧪 **experimental** means: built from protocol research by others that was verified on real
-brushes, but not yet tried with Bürstli. Experimental drivers only read, they change nothing.
+brushes, or from what the official app does, but not yet tried with Bürstli. Experimental drivers
+only read, they change nothing.
 
 Got one of the brushes marked 🔍 or 🧪? You can help without any technical knowledge: open Bürstli,
 tap **Find my brush**, then **Let's go**. Bürstli doesn't know your brush at all? Tap **My brush isn't
@@ -134,7 +135,8 @@ The protocol knowledge comes from earlier interoperability work, which deserves 
 Philips Sonicare [mtheli/philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble) (Home Assistant integration, MIT),
 and for Oral-B [Bluetooth-Devices/oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble) (the library behind Home
 Assistant's Oral-B integration, MIT), whose test suite also provides the real advertisements our tests use.
-No code was copied from either, and none from the official app.
+For Oral-B, the official app was also studied to understand the protocol, see
+[docs/ORAL-B.md](docs/ORAL-B.md). No code was copied from any of them, and none from an official app.
 
 ## How this was made
 

@@ -73,6 +73,12 @@ driver may be added without a Bürstli tester if its protocol was documented *an
 brushes* by others (e.g. Sonicare by philips_sonicare_ble). It stays `EXPERIMENTAL` and read-only
 until an owner confirms it with Bürstli: every capability is `Access.READ_ONLY`.
 
+The official vendor app counts as verified research too: what it reads and sends is what real
+brushes do every day. Bürstli studies it only to understand the protocol (interoperability) and
+never copies its code. Where the vendor app and other research disagree, the vendor app wins.
+Either way, the brand's protocol notes record where each value comes from and whether it was
+seen on a real brush, so a report can confirm or correct it (e.g. [ORAL-B.md](ORAL-B.md)).
+
 Read-only means that nothing on the brush changes, not that nothing is sent. Some protocols can't
 be read at all without messages (a handshake, subscribing, asking for values, acknowledging what
 arrived). An experimental driver may send those, but only the messages the verified

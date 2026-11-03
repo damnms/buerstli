@@ -458,11 +458,12 @@ private fun modeLabel(mode: io.github.damnms.buerstli.domain.ModeName): String =
     io.github.damnms.buerstli.domain.ModeName.MASSAGE -> "Massage"
     io.github.damnms.buerstli.domain.ModeName.WHITEN -> "Whitening"
     io.github.damnms.buerstli.domain.ModeName.DEEP_CLEAN -> "Deep Clean"
-    io.github.damnms.buerstli.domain.ModeName.TURBO -> "Turbo"
+    io.github.damnms.buerstli.domain.ModeName.PRO_CLEAN -> "Pro Clean"
     io.github.damnms.buerstli.domain.ModeName.GUM_CARE -> "Gum Care"
     io.github.damnms.buerstli.domain.ModeName.INTENSE -> "Intense"
     io.github.damnms.buerstli.domain.ModeName.SUPER_SENSITIVE -> "Super Sensitive"
     io.github.damnms.buerstli.domain.ModeName.SMART_ADAPT -> "Smart Adapt"
+    io.github.damnms.buerstli.domain.ModeName.GENTLE_WHITE -> "Gentle White"
     io.github.damnms.buerstli.domain.ModeName.SENSITIVE -> "Sensitive"
     io.github.damnms.buerstli.domain.ModeName.TONGUE_CARE -> "Tongue Care"
 }

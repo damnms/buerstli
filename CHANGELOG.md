@@ -6,6 +6,15 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Oral-B: newer iO brushes show their exact series (iO 4 to iO 10). Also recognizes more iO
+  models, the Gentle White mode and a paused brush. Taken from the official app, not seen on a
+  real brush yet – reports welcome!
+
+### Fixed
+- Oral-B: iO models Bürstli doesn't know by name showed the wrong mode names.
+- Oral-B: mode 7 on older brushes is called Pro Clean, like in the official app, not Turbo.
+
 ## [0.12.0] - 2026-11-04
 
 ### Added

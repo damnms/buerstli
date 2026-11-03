@@ -90,7 +90,7 @@
     <string name="mode_use">Diesen Modus verwenden</string>
     <string name="save_and_use">Speichern &amp; verwenden</string>
     <string name="unavailable_hf">Erst Hochfrequenz einschalten.</string>
-    <string name="experimental_note">Experimentell: gebaut nach der Forschung anderer, mit Bürstli noch nicht ausprobiert. Bürstli liest nur, es verändert nichts. Wenn etwas komisch aussieht, hilft ein Bericht sehr.</string>
+    <string name="experimental_note">Experimentell: gebaut nach der Forschung anderer oder der offiziellen App, mit Bürstli noch nicht ausprobiert. Bürstli liest nur, es verändert nichts. Wenn etwas komisch aussieht, hilft ein Bericht sehr.</string>
     <string name="capture_this_brush">Bericht für diese Bürste aufnehmen</string>
     <string name="info_activity">Zustand</string>
     <string name="info_mode">Modus</string>

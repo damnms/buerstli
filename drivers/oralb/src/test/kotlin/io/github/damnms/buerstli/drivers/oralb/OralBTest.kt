@@ -45,12 +45,12 @@ class OralBTest {
     }
 
     @Test
-    fun `Genius D701 with high pressure in turbo`() {
+    fun `Genius D701 with high pressure in Pro Clean`() {
         val s = decode("03-22-0C-03-C0-01-30-07-04-3C-04")
         assertEquals("Genius Series D701", s.modelName)
         assertEquals(true, s.pressureHigh)
         assertEquals(108, s.brushingSeconds)
-        assertEquals(ModeName.TURBO, s.modeName)
+        assertEquals(ModeName.PRO_CLEAN, s.modeName) // oralb-ble says "turbo", the official app PRO_CLEAN
         assertEquals(4, s.sector)
     }
 
@@ -78,6 +78,47 @@ class OralBTest {
         val menu = decode("08-36-52-08-32-00-00-05-00-01-00")
         assertEquals(Activity.STANDBY, menu.activity)
         assertEquals(ModeName.SUPER_SENSITIVE, menu.modeName)
+    }
+
+    // --- from the official app (see docs/ORAL-B.md): sound, but not seen on a real brush yet ---
+    // Hand-made advertisements in the layout above; only the bytes under test differ.
+
+    @Test
+    fun `protocol 8 and later name the exact iO series in byte 9`() {
+        assertEquals("iO Series 9", decode("08-36-52-08-32-00-00-05-00-01-00").modelName) // real, from oralb-ble
+        assertEquals("iO Series 10", decode("08-36-52-02-00-00-00-00-00-10-04").modelName)
+        assertEquals("iO Series 4", decode("09-34-52-02-00-00-00-00-00-06-04").modelName)
+        assertEquals("iO Series", decode("08-36-52-02-00-00-00-00-00-63-04").modelName) // unknown series
+        assertEquals("iO Series", decode("06-32-6B-02-72-00-00-01-01-01-04").modelName) // before protocol 8
+    }
+
+    @Test
+    fun `the protocol version picks the mode table, so unknown iO models get iO names`() {
+        val unknownIo = decode("07-7A-10-03-00-00-10-02-01-00-04")
+        assertNull(unknownIo.modelName)
+        assertEquals(ModeName.GUM_CARE, unknownIo.modeName)
+        assertEquals(ModeName.MASSAGE, decode("05-7A-10-03-00-00-10-03-01-00-04").modeName)
+    }
+
+    @Test
+    fun `Gentle White, and no mode name for off and settings`() {
+        assertEquals(ModeName.GENTLE_WHITE, decode("06-32-6B-03-00-00-10-0C-01-00-04").modeName)
+        assertNull(decode("06-32-6B-02-00-00-00-07-00-00-04").modeName) // iO "off"
+        assertNull(decode("06-32-6B-02-00-00-00-08-00-00-04").modeName) // iO settings
+        assertNull(decode("03-22-0C-02-00-00-00-00-00-00-04").modeName) // older brushes: "off"
+    }
+
+    @Test
+    fun `newer iO models HCB`() {
+        assertEquals("iO Series 5", decode("06-A5-10-02-00-00-00-00-00-00-04").modelName)
+        assertEquals("iO Series", decode("06-A6-10-02-00-00-00-00-00-00-04").modelName)
+    }
+
+    @Test
+    fun `states from the official app`() {
+        assertEquals(Activity.PAUSED, decode("06-32-6B-09-00-00-30-00-02-00-04").activity)
+        assertEquals(Activity.OFF, decode("06-32-6B-74-00-00-00-00-00-00-04").activity) // transport mode
+        assertNull(decode("06-32-6B-07-00-00-00-00-00-00-04").activity) // on the charger, charging not allowed
     }
 
     @Test
