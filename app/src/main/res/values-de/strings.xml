@@ -121,6 +121,13 @@
     <string name="switch_bristle_protection">Borstenschutz</string>
     <string name="switch_lift_to_wake">Anheben zum Aufwecken</string>
     <string name="switch_child_lock">Kindersicherung</string>
+    <string name="history">Putzverlauf</string>
+    <string name="history_hint">Direkt aus der Bürste, ganz ohne Cloud. Wann du geputzt hast, weiss sie nicht – nur wie lange. Die offizielle App klebt einfach die Uhrzeit vom Abholen drauf.</string>
+    <string name="history_experimental">Noch experimentell. Sieht was komisch aus? Kopier das Log und melde dich.</string>
+    <string name="history_empty">Die Bürste hat noch nichts erzählt.</string>
+    <string name="history_entry">Nr. %1$d · Modus %2$d</string>
+    <string name="history_entry_unknown_mode">Nr. %1$d</string>
+    <string name="history_time_of">%1$s von %2$s</string>
     <string name="switch_readonly_hint">Nur Anzeige – das ändert Bürstli noch nicht.</string>
     <string name="picker_open">Meine Bürste wird nicht unterstützt</string>
     <string name="picker_title">Welche ist deine Bürste?</string>

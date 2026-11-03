@@ -1,5 +1,6 @@
 package io.github.damnms.buerstli.drivers.laifen
 
+import io.github.damnms.buerstli.domain.BrushingRecord
 import io.github.damnms.buerstli.domain.ModeSettings
 import io.github.damnms.buerstli.domain.ParameterKind.RANGE
 import io.github.damnms.buerstli.domain.ParameterKind.SPEED
@@ -129,5 +130,43 @@ class LaifenWaveV1CodecTest {
     fun `encodes flight mode`() {
         assertArrayEquals(hex("AA-07-01-01-01-AC"), LaifenWaveV1Codec.encodeSwitch(Switch.FLIGHT_MODE, true))
         assertArrayEquals(hex("AA-07-01-01-00-AD"), LaifenWaveV1Codec.encodeSwitch(Switch.FLIGHT_MODE, false))
+    }
+
+    // --- history ---
+
+    @Test
+    fun `asks for the history like the official app`() {
+        assertArrayEquals(hex("AA-09-00-00-A3"), LaifenWaveV1Codec.READ_HISTORY)
+    }
+
+    @Test
+    fun `decodes a short history entry`() {
+        assertEquals(
+            BrushingRecord(number = 3, modeIndex = 1, settings = ModeSettings.of(STRENGTH to 5, RANGE to 4, SPEED to 6), brushedSeconds = 118),
+            LaifenWaveV1Codec.decodeHistoryEntry(Packets.historyEntry(3, mode = 1, s = 5, r = 4, sp = 6, brushed = 118)),
+        )
+    }
+
+    @Test
+    fun `decodes a long history entry with the set time, big-endian`() {
+        val e = LaifenWaveV1Codec.decodeHistoryEntry(Packets.historyEntry(7, mode = 3, s = 15, r = 6, sp = 6, brushed = 290, target = 300))!!
+        assertEquals(290, e.brushedSeconds)
+        assertEquals(300, e.targetSeconds)
+        assertEquals(3, e.modeIndex)
+    }
+
+    @Test
+    fun `empty slots, unknown modes and broken entries`() {
+        assertNull(LaifenWaveV1Codec.decodeHistoryEntry(Packets.historyEntry(1, mode = 0xFF, s = 0, r = 0, sp = 0, brushed = 0)))
+        assertNull(LaifenWaveV1Codec.decodeHistoryEntry(Packets.historyEntry(1, mode = 9, s = 1, r = 1, sp = 1, brushed = 60))!!.modeIndex)
+        val bad = Packets.historyEntry(1, mode = 0, s = 1, r = 1, sp = 1, brushed = 60).also { it[it.lastIndex] = (it.last() + 1).toByte() }
+        assertNull(LaifenWaveV1Codec.decodeHistoryEntry(bad))
+        assertNull(LaifenWaveV1Codec.decodeHistoryEntry(hex("AA-09-02-03-00-01-00-A1"))) // too short for an entry
+    }
+
+    @Test
+    fun `status and history packets are not mistaken for each other`() {
+        assertNull(LaifenWaveV1Codec.decodeHistoryEntry(Packets.MODE2_ACTIVE))
+        assertNull(LaifenWaveV1Codec.decodeStatus(Packets.historyEntry(1, mode = 0, s = 1, r = 1, sp = 1, brushed = 60, target = 120)))
     }
 }

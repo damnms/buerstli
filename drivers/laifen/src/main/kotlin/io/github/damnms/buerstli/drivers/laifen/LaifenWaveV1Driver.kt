@@ -49,6 +49,7 @@ object LaifenWaveV1Driver : ToothbrushDriver {
             // seconds ends it again, so writing it can't lock anyone out.
             Switch.FLIGHT_MODE to Access.READ_WRITE,
         ),
+        history = SupportLevel.EXPERIMENTAL,
     )
 
     /** Per laifen-toolbox these LFTB01 variants speak another protocol. */

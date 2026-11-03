@@ -71,4 +71,9 @@ class LaifenWaveV1DriverTest {
             driver.capabilities.switches,
         )
     }
+
+    @Test
+    fun `the history is offered, but experimental`() {
+        assertEquals(io.github.damnms.buerstli.domain.SupportLevel.EXPERIMENTAL, driver.capabilities.history)
+    }
 }
