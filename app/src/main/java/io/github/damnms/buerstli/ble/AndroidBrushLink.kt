@@ -33,11 +33,11 @@ internal class AndroidBrushLink(
     @Volatile private var pending: CompletableDeferred<ByteArray>? = null
 
     override suspend fun read(characteristic: UUID): ByteArray =
-        operation("read") { gatt.readCharacteristic(find(characteristic)) }
+        operation("read ${characteristic.short()}") { gatt.readCharacteristic(find(characteristic)) }
 
     override suspend fun write(characteristic: UUID, data: ByteArray) {
-        val ch = find(characteristic)
-        operation("write ${data.hex()}") {
+        operation("write ${characteristic.short()} ${data.hex()}") {
+            val ch = find(characteristic)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 gatt.writeCharacteristic(ch, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT) ==
                     BluetoothStatusCodes.SUCCESS
@@ -53,13 +53,13 @@ internal class AndroidBrushLink(
     }
 
     override suspend fun enableNotifications(characteristic: UUID) {
-        val ch = find(characteristic)
-        val cccd = ch.getDescriptor(CCCD) ?: throw IOException("characteristic has no notification descriptor")
-        if (!gatt.setCharacteristicNotification(ch, true)) throw IOException("could not enable notifications")
-        val canNotify = ch.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
-        val enable = if (canNotify) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-        else BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
-        operation("enable notifications") {
+        operation("subscribe ${characteristic.short()}") {
+            val ch = find(characteristic)
+            val cccd = ch.getDescriptor(CCCD) ?: throw IOException("characteristic has no notification descriptor")
+            if (!gatt.setCharacteristicNotification(ch, true)) throw IOException("could not enable notifications")
+            val canNotify = ch.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
+            val enable = if (canNotify) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            else BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 gatt.writeDescriptor(cccd, enable) == BluetoothStatusCodes.SUCCESS
             } else {
@@ -115,4 +115,12 @@ internal class AndroidBrushLink(
         val CCCD: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
         const val OPERATION_TIMEOUT_MS = 5_000L
     }
+}
+
+private const val SIG_BASE = "-0000-1000-8000-00805f9b34fb"
+
+/** For the log: "2A24" for standard characteristics, otherwise the last 8 digits ("…a5d54022"). */
+internal fun UUID.short(): String {
+    val s = toString()
+    return if (s.startsWith("0000") && s.endsWith(SIG_BASE)) s.substring(4, 8).uppercase() else "…" + s.takeLast(8)
 }

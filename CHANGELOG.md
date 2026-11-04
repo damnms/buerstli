@@ -16,6 +16,10 @@ All notable changes to Bürstli are documented here. The format follows
 - Philips Sonicare: the mode names also fit when a brush reports its full product number
   (e.g. HX9611 instead of HX961X).
 
+### Changed
+- The diagnostics log names the characteristic for every read, write, subscription and
+  notification, and also logs characteristics that are missing.
+
 ### Fixed
 - Philips Sonicare: mode names now follow the model, as in the official app. The same number means
   something else on, say, an ExpertClean than on a DiamondClean; on models without their own list,

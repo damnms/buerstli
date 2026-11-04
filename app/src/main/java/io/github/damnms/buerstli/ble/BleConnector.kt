@@ -371,7 +371,7 @@ class BleConnector(
             result(status, ByteArray(0))
 
         override fun onCharacteristicChanged(g: BluetoothGatt, ch: BluetoothGattCharacteristic, value: ByteArray) {
-            diag.log("short connection: notification ${value.hex()}")
+            diag.log("short connection: notification ${ch.uuid.short()} ${value.hex()}")
             session.onNotification(ch.uuid, value)
         }
 
@@ -380,7 +380,7 @@ class BleConnector(
             @Suppress("DEPRECATION")
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 val value = ch.value ?: return
-                diag.log("short connection: notification ${value.hex()}")
+                diag.log("short connection: notification ${ch.uuid.short()} ${value.hex()}")
                 session.onNotification(ch.uuid, value)
             }
         }
@@ -491,7 +491,7 @@ class BleConnector(
             result(status, value)
 
         override fun onCharacteristicChanged(g: BluetoothGatt, ch: BluetoothGattCharacteristic, value: ByteArray) {
-            diag.log("notification ${value.hex()}")
+            diag.log("notification ${ch.uuid.short()} ${value.hex()}")
             session?.onNotification(ch.uuid, value)
         }
 
@@ -507,7 +507,7 @@ class BleConnector(
             @Suppress("DEPRECATION")
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 val value = ch.value ?: return
-                diag.log("notification ${value.hex()}")
+                diag.log("notification ${ch.uuid.short()} ${value.hex()}")
                 session?.onNotification(ch.uuid, value)
             }
         }
