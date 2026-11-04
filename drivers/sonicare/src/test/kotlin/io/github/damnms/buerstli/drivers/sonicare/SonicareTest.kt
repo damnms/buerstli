@@ -8,15 +8,23 @@ import io.github.damnms.buerstli.domain.CommandResult
 import io.github.damnms.buerstli.domain.Intensity
 import io.github.damnms.buerstli.domain.ModeName
 import io.github.damnms.buerstli.domain.SupportLevel
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.ACTIVE_SESSION
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BATTERY
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_MODE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_STATE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_TIME
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.FIRMWARE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HANDLE_STATE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HEAD_LIMIT
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HEAD_USAGE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.INTENSITY
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.LATEST_SESSION
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.MODEL_NUMBER
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.ROUTINE_LENGTH
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SESSION_CONTROL
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SESSION_COUNT
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SESSION_DATA
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SESSION_TYPE
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,8 +48,11 @@ class SonicareTest {
     private class FakeSonicare(val values: MutableMap<UUID, ByteArray>) : BrushLink {
         val subscribed = mutableListOf<UUID>()
         val reads = mutableListOf<UUID>()
-        val writes = mutableListOf<UUID>()
+        val writes = mutableListOf<Pair<UUID, ByteArray>>()
         var failFirstReads = 0
+
+        /** What the brush does when written to, e.g. send its stored sessions. */
+        var onWrite: (UUID, ByteArray) -> Unit = { _, _ -> }
 
         override suspend fun read(characteristic: UUID): ByteArray {
             reads += characteristic
@@ -50,7 +61,8 @@ class SonicareTest {
         }
 
         override suspend fun write(characteristic: UUID, data: ByteArray) {
-            writes += characteristic
+            writes += characteristic to data
+            onWrite(characteristic, data)
         }
 
         override suspend fun enableNotifications(characteristic: UUID) {
@@ -73,7 +85,11 @@ class SonicareTest {
         ),
     )
 
-    /** Exactly what the HX960X answered in Bürstli's log, in standby. Its head has no chip: 0/0. */
+    /**
+     * Exactly what the HX960X answered in Bürstli's log, in standby. Its head has no chip: 0/0.
+     * 0.9.0 didn't read the model number, so it isn't here either; mode 1 was shown as White+, which
+     * the app's table for an HX960X reads as Gum Health – still open, see docs/SONICARE.md.
+     */
     private fun diamondClean9000() = FakeSonicare(
         mutableMapOf(
             HANDLE_STATE to byteArrayOf(0x01),
@@ -213,12 +229,12 @@ class SonicareTest {
     }
 
     @Test
-    fun `nothing is ever written to the brush`() = runTest {
+    fun `without a storage service nothing is written to the brush`() = runTest {
         val brush = diamondClean()
         val session = SonicareClassicDriver.open(brush).apply { start() }
 
         assertEquals(CommandResult.Unsupported, session.execute(BrushCommand.ActivateMode(0)))
-        assertTrue(brush.writes.isEmpty())
+        assertTrue(brush.writes.isEmpty()) // no storage service: nothing to ask for
     }
 
     @Test
@@ -230,5 +246,186 @@ class SonicareTest {
 
         assertNull(session.state.value.modeName)
         assertEquals(0, session.state.value.brushingSeconds)
+    }
+
+    // --- model number and modes (app) ---
+
+    private fun withModel(model: String, mode: Int) = diamondClean().apply {
+        values[MODEL_NUMBER] = model.toByteArray()
+        values[BRUSHING_MODE] = byteArrayOf(mode.toByte())
+    }
+
+    @Test
+    fun `reads the model number before the mode, because the mode depends on it`() = runTest {
+        val brush = withModel("HX991X", 1).apply { failFirstReads = 1 } // pairing: the first read fails
+        val s = SonicareClassicDriver.open(brush).apply { start() }.state.value
+
+        assertTrue(brush.reads.indexOf(MODEL_NUMBER) in 1 until brush.reads.indexOf(BRUSHING_MODE))
+        assertEquals("HX991X", s.modelName)
+        assertEquals(ModeName.WHITE_PLUS, s.modeName)
+    }
+
+    @Test
+    fun `the same mode number means something else on every model`() = runTest {
+        suspend fun mode(model: String, n: Int) =
+            SonicareClassicDriver.open(withModel(model, n)).apply { start() }.state.value.modeName
+
+        assertEquals(ModeName.GUM_HEALTH, mode("HX960X", 1)) // ExpertClean: Clean, Gum Care, Deep Clean
+        assertEquals(ModeName.DEEP_CLEAN_PLUS, mode("HX960X", 2))
+        assertEquals(ModeName.WHITE_PLUS, mode("HX961X", 1))
+        assertEquals(ModeName.SENSITIVE, mode("HX741X", 1))
+        assertEquals(ModeName.POLISH, mode("HX98XX", 7))
+        assertEquals(ModeName.COMFORT, mode("HX92XX", 6))
+        assertNull(mode("HX960X", 3)) // the ExpertClean has three modes
+    }
+
+    @Test
+    fun `unknown models get the app's default list, which swaps 4 and 5 against the old table`() {
+        assertEquals(ModeName.DEEP_CLEAN_PLUS, SonicareCodec.mode(3, null))
+        assertEquals(ModeName.TONGUE_CARE, SonicareCodec.mode(4, "HX992X"))
+        assertEquals(ModeName.SENSITIVE, SonicareCodec.mode(5, "HX992X"))
+        assertEquals(ModeName.COMFORT, SonicareCodec.mode(7, null))
+        assertNull(SonicareCodec.mode(8, null))
+    }
+
+    @Test
+    fun `xian models count by routine id, without skipping an entry`() {
+        assertEquals(ModeName.TONGUE_CARE, SonicareCodec.mode(3, "HX999X"))
+        assertEquals(ModeName.DEEP_CLEAN_PLUS, SonicareCodec.mode(4, "HX9996"))
+        assertEquals(ModeName.POLISH, SonicareCodec.mode(8, "HX999X"))
+    }
+
+    @Test
+    fun `reads the firmware and trims padding from Device Information`() = runTest {
+        val brush = withModel("HX960X\u0000\u0000", 0).apply { values[FIRMWARE] = "1.5.3 ".toByteArray() }
+        val s = SonicareClassicDriver.open(brush).apply { start() }.state.value
+
+        assertEquals("HX960X", s.modelName)
+        assertEquals("1.5.3", s.firmwareVersion)
+    }
+
+    // --- brushing history (app) ---
+
+    /** A stored session as the app parses it: 13 bytes (v1), or 16 with the routine id. */
+    private fun record(id: Int, start: Long, brushed: Int, length: Int, routine: Int, intensity: Int, routineId: Int? = null): ByteArray {
+        val b = ByteArray(if (routineId == null) 13 else 16)
+        for (i in 0..3) b[1 + i] = (start shr (8 * i)).toByte()
+        u16(id).copyInto(b, 5); u16(brushed).copyInto(b, 7); u16(length).copyInto(b, 9)
+        b[11] = routine.toByte(); b[12] = intensity.toByte()
+        routineId?.let { b[13] = it.toByte() }
+        return b
+    }
+
+    /** A brush with stored sessions that sends them like the app expects. */
+    private fun withHistory(sessions: List<ByteArray>, latest: Int, session: () -> BrushSessionRef) = withModel("HX991X", 0).apply {
+        values[LATEST_SESSION] = u16(latest)
+        values[SESSION_COUNT] = u16(sessions.size)
+        listOf(ACTIVE_SESSION, SESSION_DATA, SESSION_CONTROL, SESSION_TYPE).forEach { values[it] = byteArrayOf() }
+        onWrite = { uuid, data ->
+            if (uuid == SESSION_CONTROL && data.contentEquals(byteArrayOf(1))) {
+                val s = session().value!!
+                sessions.forEach { r ->
+                    s.onNotification(ACTIVE_SESSION, r.copyOfRange(5, 7))
+                    s.onNotification(SESSION_DATA, r)
+                    s.onNotification(SESSION_DATA, byteArrayOf(9, 9, 9)) // a later packet of the session
+                    s.onNotification(SESSION_CONTROL, byteArrayOf(0))
+                }
+            }
+        }
+    }
+
+    private class BrushSessionRef { var value: io.github.damnms.buerstli.domain.BrushSession? = null }
+
+    private val jan2026 = 1_767_225_600L // 2026-01-01T00:00:00Z
+
+    @Test
+    fun `fetches the stored sessions like the app, newest first`() = runTest {
+        val ref = BrushSessionRef()
+        val brush = withHistory(
+            listOf(
+                record(10, jan2026, 118, 120, 1, 2),
+                record(11, jan2026 + 86_400, 125, 120, 3, 0),
+                record(12, 1_000, 60, 120, 0, 1), // clock never set
+            ),
+            latest = 12,
+        ) { ref }
+        ref.value = SonicareClassicDriver.open(brush)
+        ref.value!!.start()
+
+        val history = ref.value!!.state.value.history
+        assertEquals(listOf(12, 11, 10), history.map { it.number })
+        assertEquals(125, history[1].brushedSeconds)
+        assertEquals(120, history[1].targetSeconds)
+        assertEquals(ModeName.DEEP_CLEAN_PLUS, history[1].modeName) // HX991X: 3 = Deep Clean
+        assertEquals(java.time.Instant.ofEpochSecond(jan2026 + 86_400), history[1].startedAt)
+        assertNull(history[0].startedAt)
+        assertEquals(ModeName.WHITE_PLUS, history[2].modeName)
+    }
+
+    @Test
+    fun `asks only for what it reads, in the app's order`() = runTest {
+        val ref = BrushSessionRef()
+        val brush = withHistory(listOf(record(41, jan2026, 120, 120, 0, 1), record(42, jan2026, 120, 120, 0, 1)), latest = 42) { ref }
+        ref.value = SonicareClassicDriver.open(brush)
+        ref.value!!.start()
+
+        assertEquals(
+            listOf(SESSION_TYPE to listOf<Byte>(0), ACTIVE_SESSION to listOf<Byte>(41, 0), SESSION_CONTROL to listOf<Byte>(1)),
+            brush.writes.map { (u, d) -> u to d.toList() },
+        )
+    }
+
+    @Test
+    fun `fetches at most the newest 30`() = runTest {
+        val ref = BrushSessionRef()
+        val brush = withHistory(emptyList(), latest = 500) { ref }.apply { values[SESSION_COUNT] = u16(200) }
+        ref.value = SonicareClassicDriver.open(brush)
+        ref.value!!.start()
+
+        assertEquals(ACTIVE_SESSION to listOf<Byte>(0xD7.toByte(), 0x01), brush.writes[1].let { (u, d) -> u to d.toList() }) // 471
+    }
+
+    @Test
+    fun `a brush that stops answering gets a cancel and the sessions that arrived`() = runTest {
+        val ref = BrushSessionRef()
+        val brush = withHistory(listOf(record(7, jan2026, 120, 120, 0, 1)), latest = 9) { ref }.apply {
+            values[SESSION_COUNT] = u16(3)
+        }
+        ref.value = SonicareClassicDriver.open(brush)
+        ref.value!!.start()
+
+        assertEquals(listOf(7), ref.value!!.state.value.history.map { it.number })
+        assertEquals(SESSION_CONTROL to listOf<Byte>(2), brush.writes.last().let { (u, d) -> u to d.toList() })
+    }
+
+    @Test
+    fun `no sessions stored, nothing asked for`() = runTest {
+        val ref = BrushSessionRef()
+        val brush = withHistory(emptyList(), latest = 0) { ref }
+        ref.value = SonicareClassicDriver.open(brush)
+        ref.value!!.start()
+
+        assertTrue(ref.value!!.state.value.history.isEmpty())
+        assertEquals(listOf(SESSION_TYPE), brush.writes.map { it.first })
+    }
+
+    @Test
+    fun `xian sessions take the mode from the routine id`() {
+        val r = SonicareCodec.session(record(3, jan2026, 120, 120, routine = 0, intensity = 1, routineId = 3), "HX999X")!!
+        assertEquals(ModeName.TONGUE_CARE, r.modeName)
+        assertNull(SonicareCodec.session(ByteArray(12), null)) // too short
+    }
+
+    @Test
+    fun `every message the codec can build only selects what to read`() {
+        val allowed = setOf(
+            SESSION_TYPE to listOf<Byte>(0),
+            SESSION_CONTROL to listOf<Byte>(1),
+            SESSION_CONTROL to listOf<Byte>(2),
+        )
+        val built = listOf(SonicareCodec.Request.ReadSessions, SonicareCodec.Request.SendAll, SonicareCodec.Request.Cancel)
+        built.forEach { assertTrue(allowed.contains(it.characteristic to it.bytes.toList())) }
+        val start = SonicareCodec.Request.StartAt(0x1234)
+        assertEquals(ACTIVE_SESSION to listOf<Byte>(0x34, 0x12), start.characteristic to start.bytes.toList())
     }
 }

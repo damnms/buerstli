@@ -8,11 +8,11 @@ import io.github.damnms.buerstli.domain.Capabilities
 import io.github.damnms.buerstli.domain.SupportLevel
 import io.github.damnms.buerstli.domain.ToothbrushDriver
 
-/** Philips Sonicare models with the classic GATT protocol. Read-only until someone confirms it. */
+/** Philips Sonicare models with the classic GATT protocol. Read-only; see docs/SONICARE.md. */
 object SonicareClassicDriver : ToothbrushDriver {
     override val model = BrushModel(brand = "Philips", name = "Sonicare")
     override val supportLevel = SupportLevel.EXPERIMENTAL
-    override val capabilities = Capabilities(modes = emptyList())
+    override val capabilities = Capabilities(modes = emptyList(), history = SupportLevel.EXPERIMENTAL)
     override val mayNeedPairing = true
 
     override fun recognizes(advertisement: Advertisement): Boolean {

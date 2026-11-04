@@ -6,6 +6,17 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Philips Sonicare: model number, firmware version and the brushing history stored on the brush
+  (the newest 30 sessions; reading deletes nothing). From the official app, untested on a real
+  brush – reports welcome!
+- Philips Sonicare: Max Care, Comfort and Polish modes.
+
+### Fixed
+- Philips Sonicare: mode names now follow the model, as in the official app. The same number means
+  something else on, say, an ExpertClean than on a DiamondClean; on models without their own list,
+  Sensitive and Tongue Care were swapped.
+
 ## [0.13.0] - 2026-11-04
 
 ### Added

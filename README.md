@@ -25,7 +25,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Oclean | X Pro, Z1, Y-series, … | `Oclean…` | 🔍 recognized, not supported yet | |
 | Xiaomi | T500, T501, T700, T700i | MiBeacon product id | 🔍 recognized, not supported yet | |
 | Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
-| Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only; ✅ confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear (not seen on a real brush yet) |
+| Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only; ✅ confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear; from the official app, untested: model number, firmware, mode names per model, brushing history ([notes](docs/SONICARE.md)) |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
 | Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens, connects briefly for what it doesn't broadcast | status, mode, brushing time, pressure, mouth area, exact iO series, battery level, brushing history, brush head reminder ([notes](docs/ORAL-B.md)) |
 
@@ -140,8 +140,8 @@ The protocol knowledge comes from earlier interoperability work, which deserves 
 Philips Sonicare [mtheli/philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble) (Home Assistant integration, MIT),
 and for Oral-B [Bluetooth-Devices/oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble) (the library behind Home
 Assistant's Oral-B integration, MIT), whose test suite also provides the real advertisements our tests use.
-For Oral-B, the official app was also studied to understand the protocol, see
-[docs/ORAL-B.md](docs/ORAL-B.md). No code was copied from any of them, and none from an official app.
+For Oral-B and Philips Sonicare, the official apps were also studied to understand the protocol, see
+[docs/ORAL-B.md](docs/ORAL-B.md) and [docs/SONICARE.md](docs/SONICARE.md). No code was copied from any of them, and none from an official app.
 
 ## How this was made
 
