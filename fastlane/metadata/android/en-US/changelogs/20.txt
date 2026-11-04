@@ -1,0 +1,8 @@
+Added:
+- Philips Sonicare: model, firmware, brushing history (reading deletes nothing), switch mode and intensity; Max Care, Comfort, Polish. From the official app, untested – reports welcome!
+
+Changed:
+- The diagnostics log names the characteristic of each read, write and notification.
+
+Fixed:
+- Philips Sonicare: mode names follow the model; some had Sensitive and Tongue Care swapped.
