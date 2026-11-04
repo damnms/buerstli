@@ -227,102 +227,136 @@ brush's own list and reading back.
 The 7100 series (HX741X, HX742X) only offers the Condor service
 `e50ba3c0-af04-4564-92ad-fef019489de6` (psb); which other models use it wasn't checked, the app
 treats xian together with the 7100 series in places. Bürstli has no Condor driver yet; it
-recognizes those brushes and offers a report. Nothing below was seen on a real brush.
+recognizes those brushes and offers a report. Everything below is read from the app 10.21.1,
+nothing was seen on a real brush.
 
-Condor has three layers: a byte stream over seven characteristics, Condor messages in that stream,
-and ports with JSON properties in the messages. **No encryption on any of them**: the code has no
-cipher, AES, HMAC or signature (the one hit, `core/util/c.java`, turns bytes into Base64 for JSON).
-There is a `SecurityPort` with `key` and `nextKey`, but nothing in the toothbrush code uses it;
-probably it belongs to Philips' Wi-Fi devices on the same stack (Wi-Fi, cloud pairing and backend
-ports are there too). Whether a 7100 asks for a key anyway only the brush can tell.
+Condor has three layers: a byte stream over seven characteristics (reliable, with sequence numbers
+and acks), Condor messages in that stream, and ports with JSON properties in the messages. **No
+encryption on any of them**: the code has no cipher, AES, HMAC or signature (the one hit,
+`core/util/c.java`, turns bytes into Base64 for JSON). There is a `SecurityPort` with `key` and
+`nextKey`, but nothing in the toothbrush code uses it; probably it belongs to Philips' Wi-Fi
+devices on the same stack (Wi-Fi, cloud pairing and backend ports are there too). Whether a 7100
+asks for a key anyway only the brush can tell.
 
 ### Byte stream
 
 Philips' generic "byte streaming" service (`com/philips/connectivity/bluetooth/services/handlers/bytestreaming/`),
 here on the Condor service; the same code also runs on `a651fff1-4074-4131-bce9-56d4261bc7b1`
-with `a6510001`–`a6510005` for other Philips devices.
+with `a6510001`–`a6510005` for other Philips devices. The names are the app's; "Rx" and "Tx" are
+from the brush's point of view.
 
-| Char. | Role |
-|---|---|
-| `e50b0001-af04-4564-92ad-fef019489de6` | Rx |
-| `e50b0002-…` | Rx ack |
-| `e50b0003-…` | Tx |
-| `e50b0004-…` | Tx ack |
-| `e50b0005-…` | protocol configuration |
-| `e50b0006-…` | server configuration |
-| `e50b0007-…` | client configuration |
+| Char. | Name | App does |
+|---|---|---|
+| `e50b0001-af04-4564-92ad-fef019489de6` | Rx | writes its packets (without response) |
+| `e50b0002-…` | Rx ack | subscribes: the brush acknowledges the app's packets |
+| `e50b0003-…` | Tx | subscribes: the brush's packets |
+| `e50b0004-…` | Tx ack | writes its acks for the brush's packets (without response) |
+| `e50b0005-…` | protocol configuration | reads (v3 only) |
+| `e50b0006-…` | server configuration | subscribes: the brush's answers while setting up v4 |
+| `e50b0007-…` | client configuration | writes while setting up v4 (without response) |
 
-Rx/Tx are named as in the app; which direction is which wasn't traced.
+**Packet:** one header byte, then the payload. Bit 7 the channel (0 or 1), bit 6 "start", bits
+0–5 a sequence number (0–63, then 0 again). Channel 0 carries the Condor messages, channel 1 binary
+data (`protocol/v4/ByteStreamingProtocolV4.java`).
 
-A packet is one header byte and its payload: bit 7 the channel (0 or 1), bit 6 "start of a
-message", bits 0–5 a sequence number (0–63). Packets are acknowledged on the ack characteristics;
-the ack format wasn't read (`internal/ByteStreamingChannel`).
+**Opening a channel:** the app sends a start packet (start bit set, sequence 0, no payload) and
+waits for the brush to acknowledge it with the start bit set on Rx ack. After that the start bit
+is only ever 0 (`internal/ByteStreamingChannel.java`).
 
-Setting up (`internal/protocol/ByteStreamingProtocolFactory.java`) knows two versions:
+**Sending:** the app's data packets count on from 1 (the start packet was 0). It cuts the data
+into packets of the agreed size (header byte included) and only sends as long as the brush's
+receive buffer (from the configuration) has room; every ack frees the bytes of the packets up to
+it. An ack can cover several packets. While waiting for an ack the app runs a 10-second timer;
+what happens when it runs out wasn't read.
 
-- **v3 (legacy):** the app reads the protocol configuration, 3 bytes: version (must be 3),
-  incoming and outgoing buffer size in packets (u8 each; `gr/c.java`).
-- **v4:** the app writes `03 04` (the versions it supports) to the protocol configuration,
-  without response, then exchanges configurations. The server configuration is 3 × u16: maximum
-  packet size, receive buffer of channel 0 and of channel 1 (`protocol/v4/b.java`). What the client
-  configuration contains wasn't read.
+**Receiving:** a packet with the expected sequence number is accepted (the counter starts at 0,
+so the app expects 0 first) and acknowledged 10 ms later; one ack covers everything received by then. A packet with the
+wrong number is dropped and the last good one acknowledged again. **An ack** is a packet without
+payload: the channel bit and the sequence number of the last packet received, start bit 0 – one
+byte, on Tx ack.
+
+**Setting up** (`internal/protocol/ByteStreamingProtocolFactory.java`): which of the two versions
+the app uses on a Condor brush is decided in a method jadx couldn't decompile
+(`ByteStreamingServiceHandler.x1`). Since the Condor service has both configuration
+characteristics, probably v4 after negotiating:
+
+1. Negotiate: write `03 04` (the versions the app supports) to the client configuration; the brush
+   answers with one byte on the server configuration, the version it picked (the app waits 5 s).
+2. v4: write `FF FF FF FF` to the client configuration; the brush answers on the server
+   configuration with up to 6 bytes, 3 × u16: maximum packet size, receive buffer of channel 0, of
+   channel 1 (`protocol/v4/b.java`). The packet size used is the smaller of that and a value from
+   the Bluetooth connection (probably what the MTU allows).
+3. v3 instead: read the protocol configuration, 3 bytes: version (must be 3), incoming and
+   outgoing buffer size in packets, u8 each (`gr/c.java`).
+
+Then channel 0 (and with v4 channel 1) is opened as above.
 
 ### Condor messages
 
-A message may span several packets; the app collects bytes until a message is complete. Framing
-(`condor/bluetooth/communication/e.java`): `FE FF`, one byte message type, two bytes payload
-length (big-endian, Java's default), then the payload.
+A message may span several packets; the app collects the bytes of channel 0 until a message is
+complete (`condor/bluetooth/communication/f.java`). Framing (`e.java`): `FE FF`, one byte message
+type, two bytes payload length (big-endian, Java's default), then the payload.
 
 | Type | Message | | Type | Message |
 |---|---|---|---|---|
 | 1 | InitializeRequest | | 2 | InitializeResponse |
 | 3 | PutPropsRequest | | 4 | GetPropsRequest |
 | 5 | SubscribeRequest | | 6 | UnsubscribeRequest |
-| 7 | GenericResponse | | 8 / 9 | ChangeIndication request / response (the brush reports a change) |
+| 7 | GenericResponse | | 8 / 9 | ChangeIndication request / response |
 | 10 | GetProdsRequest | | 11 | GetPortsRequest |
 | 12 / 13 | AddProps / DelProps | | 15 | RawRequest |
 
-Payload of a request (`kr/a.java`), UTF-8 strings each ending in a zero byte:
+**Requests** (`kr/a.java`), UTF-8 strings each ending in a zero byte. The product id is `1` for
+every toothbrush port (`getProductId()` in each port).
 
-- GetProps: product id `00` port name `00`
-- PutProps, Subscribe, Unsubscribe: product id `00` port name `00` JSON `00`; byte values inside
-  the JSON as Base64. A PutProps on a binary port sends the raw bytes instead of the JSON.
-- Subscribe carries `ttl` and `subscriber`, Unsubscribe `subscriber`
+- GetProps: `1` `00` port `00`, e.g. `31 00 53 6F 6E 69 63 61 72 65 00` for `Sonicare`.
+- PutProps, Subscribe, Unsubscribe: `1` `00` port `00` JSON `00`; byte values inside the JSON as
+  Base64. A PutProps on a binary port sends the raw bytes instead of the JSON.
+- Subscribe carries `{"ttl": …, "subscriber": …}`, Unsubscribe `{"subscriber": …}`
   (`BluetoothCommunicationStrategy`).
 
-Status codes in a response: 0 no error, 1 not understood, 2 out of memory, 3 no such port,
-4 not implemented, 5 version not supported, 6 no such property, 7 no such operation, 8 no such
-product, 9 property already exists, 10 no such method, 11 wrong parameters, 12 invalid parameter,
-13 not subscribed, 14 protocol violation.
+**Responses** (GenericResponse, InitializeResponse; `g.java`): one byte status, the rest are the
+values (for GetProps the properties as JSON). Status codes: 0 no error, 1 not understood, 2 out of
+memory, 3 no such port, 4 not implemented, 5 version not supported, 6 no such property, 7 no such
+operation, 8 no such product, 9 property already exists, 10 no such method, 11 wrong parameters,
+12 invalid parameter, 13 not subscribed, 14 protocol violation.
 
-What Initialize exchanges and which product id a toothbrush has weren't read.
+**Change indications** (type 8, the brush reports a change on a subscribed port; `d.java`): a port
+path ending in a zero byte, then the values. The app answers with type 9 and payload `00 00`. The
+exact form of the port path wasn't seen.
+
+**Initialize:** nothing in the Condor packages sends an InitializeRequest; the app only accepts an
+InitializeResponse like a generic response. Whether a brush expects one first is open.
 
 ### Ports
 
-The toothbrush ports (`com/philips/cdp/ohc/condor/services/`) are the classic services again, as
-properties:
+The toothbrush ports (`com/philips/cdp/ohc/condor/services/`, product id 1) are the classic
+services again, as JSON properties (all integers unless noted):
 
 | Port | Properties |
 |---|---|
-| `Sonicare` | `HandleState`, `HandleTime`, `RoutineIDs`, `UserMode`, `UserModePos`, `PhysModes` |
-| `RoutineStatus` | `RoutineState`, `Mode`, `Length`, `Duration`, `SessionID`, `BrushingType`, `CoverageThreshold`, `OverpressureThreshold`, `UnderpressureThreshold`, `ScrubbingThreshold` |
+| `Sonicare` | `HandleState`, `HandleTime`, `RoutineIDs` (list), `UserMode` (list), `UserModePos`, `PhysModes` |
+| `RoutineStatus` | `RoutineState`, `Mode` (the routine number), `Intensity`, `Length`, `Duration`, `SessionID`, `BrushingType`, `CoverageThreshold`, `OverpressureThreshold`, `UnderpressureThreshold`, `ScrubbingThreshold` |
 | `Battery` | `BatteryPercent`, `BatteryMV` |
-| brush head | `LifetimeLimit`, `LifetimeUsage`, `RemainingBrushings`, `SerialNumber`, `NfcTagVersion`, `RingId`, `FactoryMode`, `BHRR` |
-| `SessionStorage` | `ID`, `LatestID`, `Count`, `Type`, `Control`; plus a binary port for the data |
-| `SensorData` | `Control`, `Sensors`, `Types`; plus a binary port for the data |
+| `BrushHead` | `LifetimeLimit`, `LifetimeUsage`, `RemainingBrushings`, `SerialNumber`, `NfcTagVersion`, `RingId`, `FactoryMode`, `BHRR` |
+| `SessionStorage` | `ID`, `LatestID`, `Count`, `Type`, `Control`; the data on the binary port `SessionStorage.b` |
+| `SensorData` | `Control`, `Sensors`, `Types`; the data on the binary port `SensorData.b` |
 | `Diagnostics` | `PErrors`, `VErrors`, `ExternalFlash`, `InvalidCharger`, `PressureSensor` |
 | `Extended` | `FeatureCtrl`, `FeedbackMode` |
 | `Languages` | `ID`, `Supported` |
 
-The brush head port's name and the binary ports' names weren't read; nor what the values of
-`UserMode`, `PhysModes` and the rest mean.
+The names match the classic characteristics, so the values presumably mean the same: `HandleState`
+like `4010`, `RoutineState` like `4082`, `Mode` like `4080` and so on; not checked value by value.
+`UserMode`/`UserModePos` are called "SenseIQ mode" in the app.
 
-### Still open before a driver
+### A read-only driver would
 
-Direction of Rx/Tx, the ack format, the v4 client configuration, Initialize and the product id. All
-of it is in the byte-streaming and Condor packages above, so no new files from the app are needed.
-Probably doable without an account, but a driver of its own, larger than Oral-B's (a reliable
-transport underneath), and it needs someone with a 7100 to test.
+Set up the byte stream (v4 as above), open channel 0, subscribe to `Sonicare`, `RoutineStatus`,
+`Battery` and `BrushHead`, then GetProps each once and follow the change indications. Open before
+that: whether the brush wants an Initialize first, the form of the port path in a change
+indication, and how a real 7100 answers the setup. All of it is best seen in a log from a real
+brush; no further files from the app are needed. Probably doable without an account, but larger
+than Oral-B's driver, and it needs someone with a 7100 to test.
 
 ## To check on a real brush
 
@@ -362,8 +396,11 @@ Plain Java/Kotlin, no Flutter. `jadx --no-res` decompiles it; Bluetooth is in `c
 - Obfuscated, outside those packages: `dp/d1.java` (`h`: routine number → mode, `g`: xian) and
   `dp/e0.java` (`b(device)`: the default list without a device, otherwise the private `e(device)` with the list per model number).
 - Condor: `com/philips/connectivity/condor/` (framing in `bluetooth/communication/e.java`, message
-  types and status codes next to it, requests in `requests/`), the byte stream in
-  `com/philips/connectivity/bluetooth/services/handlers/bytestreaming/`, and
+  stream in `f.java`, responses in `g.java`, change indications in `d.java`, message types and
+  status codes next to them, requests in `requests/`), the byte stream in
+  `com/philips/connectivity/bluetooth/services/handlers/bytestreaming/` (characteristics in
+  `ByteStreamingServiceHandler`, packets and acks in `internal/ByteStreamingChannel`, setup in
+  `internal/protocol/`), and
   `com/philips/cdp/ohc/condor/services/` (one port per service, properties in
   `*PortProperties.java`). Obfuscated: `kr/a.java` (request payloads), `gr/` (v3 configuration),
   `ar/` (only a UUID type and interfaces).
