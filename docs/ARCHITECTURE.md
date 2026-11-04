@@ -77,7 +77,7 @@ The official vendor app counts as verified research too: what it reads and sends
 brushes do every day. Bürstli studies it only to understand the protocol (interoperability) and
 never copies its code. Where the vendor app and other research disagree, the vendor app wins.
 Either way, the brand's protocol notes record where each value comes from and whether it was
-seen on a real brush, so a report can confirm or correct it (e.g. [ORAL-B.md](ORAL-B.md)).
+seen on a real brush, so a report can confirm or correct it (e.g. [ORAL-B.md](ORAL-B.md), [SONICARE.md](SONICARE.md)).
 
 Read-only means that nothing on the brush changes, not that nothing is sent. Some protocols can't
 be read at all without messages (a handshake, subscribing, asking for values, acknowledging what
