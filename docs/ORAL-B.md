@@ -146,6 +146,39 @@ that change or reset the brush (in the app, `34` is a factory reset), so the cod
 one message and refuses any other index; a test checks every write. A user also reports that
 writing to `FF06` resets the brush (the app calls it the button state); Bürstli never touches it.
 
+## Reference: what else the app does (not used by Bürstli)
+
+Read from the official app for later; nothing here was seen on a real brush. Under ADR-6 anything
+that changes the brush waits for an owner who tries it.
+
+**Characteristics** (`A0F0xxxx-…`): `FF04` state · `FF05` battery · `FF06` buttons (0 none,
+1 power, 2 mode) · `FF07` mode · `FF08` brushing time · `FF09` sector · `FF0A` smiley · `FF0B`
+pressure · `FF0D` motion sensor · `FF0E` dashboard data stream · `FF10` access control · `FF21`
+commands · `FF22` clock · `FF23` time zone · `FF24` brushing timer · `FF25` mode list · `FF26`
+sector timers · `FF27` tongue time · `FF28` pressure settings · `FF29` selected data · `FF2B`
+ring colour · `FF2C` dashboard settings · `FF2D` brush head reminder · `FF2E` post-brushing
+statistics · `FF81`–`FF85` firmware update.
+
+**Commands to `FF21`** (hex):
+
+- Reading (no change): `02 n` session *n*, `02 FA` / `02 FB` service data A / B, `01 n` a
+  parameter, `04 n` calibration, `05 n` metadata (`01` device id, `02` business unit, `03` BLE
+  profile, `04` device type, `05` PCBA, `06`–`08` software versions, `09` git hash, `0A` GCAS,
+  `10` brush settings, `FF` iO type), `12 n` device colour. Sessions, service data and metadata
+  are then read from `FF29`; where the others answer, the app code doesn't make clear.
+  `31 n` keeps the connection open for *n* more seconds.
+- Changing a setting is two writes: first announce it on `FF21` – the code alone from protocol 6,
+  `37` + code before – then write the value to its own characteristic. Codes: `26` clock
+  (`FF22`, `FF23`), `28` brushing timer (`FF24`), `29` modes (`FF25`), `2A` sector timers
+  (`FF26`), `2B` tongue time (`FF27`), `2C` pressure settings (`FF28`), `2F` ring colour
+  (`FF2B`), `30` dashboard (`FF2C`), `31` brush head reminder (`FF2D`).
+- Direct: `03 n` clear a notification, `33 50`/`33 51` smart guide off/on, `47` flight mode,
+  `50 n` first day of the week.
+- **Destructive:** `32 52` resets the settings, `34 52` resets the brush to factory settings,
+  `F0 n` are debug commands (among them erasing the session data).
+- Brush commands are `10` + command (e.g. switch mode, enable or disable motion data or the
+  pressure sensor, light effects, motor ramping).
+
 ## Legal
 
 As far as we know, studying a program to make another program work with the same device is allowed for
