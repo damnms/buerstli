@@ -6,20 +6,16 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-04
+
 ### Added
-- Oral-B: newer iO brushes show their exact series (iO 4 to iO 10). Also recognizes more iO
-  models, the Gentle White mode and a paused brush. Taken from the official app, not seen on a
-  real brush yet – reports welcome!
-- Oral-B: battery level. Bürstli connects for a moment while the brush is idle, reads it and
-  only listens again. Not seen on a real brush yet either.
-- Oral-B: brushing history straight from the brush – when, how long, which mode and how long
-  the pressure was too high, for up to 30 sessions. Reading it deletes nothing. Experimental.
-- Oral-B: when a new brush head is due, in days or minutes of brushing, as the brush counts it.
-  Experimental.
+- Oral-B: battery, brushing history and when a new head is due. Bürstli connects briefly while
+  the brush is idle; reading deletes nothing.
+- Oral-B: exact iO series (iO 4–10), more iO models, Gentle White, pause. All from the official
+  app, untested on a real brush – reports welcome!
 
 ### Fixed
-- Oral-B: iO models Bürstli doesn't know by name showed the wrong mode names.
-- Oral-B: mode 7 on older brushes is called Pro Clean, like in the official app, not Turbo.
+- Oral-B: unknown iO models showed wrong mode names; mode 7 on older brushes is Pro Clean.
 
 ## [0.12.0] - 2026-11-04
 

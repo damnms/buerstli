@@ -1,0 +1,6 @@
+Added:
+- Oral-B: battery, brushing history and when a new head is due. Bürstli connects briefly while the brush is idle; reading deletes nothing.
+- Oral-B: exact iO series (iO 4–10), more iO models, Gentle White, pause. All from the official app, untested on a real brush – reports welcome!
+
+Fixed:
+- Oral-B: unknown iO models showed wrong mode names; mode 7 on older brushes is Pro Clean.
