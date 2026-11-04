@@ -23,6 +23,7 @@ object SonicareCodec {
     val MODEL_NUMBER: UUID = sig(0x2A24)
     val FIRMWARE: UUID = sig(0x2A26)
     val HANDLE_STATE: UUID = philips(0x4010)
+    val AVAILABLE_ROUTINES: UUID = philips(0x4022)
     val BRUSHING_MODE: UUID = philips(0x4080)
     val BRUSHING_STATE: UUID = philips(0x4082)
     val BRUSHING_TIME: UUID = philips(0x4090)
@@ -81,6 +82,18 @@ object SonicareCodec {
     /** "xian" models count by routine id instead, without skipping an entry. */
     private val XIAN = setOf("HX9996", "HX999X")
     private val XIAN_MODES = listOf(CLEAN, WHITE, GUM, TONGUE, DEEP, SENSITIVE, MAX, COMFORT, POLISH)
+
+    /**
+     * Routine ids, the numbering the app uses to switch modes (`4022`) and that xian brushes also
+     * report in `4080`.
+     */
+    val ROUTINE_IDS: List<ModeName> = XIAN_MODES
+
+    fun routineId(mode: ModeName?): Int? = mode?.let { ROUTINE_IDS.indexOf(it) }?.takeIf { it >= 0 }
+
+    /** `4022`: the routine ids this brush offers. */
+    fun availableRoutines(v: ByteArray): List<Int> =
+        v.map { it.toInt() and 0xFF }.filter { it in ROUTINE_IDS.indices }.distinct()
 
     /** Every model number the app knows; X stands for any digit. */
     private val KNOWN_MODELS = listOf(
@@ -164,10 +177,20 @@ object SonicareCodec {
     }
 
     /**
-     * The only messages Bürstli ever sends to a Sonicare, all to read the history the way the app
-     * does. Nothing else can be built here, so nothing on the brush can change.
+     * The only messages Bürstli ever sends to a Sonicare: reading the history the way the app does,
+     * and the app's two settings, mode and intensity. Nothing else can be built here.
      */
     sealed class Request(val characteristic: UUID, val bytes: ByteArray) {
+        /** Switch to a mode, by routine id; only ids the brush lists in `4022`. */
+        class SelectRoutine(routineId: Int) : Request(AVAILABLE_ROUTINES, byteArrayOf(routineId.toByte())) {
+            init { require(routineId in ROUTINE_IDS.indices) { "no such routine id: $routineId" } }
+        }
+
+        /** 0 low, 1 medium, 2 high. */
+        class SetIntensity(level: Int) : Request(INTENSITY, byteArrayOf(level.toByte())) {
+            init { require(level in 0..2) { "no such intensity: $level" } }
+        }
+
         /** Data type 0: brushing sessions. */
         data object ReadSessions : Request(SESSION_TYPE, byteArrayOf(0))
 

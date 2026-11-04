@@ -6,7 +6,11 @@ import io.github.damnms.buerstli.domain.BrushSession
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.BrushingRecord
 import io.github.damnms.buerstli.domain.CommandResult
+import io.github.damnms.buerstli.domain.ModeSettings
+import io.github.damnms.buerstli.domain.ParameterKind
+import io.github.damnms.buerstli.domain.Validation
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.ACTIVE_SESSION
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.AVAILABLE_ROUTINES
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BATTERY
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_MODE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_STATE
@@ -34,7 +38,8 @@ import java.io.IOException
 import java.util.UUID
 
 /**
- * Read-only: nothing on the brush changes. A Sonicare drops the connection after ~6 s unless
+ * Reads everything, and changes only mode and intensity, as the app does: confirmed by reading the
+ * brush back (ADR-2), only modes the brush lists as available. A Sonicare drops the connection after ~6 s unless
  * something is subscribed, so subscriptions come first. Not every model has every characteristic.
  * The model number is read before the mode, because what a mode number means depends on it.
  * Last, the brushing history, the way the official app fetches it (docs/SONICARE.md).
@@ -48,6 +53,8 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
     private var handleState: Int? = null
     private var brushingState: Int? = null
     private var routineNumber: Int? = null
+    private var intensity: Int? = null
+    private var available: List<Int> = emptyList()
     private var headLimit: Int? = null
     private var headUsage: Int? = null
 
@@ -64,6 +71,7 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
         // After the handle state, so pairing is done; before the mode, which depends on it.
         optional { apply(MODEL_NUMBER, link.read(MODEL_NUMBER)) }
         (READ - HANDLE_STATE).forEach { uuid -> optional { apply(uuid, link.read(uuid)) } }
+        optional { available = SonicareCodec.availableRoutines(link.read(AVAILABLE_ROUTINES)); updateMode() }
 
         optional {
             val history = readHistory()
@@ -75,7 +83,46 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
         if (characteristic in STORAGE) inbox?.trySend(characteristic to value) else apply(characteristic, value)
     }
 
-    override suspend fun execute(command: BrushCommand): CommandResult = CommandResult.Unsupported
+    override suspend fun execute(command: BrushCommand): CommandResult = try {
+        when (command) {
+            is BrushCommand.ActivateMode -> activate(command.modeIndex)
+            is BrushCommand.ChangeModeSettings -> changeIntensity(command.modeIndex, command.settings)
+            else -> CommandResult.Unsupported
+        }
+    } catch (e: IOException) {
+        CommandResult.Failed(e.message ?: "Bluetooth error")
+    }
+
+    private fun activeRoutine(): Int? = SonicareCodec.routineId(_state.value.modeName)
+
+    private suspend fun activate(routineId: Int): CommandResult {
+        if (routineId !in available) return CommandResult.UnknownMode(routineId)
+        if (activeRoutine() == routineId) return CommandResult.Confirmed
+        send(Request.SelectRoutine(routineId))
+        return confirm(BRUSHING_MODE) { activeRoutine() == routineId }
+    }
+
+    private suspend fun changeIntensity(routineId: Int, settings: ModeSettings): CommandResult {
+        if (routineId !in available) return CommandResult.UnknownMode(routineId)
+        val spec = SonicareClassicDriver.capabilities.mode(routineId) ?: return CommandResult.UnknownMode(routineId)
+        spec.validate(settings).let { if (it != Validation.Valid) return CommandResult.Invalid(it) }
+        val level = settings[ParameterKind.INTENSITY]!!
+        // "Save and use": the intensity belongs to the active mode, so switch first.
+        activate(routineId).let { if (it != CommandResult.Confirmed) return it }
+        if (intensity == level) return CommandResult.Confirmed
+        send(Request.SetIntensity(level))
+        return confirm(INTENSITY) { intensity == level }
+    }
+
+    /** Reads [uuid] back until [applied] holds; the brush may take a moment. */
+    private suspend fun confirm(uuid: UUID, applied: () -> Boolean): CommandResult {
+        repeat(CONFIRM_ATTEMPTS) {
+            if (applied()) return CommandResult.Confirmed
+            delay(CONFIRM_INTERVAL_MS)
+            apply(uuid, link.read(uuid))
+        }
+        return if (applied()) CommandResult.Confirmed else CommandResult.NotApplied
+    }
 
     private fun apply(uuid: UUID, value: ByteArray) {
         val c = SonicareCodec
@@ -86,7 +133,7 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
             HANDLE_STATE -> c.u8(value)?.let { handleState = it; updateActivity() }
             BRUSHING_STATE -> c.u8(value)?.let { brushingState = it; updateActivity() }
             BRUSHING_MODE -> c.u8(value)?.let { routineNumber = it; updateMode() }
-            INTENSITY -> c.u8(value)?.let { v -> _state.update { it.copy(intensity = c.intensity(v)) } }
+            INTENSITY -> c.u8(value)?.let { v -> intensity = v; _state.update { it.copy(intensity = c.intensity(v)) }; updateModes() }
             BRUSHING_TIME -> c.u16(value)?.let { v -> _state.update { it.copy(brushingSeconds = v) } }
             ROUTINE_LENGTH -> c.u16(value)?.let { v -> _state.update { it.copy(brushingDurationSeconds = v) } }
             HEAD_LIMIT -> c.u16(value)?.let { headLimit = it; updateWear() }
@@ -94,8 +141,24 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
         }
     }
 
-    private fun updateMode() =
+    private fun updateMode() {
         _state.update { it.copy(modeName = routineNumber?.let { n -> SonicareCodec.mode(n, modelNumber) }) }
+        updateModes()
+    }
+
+    /** The modes the brush offers; the active one carries the intensity. */
+    private fun updateModes() {
+        val active = activeRoutine()
+        val level = intensity?.takeIf { it in 0..2 }
+        _state.update { s ->
+            s.copy(
+                activeModeIndex = active,
+                modes = available.associateWith { id ->
+                    if (id == active && level != null) ModeSettings.of(ParameterKind.INTENSITY to level) else ModeSettings(emptyMap())
+                },
+            )
+        }
+    }
 
     private fun updateActivity() =
         _state.update { it.copy(activity = SonicareCodec.activity(handleState, brushingState)) }
@@ -175,6 +238,8 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
             ROUTINE_LENGTH, HEAD_LIMIT, HEAD_USAGE,
         )
         val STORAGE = setOf(ACTIVE_SESSION, SESSION_DATA, SESSION_CONTROL)
+        const val CONFIRM_ATTEMPTS = 6
+        const val CONFIRM_INTERVAL_MS = 300L
         const val MAX_SESSIONS = 30
         const val HISTORY_BUDGET_MS = 8_000L
         const val PAIRING_ATTEMPTS = 4

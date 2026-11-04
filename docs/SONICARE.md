@@ -1,9 +1,9 @@
 # Philips Sonicare: protocol notes
 
-Status: experimental, read-only (`SonicareClassicDriver`). Battery, status, mode, intensity, brushing
-time and routine length were confirmed on a real brush (see "Seen on a real brush"); the model
-number, the mode names per model and the brushing history come from the official app and were
-**not seen on a real brush yet**.
+Status: experimental (`SonicareClassicDriver`). Battery, status, mode, intensity, brushing time and
+routine length were confirmed on a real brush (see "Seen on a real brush"); the model number, the
+mode names per model, the brushing history and switching mode and intensity come from the official
+app and were **not seen on a real brush yet**.
 
 Two sources, and every value below says which one it comes from:
 
@@ -69,7 +69,7 @@ the app reads them with. Bürstli column: what it does with it.
 |---|---|---|---|---|---|
 | `0001` Sonicare | `4010` | handle state: 0 off, 1 standby, 2 run, 3 charge, 4 shutdown, 6 validate, 7 background | u8, notify | psb, app, **seen** | reads, subscribes |
 | | `4020` | available routines | bytes | app | – |
-| | `4022` | available routine ids; the app also writes a routine id here to change the mode | bytes | app | – (never written) |
+| | `4022` | available routine ids (read); the app writes a routine id here to change the mode | bytes | app | reads; writes a listed id |
 | | `4040` | cumulative motor runtime | ? | app | – |
 | | `4050` | handle clock, seconds since 1970 (the app writes the phone's time) | 32 bit | app | – (never written) |
 | `0002` Routine | `4070` | current session id | u16, notify | app | – |
@@ -77,7 +77,7 @@ the app reads them with. Bürstli column: what it does with it.
 | | `4082` | routine state: 0 inactive, 1 running, 2 paused, 3 completed, 4 terminated, 5 failed | u8 | psb, app, **seen** | reads, subscribes (2 = paused) |
 | | `4090` | brushing time, seconds | u16, notify | psb, app, **seen** | reads, subscribes |
 | | `4091` | routine length, seconds | u16, notify | psb, app, **seen** | reads, subscribes |
-| | `40B0` | intensity: 0 low, 1 medium, 2 high | u8, notify | psb, app, **seen** | reads, subscribes |
+| | `40B0` | intensity: 0 low, 1 medium, 2 high; the app writes it to change it | u8, notify | psb, app, **seen** | reads, subscribes, writes |
 | `0004` Storage | `40D0` | latest session id | u16 | app | reads (history) |
 | | `40D2` | number of stored sessions | u16 | app | reads (history) |
 | | `40D5` | data type to read, see "Brushing history" | u8, write | app | writes `00` |
@@ -168,12 +168,38 @@ A session is the first notification of that session; its length gives the versio
 Version 1 is 13 bytes. The app sets the brush's clock from the phone (`4050`), so Bürstli reads
 the start as UTC and shows no date before 2015, assuming the clock was never set.
 
+## Changing mode and intensity – app
+
+The app's settings for a classic Sonicare (`handle_controls/settings`): the mode is switched by
+writing its **routine id** (not the routine number) to `4022`, one byte; the intensity by writing
+0, 1 or 2 to `40B0`. The routine ids are the xian list above: 0 Clean, 1 White, 2 Gum Care,
+3 Tongue Care, 4 Deep Clean, 5 Sensitive, 6 Max Care, 7 Comfort, 8 Polish. The app's mode screen
+knows Clean 0, White 1, Gum Health 2, Deep Clean 4 and Sensitive 5. Reading `4022` gives the ids the
+brush offers; the app checks a mode against that list.
+
+Which models the app offers these settings for wasn't traced. What Bürstli does:
+
+- It shows only the modes listed in `4022`; if `4022` can't be read, no mode can be switched.
+- Switching: write the id to `4022`, then read `4080` back (up to 6 times, 0.3 s apart) until it
+  shows that mode, translated with the model's table above. Only then is it confirmed (ADR-2);
+  otherwise "not applied".
+- Intensity belongs to the active mode. Saving it for another mode switches to that mode first.
+  Confirmed the same way, by reading `40B0` back.
+
+For an HX960X, `4022` should then list 0, 2 and 4 (Clean, Gum Care, Deep Clean), if the app's table
+for it is right; the report shows it.
+
 ## Writing
 
-**Bürstli only writes to `40D5` (`00`), `40E0` (a session id) and `4110` (`01`, `02`)**, which is
-what the app sends to read the history, and the codec builds nothing else; a test checks every
-write. It never writes the mode (`4022`), intensity (`40B0`), routine state (`4082`), clock
-(`4050`), settings (`4420`) or anything in the sensor, brush head or diagnostics services.
+**What Bürstli writes to a Sonicare, and nothing else:** `4022` (a routine id the brush listed),
+`40B0` (0–2), and for the history `40D5` (`00`), `40E0` (a session id) and `4110` (`01`, `02`). The
+codec builds nothing else, it rejects ids and levels out of range, and a test checks every write. It
+never writes the routine state (`4082`, which starts and stops), the clock (`4050`), the settings
+(`4420`) or anything in the sensor, brush head or diagnostics services.
+
+Mode and intensity are an exception to ADR-6: the driver is experimental, but it changes them. The
+maintainer decided that, so that one test by an owner covers everything; the guards are the
+brush's own list and reading back.
 
 ## Condor
 
@@ -193,6 +219,8 @@ studied yet; Bürstli recognizes Condor-only brushes and offers a report.
   described, are times and durations right, and are the sessions still there afterwards in the
   official app?
 - Does `2A26` hold the firmware version as the official app shows it?
+- Mode and intensity: which ids does `4022` list? Does switching a mode and changing the
+  intensity work, and does the handle show the same afterwards? Does it work while brushing?
 
 ## Looking things up again
 
@@ -210,6 +238,8 @@ Plain Java/Kotlin, no Flutter. `jadx --no-res` decompiles it; Bluetooth is in `c
   `storage/SessionDataType`, `storage/data_extraction/SessionDataExtractor` (how the history is
   fetched).
 - `com/philips/cdp/ohc/utility/datamodel/model/device/Device.java` – model numbers and families.
+- `com/philips/cdp/ohc/tuscany/handle_controls/settings/` – changing mode (`ModeChange`, the ids in
+  `d.java`) and intensity (`Intensity`, levels in `c.java`).
 - `com/philips/cdp/ohc/tuscany/data_extraction/routineSession/b.java` – layout of a stored
   session; `RoutineIdToBrushMode.java` – the xian modes; `views/mouthmap/BrushMode$Mode.java` – the
   default mode list.

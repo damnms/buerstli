@@ -1,7 +1,12 @@
 package io.github.damnms.buerstli.domain
 
 /** The knobs a brushing mode can have. Extend when a brand brings a new one. */
-enum class ParameterKind { STRENGTH, RANGE, SPEED }
+enum class ParameterKind {
+    STRENGTH, RANGE, SPEED,
+
+    /** Sonicare: 0 low, 1 medium, 2 high. */
+    INTENSITY,
+}
 
 /** One knob of a mode and the values the brush accepts for it. */
 data class ParameterSpec(val kind: ParameterKind, val range: IntRange)
@@ -13,6 +18,8 @@ data class ModeSpec(
     val highFrequency: Boolean = false,
     /** A switch that must be on for this mode to exist on the brush, if any. */
     val requires: Switch? = null,
+    /** For brushes with named modes (e.g. Sonicare); otherwise the mode is shown by number. */
+    val name: ModeName? = null,
 ) {
     fun spec(kind: ParameterKind): ParameterSpec? = parameters.firstOrNull { it.kind == kind }
 

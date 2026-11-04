@@ -10,6 +10,8 @@ All notable changes to Bürstli are documented here. The format follows
 - Philips Sonicare: model number, firmware version and the brushing history stored on the brush
   (the newest 30 sessions; reading deletes nothing). From the official app, untested on a real
   brush – reports welcome!
+- Philips Sonicare: switch the mode and change the intensity from the phone, experimental. Only
+  the modes the brush offers; a change counts once the brush reports it back.
 - Philips Sonicare: Max Care, Comfort and Polish modes.
 - Philips Sonicare: the mode names also fit when a brush reports its full product number
   (e.g. HX9611 instead of HX961X).

@@ -7,8 +7,11 @@ import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.CommandResult
 import io.github.damnms.buerstli.domain.Intensity
 import io.github.damnms.buerstli.domain.ModeName
+import io.github.damnms.buerstli.domain.ModeSettings
+import io.github.damnms.buerstli.domain.ParameterKind
 import io.github.damnms.buerstli.domain.SupportLevel
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.ACTIVE_SESSION
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.AVAILABLE_ROUTINES
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BATTERY
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_MODE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_STATE
@@ -29,6 +32,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
@@ -122,10 +126,11 @@ class SonicareTest {
     }
 
     @Test
-    fun `is experimental, may need pairing and changes nothing`() {
+    fun `is experimental, may need pairing, offers the app's modes with intensity`() {
         assertEquals(SupportLevel.EXPERIMENTAL, SonicareClassicDriver.supportLevel)
         assertTrue(SonicareClassicDriver.mayNeedPairing)
-        assertTrue(SonicareClassicDriver.capabilities.modes.isEmpty())
+        assertEquals(SonicareCodec.ROUTINE_IDS, SonicareClassicDriver.capabilities.modes.map { it.name })
+        assertTrue(SonicareClassicDriver.capabilities.modes.all { m -> m.parameters.single().kind == ParameterKind.INTENSITY })
         assertTrue(SonicareClassicDriver.capabilities.switches.isEmpty())
         assertNull(SonicareClassicDriver.capabilities.brushingDuration)
     }
@@ -229,12 +234,12 @@ class SonicareTest {
     }
 
     @Test
-    fun `without a storage service nothing is written to the brush`() = runTest {
+    fun `without storage service and mode list nothing is written to the brush`() = runTest {
         val brush = diamondClean()
         val session = SonicareClassicDriver.open(brush).apply { start() }
 
-        assertEquals(CommandResult.Unsupported, session.execute(BrushCommand.ActivateMode(0)))
-        assertTrue(brush.writes.isEmpty()) // no storage service: nothing to ask for
+        assertEquals(CommandResult.UnknownMode(0), session.execute(BrushCommand.ActivateMode(0))) // no 4022
+        assertTrue(brush.writes.isEmpty()) // no storage service, no list of modes: nothing to send
     }
 
     @Test
@@ -417,7 +422,7 @@ class SonicareTest {
     }
 
     @Test
-    fun `every message the codec can build only selects what to read`() {
+    fun `the codec builds only the app's reading messages, a mode and an intensity`() {
         val allowed = setOf(
             SESSION_TYPE to listOf<Byte>(0),
             SESSION_CONTROL to listOf<Byte>(1),
@@ -427,6 +432,104 @@ class SonicareTest {
         built.forEach { assertTrue(allowed.contains(it.characteristic to it.bytes.toList())) }
         val start = SonicareCodec.Request.StartAt(0x1234)
         assertEquals(ACTIVE_SESSION to listOf<Byte>(0x34, 0x12), start.characteristic to start.bytes.toList())
+        val mode = SonicareCodec.Request.SelectRoutine(4)
+        assertEquals(AVAILABLE_ROUTINES to listOf<Byte>(4), mode.characteristic to mode.bytes.toList())
+        val level = SonicareCodec.Request.SetIntensity(2)
+        assertEquals(INTENSITY to listOf<Byte>(2), level.characteristic to level.bytes.toList())
+        assertThrows(IllegalArgumentException::class.java) { SonicareCodec.Request.SelectRoutine(9) }
+        assertThrows(IllegalArgumentException::class.java) { SonicareCodec.Request.SetIntensity(3) }
+    }
+
+    // --- mode and intensity (app) ---
+
+    /**
+     * An HX960X that offers Clean, Gum Care and Deep Clean (routine ids 0, 2, 4) and applies what it
+     * is told, as a brush should: a routine id written to 4022 shows up as its routine number in 4080.
+     */
+    private fun expertClean(applies: Boolean = true) = withModel("HX960X", 0).apply {
+        values[AVAILABLE_ROUTINES] = byteArrayOf(0, 2, 4)
+        values[INTENSITY] = byteArrayOf(1)
+        onWrite = { uuid, data ->
+            if (applies && uuid == AVAILABLE_ROUTINES) {
+                values[BRUSHING_MODE] = byteArrayOf(mapOf(0 to 0, 2 to 1, 4 to 2).getValue(data[0].toInt()).toByte())
+            }
+            if (applies && uuid == INTENSITY) values[INTENSITY] = data
+        }
+    }
+
+    @Test
+    fun `shows the modes the brush offers, the active one with its intensity`() = runTest {
+        val s = SonicareClassicDriver.open(expertClean()).apply { start() }.state.value
+
+        assertEquals(setOf(0, 2, 4), s.modes.keys)
+        assertEquals(0, s.activeModeIndex) // routine number 0 on an HX960X: Clean, routine id 0
+        assertEquals(ModeSettings.of(ParameterKind.INTENSITY to 1), s.modes[0])
+        assertEquals(ModeSettings(emptyMap()), s.modes[2])
+    }
+
+    @Test
+    fun `switches the mode and confirms it by reading back`() = runTest {
+        val brush = expertClean()
+        val session = SonicareClassicDriver.open(brush).apply { start() }
+
+        assertEquals(CommandResult.Confirmed, session.execute(BrushCommand.ActivateMode(4)))
+        assertEquals(ModeName.DEEP_CLEAN_PLUS, session.state.value.modeName)
+        assertEquals(4, session.state.value.activeModeIndex)
+        assertEquals(AVAILABLE_ROUTINES to listOf<Byte>(4), brush.writes.last().let { (u, d) -> u to d.toList() })
+    }
+
+    @Test
+    fun `a mode the brush doesn't offer is never sent`() = runTest {
+        val brush = expertClean()
+        val session = SonicareClassicDriver.open(brush).apply { start() }
+        val before = brush.writes.size
+
+        assertEquals(CommandResult.UnknownMode(1), session.execute(BrushCommand.ActivateMode(1))) // White
+        assertEquals(before, brush.writes.size)
+    }
+
+    @Test
+    fun `a brush that ignores the switch reports not applied`() = runTest {
+        val session = SonicareClassicDriver.open(expertClean(applies = false)).apply { start() }
+
+        assertEquals(CommandResult.NotApplied, session.execute(BrushCommand.ActivateMode(2)))
+        assertEquals(ModeName.CLEAN, session.state.value.modeName)
+    }
+
+    @Test
+    fun `changes the intensity of the active mode and confirms it`() = runTest {
+        val brush = expertClean()
+        val session = SonicareClassicDriver.open(brush).apply { start() }
+
+        val result = session.execute(BrushCommand.ChangeModeSettings(0, ModeSettings.of(ParameterKind.INTENSITY to 2)))
+        assertEquals(CommandResult.Confirmed, result)
+        assertEquals(Intensity.HIGH, session.state.value.intensity)
+        assertEquals(INTENSITY to listOf<Byte>(2), brush.writes.last().let { (u, d) -> u to d.toList() })
+    }
+
+    @Test
+    fun `saving the intensity of another mode switches to it first`() = runTest {
+        val brush = expertClean()
+        val session = SonicareClassicDriver.open(brush).apply { start() }
+
+        val result = session.execute(BrushCommand.ChangeModeSettings(2, ModeSettings.of(ParameterKind.INTENSITY to 0)))
+        assertEquals(CommandResult.Confirmed, result)
+        assertEquals(ModeName.GUM_HEALTH, session.state.value.modeName)
+        assertEquals(
+            listOf(AVAILABLE_ROUTINES to listOf<Byte>(2), INTENSITY to listOf<Byte>(0)),
+            brush.writes.takeLast(2).map { (u, d) -> u to d.toList() },
+        )
+    }
+
+    @Test
+    fun `an intensity out of range is rejected before sending`() = runTest {
+        val brush = expertClean()
+        val session = SonicareClassicDriver.open(brush).apply { start() }
+        val before = brush.writes.size
+
+        val result = session.execute(BrushCommand.ChangeModeSettings(0, ModeSettings.of(ParameterKind.INTENSITY to 5)))
+        assertTrue(result is CommandResult.Invalid)
+        assertEquals(before, brush.writes.size)
     }
 
     @Test

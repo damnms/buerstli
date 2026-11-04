@@ -376,8 +376,9 @@ private fun ModeCard(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    if (spec.highFrequency) stringResource(R.string.mode_hf, spec.index + 1)
-                    else stringResource(R.string.mode_n, spec.index + 1),
+                    spec.name?.let { modeLabel(it) }
+                        ?: if (spec.highFrequency) stringResource(R.string.mode_hf, spec.index + 1)
+                        else stringResource(R.string.mode_n, spec.index + 1),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 if (active) {
@@ -385,9 +386,10 @@ private fun ModeCard(
                 }
             }
             if (unused) Text(stringResource(R.string.mode_hf_off_hint), style = MaterialTheme.typography.bodySmall)
-            spec.parameters.forEach { p ->
+            // Intensity only where the brush reports it: Sonicare, for the active mode.
+            spec.parameters.filter { it.kind != ParameterKind.INTENSITY || shown[it.kind] != null }.forEach { p ->
                 val value = shown[p.kind] ?: p.range.first
-                Text("${stringResource(labelOf(p.kind))}: $value", style = MaterialTheme.typography.bodyMedium)
+                Text("${stringResource(labelOf(p.kind))}: ${valueLabel(p.kind, value)}", style = MaterialTheme.typography.bodyMedium)
                 Slider(
                     value = value.toFloat(),
                     onValueChange = { actions.edit(spec.index, p.kind, it.roundToInt()) },
@@ -654,10 +656,21 @@ private fun SaveResult(result: CommandResult) {
     )
 }
 
+@Composable
+private fun valueLabel(kind: ParameterKind, value: Int): String =
+    if (kind == ParameterKind.INTENSITY) stringResource(
+        when (value) {
+            0 -> R.string.intensity_low
+            1 -> R.string.intensity_medium
+            else -> R.string.intensity_high
+        },
+    ) else value.toString()
+
 private fun labelOf(kind: ParameterKind) = when (kind) {
     ParameterKind.STRENGTH -> R.string.strength
     ParameterKind.RANGE -> R.string.range
     ParameterKind.SPEED -> R.string.speed
+    ParameterKind.INTENSITY -> R.string.info_intensity
 }
 
 @Composable
