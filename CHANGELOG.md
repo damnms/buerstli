@@ -11,6 +11,8 @@ All notable changes to Bürstli are documented here. The format follows
   (the newest 30 sessions; reading deletes nothing). From the official app, untested on a real
   brush – reports welcome!
 - Philips Sonicare: Max Care, Comfort and Polish modes.
+- Philips Sonicare: the mode names also fit when a brush reports its full product number
+  (e.g. HX9611 instead of HX961X).
 
 ### Fixed
 - Philips Sonicare: mode names now follow the model, as in the official app. The same number means

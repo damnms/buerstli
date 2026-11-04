@@ -428,4 +428,25 @@ class SonicareTest {
         val start = SonicareCodec.Request.StartAt(0x1234)
         assertEquals(ACTIVE_SESSION to listOf<Byte>(0x34, 0x12), start.characteristic to start.bytes.toList())
     }
+
+    @Test
+    fun `full product numbers find the most specific short form`() {
+        assertEquals("HX961X", SonicareCodec.modelCode("HX9611"))
+        assertEquals("HX961X", SonicareCodec.modelCode("hx9611/62 "))
+        assertEquals("HX962X", SonicareCodec.modelCode("HX9621")) // not the broader HX9XXX
+        assertEquals("HX9XXX", SonicareCodec.modelCode("HX9050"))
+        assertEquals("HX9996", SonicareCodec.modelCode("HX9996"))
+        assertEquals("HX999X", SonicareCodec.modelCode("HX9990"))
+        assertEquals("HX742X", SonicareCodec.modelCode("HX7423"))
+        assertNull(SonicareCodec.modelCode("HX6310")) // not in the app
+        assertNull(SonicareCodec.modelCode("Sonicare"))
+        assertNull(SonicareCodec.modelCode(null))
+    }
+
+    @Test
+    fun `a full product number still gets its model's modes`() {
+        assertEquals(ModeName.WHITE_PLUS, SonicareCodec.mode(1, "HX9611")) // HX961X: Clean, White, Deep Clean
+        assertEquals(ModeName.GUM_HEALTH, SonicareCodec.mode(1, "HX9601")) // HX960X: Clean, Gum Care, Deep Clean
+        assertEquals(ModeName.TONGUE_CARE, SonicareCodec.mode(3, "HX9990")) // xian
+    }
 }

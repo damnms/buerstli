@@ -82,7 +82,28 @@ object SonicareCodec {
     private val XIAN = setOf("HX9996", "HX999X")
     private val XIAN_MODES = listOf(CLEAN, WHITE, GUM, TONGUE, DEEP, SENSITIVE, MAX, COMFORT, POLISH)
 
-    fun isXian(modelNumber: String?) = modelNumber in XIAN
+    /** Every model number the app knows; X stands for any digit. */
+    private val KNOWN_MODELS = listOf(
+        "HX741X", "HX742X", "HX74XX", "HX84XX", "HX85XX", "HX9120", "HX92XX", "HX960X", "HX961X", "HX97XX",
+        "HX962X", "HX991X", "HX992X", "HX993X", "HX99XX", "HX9996", "HX999X", "HX98XX", "HX9XXX",
+    )
+    private val PRODUCT_NUMBER = Regex("^HX\\d{4}")
+
+    /**
+     * The app's model number for what the brush reports. The app expects its own short form
+     * ("HX961X"); if a brush sends the full product number ("HX9611/62"), the most specific known
+     * form that fits is taken ("HX961X" rather than "HX9XXX"). Null if nothing fits.
+     */
+    fun modelCode(modelNumber: String?): String? {
+        val m = modelNumber?.trim()?.uppercase() ?: return null
+        if (m in KNOWN_MODELS) return m
+        val product = PRODUCT_NUMBER.find(m)?.value ?: return null
+        return KNOWN_MODELS
+            .filter { known -> known.indices.all { i -> known[i] == 'X' && i >= 2 || known[i] == product[i] } }
+            .minByOrNull { known -> known.count { it == 'X' } }
+    }
+
+    fun isXian(modelNumber: String?) = modelCode(modelNumber) in XIAN
 
     /**
      * The mode for a routine number from `4080` or a stored session, which means something else on
@@ -91,7 +112,7 @@ object SonicareCodec {
     fun mode(v: Int, modelNumber: String?): ModeName? {
         if (isXian(modelNumber)) return XIAN_MODES.getOrNull(v)
         if (v !in 0..7) return null
-        return (MODES_BY_MODEL[modelNumber] ?: DEFAULT_MODES).getOrNull(v)
+        return (MODES_BY_MODEL[modelCode(modelNumber)] ?: DEFAULT_MODES).getOrNull(v)
     }
 
     fun intensity(v: Int): Intensity? = when (v) {

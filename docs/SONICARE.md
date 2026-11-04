@@ -55,8 +55,10 @@ app gets it is our assumption: it reads Device Information through a generic han
 | HX992X, HX993X, HX99XX | shanghai | |
 | HX9996, HX999X | xian | |
 
-Bürstli shows the model number as the model; the product names are in the app's resources, which
-weren't studied.
+Bürstli shows the model number as the brush sends it; the product names are in the app's
+resources, which weren't studied. The app compares the number with its short forms above as they
+are. In case a brush sends the full product number instead (e.g. `HX9611/62`), Bürstli takes the
+most specific short form that fits (`HX961X`, not `HX9XXX`); that a brush does this is our guess.
 
 ## Characteristics (classic GATT)
 
@@ -182,7 +184,8 @@ studied yet; Bürstli recognizes Condor-only brushes and offers a report.
 
 ## To check on a real brush
 
-- Model number: does `2A24` give the codes above (HX960X, HX991X, …)? Is the DiamondClean 9000
+- Model number: does `2A24` give the short forms above (HX960X, HX991X, …) or the full product
+  number? Is the DiamondClean 9000
   really an HX960X, or an HX991X (whose list matches its four modes)?
 - Modes: set every mode on the brush once and note what Bürstli shows next to the value in the
   log. Does the app's table for the model fit?
