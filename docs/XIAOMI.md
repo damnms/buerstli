@@ -206,15 +206,17 @@ From a T500: does Bürstli show brushing, the score after brushing, battery and 
 they match Mi Home? Is the brush head wear the right way round?
 
 From a T700, T700i or T501 with its key: does the key work, and what does Bürstli show? The T501
-especially: nobody knows yet which objects it sends.
+especially: nobody knows yet which objects it sends. A report can't tell, it records the frames
+encrypted. The **nerd log** can: with a working key, Bürstli writes every decrypted frame into it
+(`decrypted: object 0x… = …`, unknown objects marked), once per frame. Brush, then copy the log.
 
 From any Xiaomi brush, the current report already records everything needed, without sending a
 command:
 
 1. **Frame control** (bytes 0-1 of the `0xFE95` service data, not masked): is the brush bound,
-   and with which auth mode? Decode the bits with the
-   [xiaomi-ble](https://github.com/Bluetooth-Devices/xiaomi-ble) parser as reference, not from
-   memory.
+   and with which auth mode? The report writes it out next to each frame (`MiBeacon V5, product
+   0x3B94, encrypted, bound, standard auth`), from the bits as xiaomi-ble documents them; objects
+   of frames in clear are listed too.
 2. **GATT dump:** does the brush offer service `0xFE95` with `0x0010`, `0x0013`, `0x0014` and
    `0x0019`?
 

@@ -94,6 +94,12 @@ interface BrushSession {
     fun setKey(key: ByteArray?) {}
 
     /**
+     * What the session saw that the raw log can't show (e.g. decrypted data), for the diagnostics
+     * log. Returns each note once; the adapter asks after every advertisement (passive sessions).
+     */
+    fun takeNotes(): List<String> = emptyList()
+
+    /**
      * Passive sessions only: true while the session needs a value the brush doesn't broadcast
      * (e.g. Oral-B's battery level). The adapter then stops listening for a moment, connects,
      * calls [poll] and disconnects again. How often it tries is up to the adapter.

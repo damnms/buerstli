@@ -11,6 +11,7 @@ import io.github.damnms.buerstli.drivers.sonicare.SonicareClassicDriver
 import io.github.damnms.buerstli.drivers.xiaomi.XiaomiT500Driver
 import io.github.damnms.buerstli.drivers.xiaomi.XiaomiT501Driver
 import io.github.damnms.buerstli.drivers.xiaomi.XiaomiT700Driver
+import io.github.damnms.buerstli.drivers.xiaomi.describeMiBeacon
 import java.util.UUID
 
 /** Composition root: every supported toothbrush is registered here. */
@@ -93,4 +94,8 @@ object Drivers {
             },
         ),
     )
+
+    /** Service data in words for capture reports, for the formats Bürstli knows. */
+    fun describeServiceData(uuid: UUID, data: ByteArray): String? =
+        if (uuid == XIAOMI_SERVICE) describeMiBeacon(data) else null
 }

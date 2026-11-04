@@ -25,6 +25,11 @@ internal class XiaomiPassiveSession(
     private var lastEncrypted: Pair<ByteArray, String?>? = null
     private var failures = 0
 
+    private val notes = mutableListOf<String>()
+    private var lastNotedFrame: Int? = null
+
+    override fun takeNotes(): List<String> = notes.toList().also { notes.clear() }
+
     override suspend fun start() {}
 
     override fun onNotification(characteristic: UUID, value: ByteArray) {}
@@ -70,6 +75,11 @@ internal class XiaomiPassiveSession(
             return
         }
         failures = 0
+        // Decrypted data shows up nowhere else: into the log, once per frame, known or not.
+        if (beacon.frameCounter != lastNotedFrame) {
+            lastNotedFrame = beacon.frameCounter
+            notes += "decrypted: " + objects.joinToString(", ") { describe(it) }.ifEmpty { "no objects" }
+        }
         _state.value = objects.fold(_state.value.copy(keyStatus = KeyStatus.OK), MiBeaconCodec::apply)
     }
 

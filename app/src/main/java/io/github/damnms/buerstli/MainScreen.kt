@@ -82,6 +82,7 @@ class Actions(
     val pick: (Nearby) -> Unit,
     /** False if the text isn't a valid key. */
     val saveKey: (String) -> Boolean,
+    val forgetKey: () -> Unit,
 )
 
 class DurationUi(val draft: Int?, val save: SaveStatus?)
@@ -194,7 +195,11 @@ private fun ConnectionContent(
             BrushHeader(connection.name, connection.driver)
             val keyStatus = brushState?.keyStatus
             connection.driver.key?.let { spec ->
-                if (keyStatus == KeyStatus.MISSING || keyStatus == KeyStatus.WRONG) KeyCard(spec, keyStatus, actions)
+                when (keyStatus) {
+                    KeyStatus.MISSING, KeyStatus.WRONG -> KeyCard(spec, keyStatus, actions)
+                    KeyStatus.OK -> KeyStoredCard(actions)
+                    null -> {}
+                }
             }
             if (connection.driver.supportLevel == SupportLevel.EXPERIMENTAL) ExperimentalNote(connection.driver, actions)
             if (brushState == null) {
@@ -523,6 +528,20 @@ private fun KeyCard(spec: KeySpec, status: KeyStatus, actions: Actions) {
                 Text(stringResource(R.string.key_save))
             }
             TextButton(onClick = { uriHandler.openUri(spec.helpUrl) }) { Text(stringResource(R.string.key_help)) }
+        }
+        if (status == KeyStatus.WRONG) {
+            TextButton(onClick = actions.forgetKey) { Text(stringResource(R.string.key_remove)) }
+        }
+    }
+}
+
+/** The key works; it can still be removed from the phone. */
+@Composable
+private fun KeyStoredCard(actions: Actions) {
+    InfoCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.key_stored), modifier = Modifier.weight(1f))
+            TextButton(onClick = actions.forgetKey) { Text(stringResource(R.string.key_remove)) }
         }
     }
 }

@@ -80,7 +80,8 @@ answers the way the app expects.
 
 **Got a Xiaomi?** Every toothbrush from Xiaomi Home is recognized; the T500, T700, T700i and T501
 have first drivers that only listen. The T700 and T501 broadcast encrypted: with the brush's key
-([how to get it](docs/XIAOMI.md#bindkey)) Bürstli can read them, and still sends nothing. A report
+([how to get it](docs/XIAOMI.md#bindkey)) Bürstli can read them, and still sends nothing. Got one
+with its key? Brush once, then copy the nerd log: it shows what the brush sent, decrypted. A report
 from any other Xiaomi brush helps: it shows whether the brush broadcasts encrypted, and whether it
 offers what Bürstli would need to read it without Mi Home. Owners of a T500: does Bürstli show
 brushing, score, battery and brush head? [What a first report should answer](docs/XIAOMI.md#what-the-first-report-should-answer).

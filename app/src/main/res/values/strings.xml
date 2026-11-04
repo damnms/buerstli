@@ -106,6 +106,8 @@
     <string name="key_save">Save</string>
     <string name="key_invalid">%1$d hexadecimal characters (0–9, a–f), please.</string>
     <string name="key_help">Where do I get it?</string>
+    <string name="key_stored">Key saved on this phone, it fits.</string>
+    <string name="key_remove">Remove key</string>
     <string name="info_score">Last score</string>
     <string name="info_head_wear">Brush head</string>
     <string name="info_head_wear_value">%1$d %% worn</string>

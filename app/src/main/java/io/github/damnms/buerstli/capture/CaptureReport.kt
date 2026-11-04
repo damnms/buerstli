@@ -16,6 +16,8 @@ data class CaptureReport(
     val problems: List<String> = emptyList(),
     val listenedSeconds: Int = 30,
     val untilStopped: Boolean = false,
+    /** Service data in words, where Bürstli knows the format (e.g. Xiaomi's MiBeacon). */
+    val describe: (UUID, ByteArray) -> String? = { _, _ -> null },
 ) {
     private val mask = io.github.damnms.buerstli.AddressMask(address)
     private fun hexMasked(bytes: ByteArray) = mask.hex(bytes)
@@ -36,7 +38,9 @@ data class CaptureReport(
             val parts = mutableListOf("${seconds(a.timeMs)} rssi ${a.rssi}")
             if (a.serviceUuids.isNotEmpty()) parts += "services " + a.serviceUuids.joinToString { short(it) }
             a.manufacturerData.forEach { (id, data) -> parts += "manufacturer ${hex16(id)}: ${hexMasked(data)}" }
-            a.serviceData.forEach { (uuid, data) -> parts += "service data ${short(uuid)}: ${hexMasked(data)}" }
+            a.serviceData.forEach { (uuid, data) ->
+                parts += "service data ${short(uuid)}: ${hexMasked(data)}" + (describe(uuid, data)?.let { " ($it)" } ?: "")
+            }
             appendLine("- " + parts.joinToString(" · "))
         }
 

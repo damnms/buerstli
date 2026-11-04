@@ -208,6 +208,48 @@ class XiaomiTest {
     }
 
     @Test
+    fun `a removed key asks for one again`() {
+        val s = XiaomiT700Driver.open(NoLink)
+        s.setKey(t700Key)
+        s.onAdvertisement(t700Ad())
+        s.setKey(null)
+        assertEquals(KeyStatus.MISSING, s.state.value.keyStatus)
+    }
+
+    @Test
+    fun `decrypted objects go into the log once per frame`() {
+        val s = XiaomiT700Driver.open(NoLink)
+        s.setKey(t700Key)
+        s.onAdvertisement(t700Ad())
+        assertEquals(listOf("decrypted: object 0x3003 = 01-03-62-9D-64-53"), s.takeNotes())
+        s.onAdvertisement(t700Ad()) // the same frame again
+        assertTrue(s.takeNotes().isEmpty())
+    }
+
+    @Test
+    fun `objects Bürstli doesn't know are marked in the log`() {
+        assertEquals("object 0x4803 = 64 (unknown)", describe(MiObject(0x4803, hex("64"))))
+    }
+
+    @Test
+    fun `frame control in words, for reports`() {
+        assertEquals(
+            "MiBeacon V3, product 0x0489, not encrypted, not bound, old auth, object 0x0010 = 00-03",
+            describeMiBeacon(hex(t500Brushing)),
+        )
+        assertEquals(
+            "MiBeacon V5, product 0x0806, encrypted, not bound, standard auth",
+            describeMiBeacon(hex(t700Encrypted)),
+        )
+        // The real T501 frame control from xiaomi-ble#356: bound.
+        assertEquals(
+            "MiBeacon V5, product 0x3B94, encrypted, bound, standard auth",
+            describeMiBeacon(hex("48-59-94-3B-01")),
+        )
+        assertNull(describeMiBeacon(hex("48-59-94")))
+    }
+
+    @Test
     fun `the T500 doesn't ask for a key, it broadcasts in clear`() {
         val s = session()
         s.onAdvertisement(ad(t500Brushing))

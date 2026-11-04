@@ -15,6 +15,7 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
 import io.github.damnms.buerstli.Diagnostics
+import io.github.damnms.buerstli.Drivers
 import io.github.damnms.buerstli.ble.connectLe
 import io.github.damnms.buerstli.ble.manufacturerMap
 import kotlinx.coroutines.CompletableDeferred
@@ -106,6 +107,7 @@ class BrushRecorder(
                 problems = synchronized(problems) { problems.toList() },
                 listenedSeconds = clock.elapsed,
                 untilStopped = clock.untilStopped,
+                describe = Drivers::describeServiceData,
             )
             diag.log("capture done: ${report.advertisements.size} ads, ${services.size} services, ${report.notifications.size} notifications")
             _state.value = CaptureState.Done(report)

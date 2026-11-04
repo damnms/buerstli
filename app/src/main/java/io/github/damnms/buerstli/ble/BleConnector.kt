@@ -213,12 +213,16 @@ class BleConnector(
 
     private fun feed(l: Listening, ad: Advertisement) {
         val mask = AddressMask(l.device.address)
-        val hex = ad.manufacturerData.entries.joinToString(" ") { (id, data) -> "%04X:".format(id) + mask.hex(data) }
+        val hex = (
+            ad.manufacturerData.entries.map { (id, data) -> "%04X:".format(id) + mask.hex(data) } +
+                ad.serviceData.entries.map { (uuid, data) -> "${shortUuid(uuid)}:" + mask.hex(data) }
+            ).joinToString(" ")
         if (hex != lastAdHex) {
             lastAdHex = hex
             diag.log("advertisement $hex")
         }
         l.session.onAdvertisement(ad)
+        l.session.takeNotes().forEach { diag.log(it) }
         restartSilence(l)
         maybePoll(l)
     }

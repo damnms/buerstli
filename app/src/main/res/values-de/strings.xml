@@ -105,6 +105,8 @@
     <string name="key_save">Speichern</string>
     <string name="key_invalid">Bitte %1$d hexadezimale Zeichen (0–9, a–f).</string>
     <string name="key_help">Woher bekomme ich ihn?</string>
+    <string name="key_stored">Schlüssel auf diesem Handy gespeichert, er passt.</string>
+    <string name="key_remove">Schlüssel entfernen</string>
     <string name="info_score">Letzte Bewertung</string>
     <string name="info_head_wear">Bürstenkopf</string>
     <string name="info_head_wear_value">%1$d %% verbraucht</string>

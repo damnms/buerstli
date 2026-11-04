@@ -56,6 +56,15 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
         return true
     }
 
+    /** Deletes the stored key of the connected brush. */
+    fun forgetKey() {
+        val c = connection.value as? Connection.Connected ?: return
+        if (c.driver.key == null) return
+        keys.remove(c.device.address)
+        diagnostics.log("key removed")
+        c.session.setKey(null)
+    }
+
     private val recorder = BrushRecorder(app, viewModelScope, diagnostics)
     val capture: StateFlow<CaptureState> = recorder.state
 

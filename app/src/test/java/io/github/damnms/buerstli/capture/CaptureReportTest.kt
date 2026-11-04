@@ -132,4 +132,18 @@ class CaptureReportTest {
         ).render()
         assertTrue(text.contains("service data 0xFE95: 30-58-89-04-XX-XX-XX"))
     }
+
+    @Test
+    fun `known service data is described in words`() {
+        val text = CaptureReport(
+            appVersion = "0.17.0", phone = "x", brand = "Xiaomi", deviceName = null,
+            address = "C0:00:00:01:1D:EE",
+            advertisements = listOf(
+                AdvertisementSample(500, -50, emptyList(), emptyMap(), serviceData = mapOf(uuid16(0xFE95) to byteArrayOf(0x48, 0x59, 0x94.toByte(), 0x3B, 0x01))),
+            ),
+            services = emptyList(), notifications = emptyList(),
+            describe = io.github.damnms.buerstli.Drivers::describeServiceData,
+        ).render()
+        assertTrue(text.contains("service data 0xFE95: 48-59-94-3B-01 (MiBeacon V5, product 0x3B94, encrypted, bound, standard auth)"))
+    }
 }

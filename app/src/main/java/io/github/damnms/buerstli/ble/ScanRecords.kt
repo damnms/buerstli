@@ -3,6 +3,12 @@ package io.github.damnms.buerstli.ble
 import android.bluetooth.le.ScanRecord
 import androidx.core.util.forEach
 
+/** "0xFE95" for a standard 16-bit UUID, else the full UUID. */
+fun shortUuid(uuid: java.util.UUID): String {
+    val s = uuid.toString()
+    return if (s.startsWith("0000") && s.endsWith("-0000-1000-8000-00805f9b34fb")) "0x" + s.substring(4, 8).uppercase() else s
+}
+
 /** Manufacturer-specific data by Bluetooth company id, as a plain map. */
 fun ScanRecord?.manufacturerMap(): Map<Int, ByteArray> = buildMap {
     this@manufacturerMap?.manufacturerSpecificData?.forEach { id, data -> put(id, data) }

@@ -15,6 +15,10 @@ class BrushKeys(context: Context) {
         prefs.edit().putString(address.uppercase(), key.joinToString("") { "%02x".format(it.toInt() and 0xFF) }).apply()
     }
 
+    fun remove(address: String) {
+        prefs.edit().remove(address.uppercase()).apply()
+    }
+
     companion object {
         /** A key typed or pasted by the user: hex, spaces, colons and dashes allowed. Null if it isn't [bytes] long. */
         fun parse(text: String, bytes: Int): ByteArray? {
