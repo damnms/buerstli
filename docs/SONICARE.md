@@ -84,7 +84,8 @@ the app reads them with. Bürstli column: what it does with it.
 | | `40E0` | session id to start at / the one being sent | u16, write, notify | app | writes the first id |
 | | `4100` | session data | notify | app | subscribes (history) |
 | | `4110` | control (write) and status (notify) | u8 | app | writes `01`, `02` |
-| `0005` Sensor | `4120`, `4130` | motion and pressure stream, switched on by writing the sensor types | | app | – |
+| `0005` Sensor | `4120` | which sensors to stream, bit mask (see "Sensor stream") | u16, write | app | – |
+| | `4130` | sensor stream | notify | app | – |
 | `0006` Brush head | `4210` | NFC tag version | | app | – |
 | | `4220` | factory mode | u8 | app | – |
 | | `4230` | serial number of the head | text | app | – |
@@ -168,6 +169,26 @@ A session is the first notification of that session; its length gives the versio
 Version 1 is 13 bytes. The app sets the brush's clock from the phone (`4050`), so Bürstli reads
 the start as UTC and shows no date before 2015, assuming the clock was never set.
 
+## Sensor stream (live pressure) – app
+
+Not used by Bürstli yet. The app switches the stream on by writing a bit mask (u16, little-endian)
+to `4120` and gets the data as notifications on `4130` (`CBTSensorServiceHandler`,
+`tuscany/ble/SensorDataParser.java`). Bits, as far as the packet types show: 1 pressure, 4 motion,
+64 ML estimates. The app writes 64 if the model supports ML estimates, otherwise 5 (pressure and
+motion); without a choice the handler writes 7.
+
+A packet starts with its type in bytes 0–1 (u16); bytes 2–3 aren't read by the app, the data
+starts at byte 4:
+
+| Type | Content |
+|---|---|
+| 1 pressure | 7 bytes: bytes 4–5 pressure value (u16), byte 6 state. Shorter: byte 4 state. State 2 = too much pressure, anything else normal. |
+| 4 motion | bytes 4–15: gyro X, Y, Z, then acceleration X, Y, Z, each a signed 16-bit value; at least 16 bytes |
+| 64 ML estimate | bytes 4–7 a u32, then the estimate; at least 12 bytes |
+
+What the pressure value means (unit, scale) wasn't traced. Bürstli could show "too much pressure"
+live from type 1 alone; that would need writing `01 00` to `4120`, which Bürstli doesn't do yet.
+
 ## Changing mode and intensity – app
 
 The app's settings for a classic Sonicare (`handle_controls/settings`): the mode is switched by
@@ -201,23 +222,56 @@ Mode and intensity are an exception to ADR-6: the driver is experimental, but it
 maintainer decided that, so that one test by an owner covers everything; the guards are the
 brush's own list and reading back.
 
-## Condor – app, first look
+## Condor – app
 
 The 7100 series (HX741X, HX742X) only offers the Condor service
 `e50ba3c0-af04-4564-92ad-fef019489de6` (psb); which other models use it wasn't checked, the app
 treats xian together with the 7100 series in places. Bürstli has no Condor driver yet; it
-recognizes those brushes and offers a report. What the app shows so far, nothing seen on a real
-brush:
+recognizes those brushes and offers a report. Nothing below was seen on a real brush.
 
-**No encryption in the Bluetooth layer.** The Condor code (`com.philips.connectivity.condor`) has
-no cipher, AES, HMAC or signature; the only hit, `core/util/c.java`, turns bytes into Base64 for
-JSON. There is a `SecurityPort` with `key` and `nextKey`, but nothing in the toothbrush code uses
-it; probably it belongs to Philips' Wi-Fi devices on the same stack (there are Wi-Fi, cloud pairing
-and backend ports too). Whether a 7100 asks for a key anyway only the brush can tell.
+Condor has three layers: a byte stream over seven characteristics, Condor messages in that stream,
+and ports with JSON properties in the messages. **No encryption on any of them**: the code has no
+cipher, AES, HMAC or signature (the one hit, `core/util/c.java`, turns bytes into Base64 for JSON).
+There is a `SecurityPort` with `key` and `nextKey`, but nothing in the toothbrush code uses it;
+probably it belongs to Philips' Wi-Fi devices on the same stack (Wi-Fi, cloud pairing and backend
+ports are there too). Whether a 7100 asks for a key anyway only the brush can tell.
 
-**Ports and properties, as JSON**, much like Philips' DiComm for Wi-Fi devices. A message is
-framed as `FE FF`, one byte message type, two bytes payload length (big-endian, Java's default),
-then the payload (`bluetooth/communication/e.java`):
+### Byte stream
+
+Philips' generic "byte streaming" service (`com/philips/connectivity/bluetooth/services/handlers/bytestreaming/`),
+here on the Condor service; the same code also runs on `a651fff1-4074-4131-bce9-56d4261bc7b1`
+with `a6510001`–`a6510005` for other Philips devices.
+
+| Char. | Role |
+|---|---|
+| `e50b0001-af04-4564-92ad-fef019489de6` | Rx |
+| `e50b0002-…` | Rx ack |
+| `e50b0003-…` | Tx |
+| `e50b0004-…` | Tx ack |
+| `e50b0005-…` | protocol configuration |
+| `e50b0006-…` | server configuration |
+| `e50b0007-…` | client configuration |
+
+Rx/Tx are named as in the app; which direction is which wasn't traced.
+
+A packet is one header byte and its payload: bit 7 the channel (0 or 1), bit 6 "start of a
+message", bits 0–5 a sequence number (0–63). Packets are acknowledged on the ack characteristics;
+the ack format wasn't read (`internal/ByteStreamingChannel`).
+
+Setting up (`internal/protocol/ByteStreamingProtocolFactory.java`) knows two versions:
+
+- **v3 (legacy):** the app reads the protocol configuration, 3 bytes: version (must be 3),
+  incoming and outgoing buffer size in packets (u8 each; `gr/c.java`).
+- **v4:** the app writes `03 04` (the versions it supports) to the protocol configuration,
+  without response, then exchanges configurations. The server configuration is 3 × u16: maximum
+  packet size, receive buffer of channel 0 and of channel 1 (`protocol/v4/b.java`). What the client
+  configuration contains wasn't read.
+
+### Condor messages
+
+A message may span several packets; the app collects bytes until a message is complete. Framing
+(`condor/bluetooth/communication/e.java`): `FE FF`, one byte message type, two bytes payload
+length (big-endian, Java's default), then the payload.
 
 | Type | Message | | Type | Message |
 |---|---|---|---|---|
@@ -228,14 +282,25 @@ then the payload (`bluetooth/communication/e.java`):
 | 10 | GetProdsRequest | | 11 | GetPortsRequest |
 | 12 / 13 | AddProps / DelProps | | 15 | RawRequest |
 
+Payload of a request (`kr/a.java`), UTF-8 strings each ending in a zero byte:
+
+- GetProps: product id `00` port name `00`
+- PutProps, Subscribe, Unsubscribe: product id `00` port name `00` JSON `00`; byte values inside
+  the JSON as Base64. A PutProps on a binary port sends the raw bytes instead of the JSON.
+- Subscribe carries `ttl` and `subscriber`, Unsubscribe `subscriber`
+  (`BluetoothCommunicationStrategy`).
+
 Status codes in a response: 0 no error, 1 not understood, 2 out of memory, 3 no such port,
 4 not implemented, 5 version not supported, 6 no such property, 7 no such operation, 8 no such
 product, 9 property already exists, 10 no such method, 11 wrong parameters, 12 invalid parameter,
-13 not subscribed, 14 protocol violation. A request names a product id and a port; GetProps,
-PutProps, Subscribe and the rest carry the properties as a map.
+13 not subscribed, 14 protocol violation.
 
-The toothbrush ports (`com/philips/cdp/ohc/condor/services/`) are the classic services again,
-as properties:
+What Initialize exchanges and which product id a toothbrush has weren't read.
+
+### Ports
+
+The toothbrush ports (`com/philips/cdp/ohc/condor/services/`) are the classic services again, as
+properties:
 
 | Port | Properties |
 |---|---|
@@ -249,19 +314,15 @@ as properties:
 | `Extended` | `FeatureCtrl`, `FeedbackMode` |
 | `Languages` | `ID`, `Supported` |
 
-The brush head port's name and the binary ports' names weren't read.
+The brush head port's name and the binary ports' names weren't read; nor what the values of
+`UserMode`, `PhysModes` and the rest mean.
 
-**Open**, needed before a driver:
+### Still open before a driver
 
-- Which characteristics of `e50ba3c0-…` carry the messages, and whether a message is split
-  across several writes or notifications. That is in obfuscated classes outside the Condor
-  packages (the Bluetooth code imports `ar.*`).
-- The exact payload of each request (product id, port name, JSON): built by the obfuscated
-  `kr/a.java` (`d` for GetProps, `f`/`g` for the requests with properties).
-- What Initialize exchanges, and the meaning of the values (`UserMode`, `PhysModes`, …).
-
-Probably doable without an account, but a driver of its own, about the size of Oral-B's, and it
-needs someone with a 7100 to test.
+Direction of Rx/Tx, the ack format, the v4 client configuration, Initialize and the product id. All
+of it is in the byte-streaming and Condor packages above, so no new files from the app are needed.
+Probably doable without an account, but a driver of its own, larger than Oral-B's (a reliable
+transport underneath), and it needs someone with a 7100 to test.
 
 ## To check on a real brush
 
@@ -301,9 +362,13 @@ Plain Java/Kotlin, no Flutter. `jadx --no-res` decompiles it; Bluetooth is in `c
 - Obfuscated, outside those packages: `dp/d1.java` (`h`: routine number → mode, `g`: xian) and
   `dp/e0.java` (`b(device)`: the default list without a device, otherwise the private `e(device)` with the list per model number).
 - Condor: `com/philips/connectivity/condor/` (framing in `bluetooth/communication/e.java`, message
-  types and status codes next to it, requests in `requests/`) and `com/philips/cdp/ohc/condor/services/`
-  (one port per service, properties in `*PortProperties.java`). Obfuscated: `kr/a.java` (payloads),
-  `ar/` (Bluetooth transport).
+  types and status codes next to it, requests in `requests/`), the byte stream in
+  `com/philips/connectivity/bluetooth/services/handlers/bytestreaming/`, and
+  `com/philips/cdp/ohc/condor/services/` (one port per service, properties in
+  `*PortProperties.java`). Obfuscated: `kr/a.java` (request payloads), `gr/` (v3 configuration),
+  `ar/` (only a UUID type and interfaces).
+- Byte order: the app reads integers with `qp/a.java`, little-endian (`a` as an int, `b`/`c` as a
+  signed 16-bit value). Stored sessions and sensor packets use it.
 
 ## Legal
 
