@@ -1,0 +1,4 @@
+Added:
+- Philips Sonicare: live pressure warning while brushing, as in the official app. Untested on a real brush – reports welcome!
+- Xiaomi T500, experimental: brushing, score of the last session, battery and brush head wear, from what the brush broadcasts. Untested – reports welcome!
+- Recognizes every toothbrush in Xiaomi Home's device catalog: 25 models, from Xiaomi, Mijia and partner brands.
