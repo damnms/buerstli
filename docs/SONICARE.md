@@ -201,12 +201,67 @@ Mode and intensity are an exception to ADR-6: the driver is experimental, but it
 maintainer decided that, so that one test by an owner covers everything; the guards are the
 brush's own list and reading back.
 
-## Condor
+## Condor – app, first look
 
-The 7100 series (HX741X, HX742X) uses the Condor protocol (psb; in the app
-`com.philips.connectivity.condor`, service `e50ba3c0-af04-4564-92ad-fef019489de6`). Which other
-models use it wasn't checked; the app treats xian together with the 7100 series in places. Not
-studied yet; Bürstli recognizes Condor-only brushes and offers a report.
+The 7100 series (HX741X, HX742X) only offers the Condor service
+`e50ba3c0-af04-4564-92ad-fef019489de6` (psb); which other models use it wasn't checked, the app
+treats xian together with the 7100 series in places. Bürstli has no Condor driver yet; it
+recognizes those brushes and offers a report. What the app shows so far, nothing seen on a real
+brush:
+
+**No encryption in the Bluetooth layer.** The Condor code (`com.philips.connectivity.condor`) has
+no cipher, AES, HMAC or signature; the only hit, `core/util/c.java`, turns bytes into Base64 for
+JSON. There is a `SecurityPort` with `key` and `nextKey`, but nothing in the toothbrush code uses
+it; probably it belongs to Philips' Wi-Fi devices on the same stack (there are Wi-Fi, cloud pairing
+and backend ports too). Whether a 7100 asks for a key anyway only the brush can tell.
+
+**Ports and properties, as JSON**, much like Philips' DiComm for Wi-Fi devices. A message is
+framed as `FE FF`, one byte message type, two bytes payload length (big-endian, Java's default),
+then the payload (`bluetooth/communication/e.java`):
+
+| Type | Message | | Type | Message |
+|---|---|---|---|---|
+| 1 | InitializeRequest | | 2 | InitializeResponse |
+| 3 | PutPropsRequest | | 4 | GetPropsRequest |
+| 5 | SubscribeRequest | | 6 | UnsubscribeRequest |
+| 7 | GenericResponse | | 8 / 9 | ChangeIndication request / response (the brush reports a change) |
+| 10 | GetProdsRequest | | 11 | GetPortsRequest |
+| 12 / 13 | AddProps / DelProps | | 15 | RawRequest |
+
+Status codes in a response: 0 no error, 1 not understood, 2 out of memory, 3 no such port,
+4 not implemented, 5 version not supported, 6 no such property, 7 no such operation, 8 no such
+product, 9 property already exists, 10 no such method, 11 wrong parameters, 12 invalid parameter,
+13 not subscribed, 14 protocol violation. A request names a product id and a port; GetProps,
+PutProps, Subscribe and the rest carry the properties as a map.
+
+The toothbrush ports (`com/philips/cdp/ohc/condor/services/`) are the classic services again,
+as properties:
+
+| Port | Properties |
+|---|---|
+| `Sonicare` | `HandleState`, `HandleTime`, `RoutineIDs`, `UserMode`, `UserModePos`, `PhysModes` |
+| `RoutineStatus` | `RoutineState`, `Mode`, `Length`, `Duration`, `SessionID`, `BrushingType`, `CoverageThreshold`, `OverpressureThreshold`, `UnderpressureThreshold`, `ScrubbingThreshold` |
+| `Battery` | `BatteryPercent`, `BatteryMV` |
+| brush head | `LifetimeLimit`, `LifetimeUsage`, `RemainingBrushings`, `SerialNumber`, `NfcTagVersion`, `RingId`, `FactoryMode`, `BHRR` |
+| `SessionStorage` | `ID`, `LatestID`, `Count`, `Type`, `Control`; plus a binary port for the data |
+| `SensorData` | `Control`, `Sensors`, `Types`; plus a binary port for the data |
+| `Diagnostics` | `PErrors`, `VErrors`, `ExternalFlash`, `InvalidCharger`, `PressureSensor` |
+| `Extended` | `FeatureCtrl`, `FeedbackMode` |
+| `Languages` | `ID`, `Supported` |
+
+The brush head port's name and the binary ports' names weren't read.
+
+**Open**, needed before a driver:
+
+- Which characteristics of `e50ba3c0-…` carry the messages, and whether a message is split
+  across several writes or notifications. That is in obfuscated classes outside the Condor
+  packages (the Bluetooth code imports `ar.*`).
+- The exact payload of each request (product id, port name, JSON): built by the obfuscated
+  `kr/a.java` (`d` for GetProps, `f`/`g` for the requests with properties).
+- What Initialize exchanges, and the meaning of the values (`UserMode`, `PhysModes`, …).
+
+Probably doable without an account, but a driver of its own, about the size of Oral-B's, and it
+needs someone with a 7100 to test.
 
 ## To check on a real brush
 
@@ -245,7 +300,10 @@ Plain Java/Kotlin, no Flutter. `jadx --no-res` decompiles it; Bluetooth is in `c
   default mode list.
 - Obfuscated, outside those packages: `dp/d1.java` (`h`: routine number → mode, `g`: xian) and
   `dp/e0.java` (`b(device)`: the default list without a device, otherwise the private `e(device)` with the list per model number).
-- Condor: `com/philips/connectivity/condor/` and `com/philips/cdp/ohc/condor/`.
+- Condor: `com/philips/connectivity/condor/` (framing in `bluetooth/communication/e.java`, message
+  types and status codes next to it, requests in `requests/`) and `com/philips/cdp/ohc/condor/services/`
+  (one port per service, properties in `*PortProperties.java`). Obfuscated: `kr/a.java` (payloads),
+  `ar/` (Bluetooth transport).
 
 ## Legal
 
