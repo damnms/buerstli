@@ -27,7 +27,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Xiaomi | T501, T700, T700i, Pro models, kids, partner brands in Mi Home (24 more models) | MiBeacon product id | 🔍 recognized, not supported yet (most broadcast encrypted) ([notes](docs/XIAOMI.md)) | |
 | Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
 | Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental; ✅ reading confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear; from the official app, untested: model number, firmware, mode names per model, brushing history, live pressure, switch mode and intensity ([notes](docs/SONICARE.md)) |
-| Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
+| Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol, "Condor"); protocol [documented](docs/SONICARE.md#condor--app) – tester wanted! | |
 | Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens, connects briefly for what it doesn't broadcast | status, mode, brushing time, pressure, mouth area, exact iO series, battery level, brushing history, brush head reminder ([notes](docs/ORAL-B.md)) |
 
 ### Laifen Wave: the hidden fourth mode
@@ -56,7 +56,9 @@ a 👍. Enough thumbs, and it gets built.
 
 🧪 **experimental** means: built from protocol research by others that was verified on real
 brushes, or from what the official app does, but not yet tried with Bürstli. Experimental drivers
-only read, they change nothing.
+only read, they change nothing – with one exception: for Philips Sonicare, Bürstli also switches
+mode and intensity and sets the brush's clock, as the official app does
+([details](docs/SONICARE.md#writing)).
 
 Got one of the brushes marked 🔍 or 🧪? You can help without any technical knowledge: open Bürstli,
 tap **Find my brush**, then **Let's go**. Bürstli doesn't know your brush at all? Tap **My brush isn't
@@ -68,6 +70,12 @@ e-mail or as a [GitHub issue](../../issues/new?template=new-brush.yml).
 head is due – but all of that comes from studying the official app, and nobody has tried it on a
 real brush yet. One report from an iO and one from an older Genius or Smart would settle most of
 it: [what a first report should answer](docs/ORAL-B.md#to-check-on-a-real-brush).
+
+**Got a Philips Sonicare 7100 (HX742X)?** It speaks a different protocol than the other
+Sonicares ("Condor"). What the official app does with it is
+[written down](docs/SONICARE.md#condor--app), and a driver could be built from it – but only with
+someone who can try it. A report from your brush would be the first step: it shows whether it
+answers the way the app expects.
 
 **Got a Xiaomi?** Every toothbrush from Xiaomi Home is recognized, and the T500 has a first driver
 that only listens. A report from any Xiaomi brush helps: it shows whether the brush broadcasts
