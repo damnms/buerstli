@@ -7,7 +7,7 @@
 <li><b>Laifen Wave SE (LFTB01-SE)</b> – experimentell, hört nur mit: Akku, Modi, Putzdauer, putzt oder bereit, 30-Sekunden-Signal, Hochfrequenz, Flugmodus.</li>
 <li><b>Laifen Kids TC51 (LFTB01-C)</b> – experimentell, hört nur mit: Akku, Putzdauer, putzt oder bereit, Kindersicherung, 30-Sekunden-Signal, Hochfrequenz, Flugmodus und mehr.</li>
 <li><b>Philips Sonicare</b> (klassische Modelle wie DiamondClean, Prestige, ExpertClean, Kids) – experimentell und nur lesend, an einer echten DiamondClean 9000 bestätigt: Akku, Zustand, Modus, Intensität, Putzzeit und Bürstenkopf-Verschleiss.</li>
-<li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimentell, hört nur mit, ohne Verbindung: Zustand, Modus, Putzzeit, Andruck und Kieferbereich.</li>
+<li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimentell, hört mit und verbindet sich nur kurz für den Akku: Zustand, Modus, Putzzeit, Andruck, Kieferbereich und Akkustand.</li>
 </ul>
 
 <p><b>Deine Bürste wird noch nicht unterstützt?</b> Bürstli erkennt die Philips Sonicare 7100, Oclean und Xiaomi – jede andere Bürste wählst du einfach aus einer Liste von Geräten in der Nähe. Bürstli nimmt dann in etwa einer Minute einen Bericht auf – es hört nur zu, an der Bürste wird nichts verändert. Den Bericht schickst du per Messenger, E-Mail oder über GitHub an die Entwickler, ganz ohne Technik-Kenntnisse.</p>

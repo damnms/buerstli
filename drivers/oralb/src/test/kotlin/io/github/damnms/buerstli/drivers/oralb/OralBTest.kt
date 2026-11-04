@@ -3,6 +3,7 @@ package io.github.damnms.buerstli.drivers.oralb
 import io.github.damnms.buerstli.domain.Activity
 import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.domain.BrushCommand
+import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.CommandResult
 import io.github.damnms.buerstli.domain.ModeName
 import io.github.damnms.buerstli.domain.NoLink
@@ -13,6 +14,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.IOException
+import java.util.UUID
 
 /**
  * Real advertisements from the test suite of oralb-ble (MIT), the library behind Home Assistant's
@@ -152,5 +155,68 @@ class OralBTest {
         assertEquals(Activity.BRUSHING, session.state.value.activity)
 
         assertEquals(CommandResult.Unsupported, session.execute(BrushCommand.ActivateMode(0)))
+    }
+
+    // --- battery over a short connection (layout from the official app, see docs/ORAL-B.md) ---
+
+    @Test
+    fun `battery layout depends on the protocol version`() {
+        assertEquals(75, OralBCodec.battery(2, hex("4B")))
+        assertEquals(75, OralBCodec.battery(6, hex("CB-00-3C-00"))) // top bit is not part of the level
+        assertEquals(75, OralBCodec.battery(8, hex("CB-3C-00")))
+        assertNull(OralBCodec.battery(2, hex("BD"))) // 189 %: nonsense, not a level
+        assertNull(OralBCodec.battery(8, ByteArray(0)))
+    }
+
+    /** Answers reads from [values]; records everything, so tests can check nothing is written. */
+    private class FakeOralB(val values: Map<UUID, ByteArray> = emptyMap()) : BrushLink {
+        val reads = mutableListOf<UUID>()
+        var writes = 0
+        override suspend fun read(characteristic: UUID): ByteArray {
+            reads += characteristic
+            return values[characteristic] ?: throw IOException("not found")
+        }
+        override suspend fun write(characteristic: UUID, data: ByteArray) { writes++ }
+        override suspend fun enableNotifications(characteristic: UUID) { writes++ }
+    }
+
+    private val standby = "08-36-52-02-00-00-00-05-00-01-04"
+    private val brushing = "08-36-52-03-00-00-10-05-01-01-04"
+    private val paused = "08-36-52-09-00-00-10-05-01-01-04"
+
+    @Test
+    fun `wants a short connection for the battery only while the brush is idle`() = runTest {
+        val session = OralBPassiveDriver.open(NoLink).apply { start() }
+        assertFalse(session.wantsPoll) // nothing heard yet
+        session.onAdvertisement(ad(brushing))
+        assertFalse(session.wantsPoll)
+        session.onAdvertisement(ad(paused))
+        assertFalse(session.wantsPoll)
+        session.onAdvertisement(ad(standby))
+        assertTrue(session.wantsPoll)
+    }
+
+    @Test
+    fun `the short connection only reads the battery and keeps it`() = runTest {
+        val session = OralBPassiveDriver.open(NoLink).apply { start() }
+        session.onAdvertisement(ad(standby))
+        val link = FakeOralB(mapOf(OralBCodec.BATTERY to hex("CB-3C-00")))
+
+        session.poll(link)
+
+        assertEquals(listOf(OralBCodec.BATTERY), link.reads)
+        assertEquals(0, link.writes)
+        assertEquals(75, session.state.value.batteryPercent)
+        assertFalse(session.wantsPoll)
+        session.onAdvertisement(ad(brushing)) // advertisements don't wipe the battery
+        assertEquals(75, session.state.value.batteryPercent)
+        assertEquals(Activity.BRUSHING, session.state.value.activity)
+    }
+
+    @Test(expected = IOException::class)
+    fun `a failed read is reported to the adapter`() = runTest {
+        val session = OralBPassiveDriver.open(NoLink).apply { start() }
+        session.onAdvertisement(ad(standby))
+        session.poll(FakeOralB())
     }
 }

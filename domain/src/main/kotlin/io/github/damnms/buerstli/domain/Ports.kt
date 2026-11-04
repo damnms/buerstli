@@ -66,6 +66,16 @@ interface BrushSession {
     /** Called by the adapter for every advertisement of this brush (passive drivers). */
     fun onAdvertisement(advertisement: Advertisement) {}
 
+    /**
+     * Passive sessions only: true while the session needs a value the brush doesn't broadcast
+     * (e.g. Oral-B's battery level). The adapter then stops listening for a moment, connects,
+     * calls [poll] and disconnects again. How often it tries is up to the adapter.
+     */
+    val wantsPoll: Boolean get() = false
+
+    /** Reads what [wantsPoll] asked for over a short connection. Throws IOException on failure. */
+    suspend fun poll(link: BrushLink) {}
+
     suspend fun execute(command: BrushCommand): CommandResult
 }
 

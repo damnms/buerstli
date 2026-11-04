@@ -3,6 +3,7 @@ package io.github.damnms.buerstli.drivers.oralb
 import io.github.damnms.buerstli.domain.Activity
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.ModeName
+import java.util.UUID
 
 /**
  * Oral-B advertisement data (manufacturer id 0x00DC):
@@ -14,10 +15,16 @@ import io.github.damnms.buerstli.domain.ModeName
  * The layout and most values come from oralb-ble (MIT), the library behind Home Assistant's
  * Oral-B integration, verified there against many real brushes. Where the official Oral-B app
  * knows more or says otherwise, the app wins (ADR-6); docs/ORAL-B.md lists which value comes
- * from where. The battery level is not in the advertisements.
+ * from where. The battery level is not in the advertisements; it is read from [BATTERY] over a
+ * short connection.
  */
 object OralBCodec {
     const val MANUFACTURER_ID = 0x00DC
+
+    private fun uuid(short: String): UUID = UUID.fromString("a0f0$short-5047-4d53-8208-4f72616c2d42")
+
+    /** Read-only. Never write to any Oral-B characteristic (FF06 is reported to reset the brush). */
+    val BATTERY: UUID = uuid("ff05")
 
     private enum class Family { SMART, IO }
 
@@ -61,6 +68,19 @@ object OralBCodec {
     )
 
     private const val RUNNING = 3
+
+    /** Protocol version of an advertisement, or null if it is too short to be one. */
+    fun protocol(data: ByteArray): Int? = if (data.size < 9) null else data[0].toInt() and 0xFF
+
+    /**
+     * Battery level from [BATTERY] (official app): up to protocol 3 the whole first byte, later
+     * its low 7 bits; the bytes after it (time left, voltage, …) are not used.
+     */
+    fun battery(protocol: Int, value: ByteArray): Int? {
+        val first = value.firstOrNull()?.toInt()?.and(0xFF) ?: return null
+        val level = if (protocol < 4) first else first and 0x7F
+        return level.takeIf { it in 0..100 }
+    }
 
     fun decode(data: ByteArray): BrushState? {
         if (data.size < 9) return null

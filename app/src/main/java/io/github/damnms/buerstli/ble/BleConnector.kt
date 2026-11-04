@@ -14,23 +14,28 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
+import android.os.SystemClock
 import io.github.damnms.buerstli.AddressMask
 import io.github.damnms.buerstli.Diagnostics
 import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.hex
+import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.BrushSession
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.DriverRegistry
 import io.github.damnms.buerstli.domain.NoLink
 import io.github.damnms.buerstli.domain.Recognition
 import io.github.damnms.buerstli.domain.ToothbrushDriver
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import java.io.IOException
 
 sealed interface Connection {
@@ -143,7 +148,7 @@ class BleConnector(
     fun disconnect() {
         diag.log("disconnect requested")
         stopScan()
-        if (passiveScan != null) {
+        if (listening != null) {
             stopListening(sleeping = true)
             return
         }
@@ -173,33 +178,58 @@ class BleConnector(
         closeGatt()
     }
 
-    // --- passive drivers: no connection, only advertisements ---
+    // --- passive drivers: they listen to advertisements, and may connect for a moment (poll) ---
 
+    /** The brush a passive driver listens to. */
+    private class Listening(
+        val device: BluetoothDevice,
+        val name: String,
+        val driver: ToothbrushDriver,
+        val session: BrushSession,
+    )
+
+    private var listening: Listening? = null
     private var passiveScan: ScanCallback? = null
     private var silence: Job? = null
     private var lastAdHex: String? = null
+    private var polling: Job? = null
+    private var pollGatt: BluetoothGatt? = null
+    private var pollAttempts = 0
+    private var lastPollAt = 0L
 
     private fun listen(device: BluetoothDevice, name: String, driver: ToothbrushDriver, first: Advertisement) {
-        val scanner = adapter?.bluetoothLeScanner ?: run { _state.value = Connection.BluetoothOff; return }
-        val mask = AddressMask(device.address)
+        if (adapter?.bluetoothLeScanner == null) { _state.value = Connection.BluetoothOff; return }
         val s = driver.open(NoLink)
+        val l = Listening(device, name, driver, s)
         session = s
+        listening = l
+        pollAttempts = 0
+        lastPollAt = 0L
         diag.log("listening (passive, no connection)")
-        fun feed(ad: Advertisement) {
-            val hex = ad.manufacturerData.entries.joinToString(" ") { (id, data) -> "%04X:".format(id) + mask.hex(data) }
-            if (hex != lastAdHex) {
-                lastAdHex = hex
-                diag.log("advertisement $hex")
-            }
-            s.onAdvertisement(ad)
-            restartSilence(name, driver, s)
-        }
-        feed(first)
         _state.value = Connection.Connected(name, driver, s, device)
+        startPassiveScan(l)
+        feed(l, first)
+    }
+
+    private fun feed(l: Listening, ad: Advertisement) {
+        val mask = AddressMask(l.device.address)
+        val hex = ad.manufacturerData.entries.joinToString(" ") { (id, data) -> "%04X:".format(id) + mask.hex(data) }
+        if (hex != lastAdHex) {
+            lastAdHex = hex
+            diag.log("advertisement $hex")
+        }
+        l.session.onAdvertisement(ad)
+        restartSilence(l)
+        maybePoll(l)
+    }
+
+    private fun startPassiveScan(l: Listening) {
+        val scanner = adapter?.bluetoothLeScanner ?: return
         val cb = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
+                val self = this
                 val ad = result.toAdvertisement()
-                scope.launch { if (passiveScan != null) feed(ad) }
+                scope.launch { if (listening === l && passiveScan === self) feed(l, ad) }
             }
 
             override fun onScanFailed(errorCode: Int) {
@@ -211,37 +241,138 @@ class BleConnector(
             }
         }
         passiveScan = cb
-        val filter = ScanFilter.Builder().setDeviceAddress(device.address).build()
+        val filter = ScanFilter.Builder().setDeviceAddress(l.device.address).build()
         scanner.startScan(listOf(filter), ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), cb)
     }
 
+    private fun stopPassiveScan() {
+        val cb = passiveScan ?: return
+        passiveScan = null
+        try {
+            adapter?.bluetoothLeScanner?.stopScan(cb)
+        } catch (_: IllegalStateException) {
+            // Bluetooth was turned off meanwhile.
+        }
+    }
+
+    /**
+     * The session needs something the brush doesn't broadcast: stop listening, connect for a moment,
+     * let the session read it, disconnect and listen again. The brush doesn't advertise while
+     * connected, so the silence timer pauses too. A few tries per listening, then it's left alone.
+     */
+    private fun maybePoll(l: Listening) {
+        if (polling != null || !l.session.wantsPoll || pollAttempts >= MAX_POLL_ATTEMPTS) return
+        val now = SystemClock.elapsedRealtime()
+        if (pollAttempts > 0 && now - lastPollAt < POLL_RETRY_MS) return
+        pollAttempts++
+        lastPollAt = now
+        polling = scope.launch {
+            val me = coroutineContext[Job]
+            stopPassiveScan()
+            silence?.cancel()
+            diag.log("short connection ($pollAttempts/$MAX_POLL_ATTEMPTS) to read what the brush doesn't broadcast")
+            try {
+                withTimeout(POLL_TIMEOUT_MS) { shortConnection(l.device) { link -> l.session.poll(link) } }
+                diag.log("short connection done")
+            } catch (_: TimeoutCancellationException) {
+                diag.log("short connection: no answer within ${POLL_TIMEOUT_MS / 1000} s")
+            } catch (e: IOException) {
+                diag.log("short connection FAILED: ${e.message}")
+            } finally {
+                if (polling === me) polling = null
+                if (listening === l) {
+                    startPassiveScan(l)
+                    restartSilence(l)
+                }
+            }
+        }
+    }
+
+    private suspend fun shortConnection(device: BluetoothDevice, block: suspend (BrushLink) -> Unit) {
+        val ready = CompletableDeferred<AndroidBrushLink>()
+        val cb = PollCallback(ready)
+        val g = device.connectLe(appContext, cb) ?: throw IOException("Bluetooth refused the connection")
+        pollGatt = g
+        try {
+            block(ready.await())
+        } finally {
+            cb.link?.fail("closed")
+            g.disconnect()
+            g.close()
+            if (pollGatt === g) pollGatt = null
+        }
+    }
+
     /** No advertisement for a while: the brush went to sleep or out of range. */
-    private fun restartSilence(name: String, driver: ToothbrushDriver, s: BrushSession) {
+    private fun restartSilence(l: Listening) {
         silence?.cancel()
         silence = scope.launch {
             delay(PASSIVE_SILENCE_MS)
             diag.log("no advertisements for ${PASSIVE_SILENCE_MS / 1000} s")
             stopListening(sleeping = false)
-            _state.value = Connection.Disconnected(name, driver, s.state.value)
+            _state.value = Connection.Disconnected(l.name, l.driver, l.session.state.value)
         }
     }
 
     private fun stopListening(sleeping: Boolean) {
         silence?.cancel()
         silence = null
-        val cb = passiveScan ?: return
-        passiveScan = null
-        lastAdHex = null
-        try {
-            adapter?.bluetoothLeScanner?.stopScan(cb)
-        } catch (_: IllegalStateException) {
-            // Bluetooth was turned off meanwhile.
+        val l = listening ?: return
+        listening = null
+        polling?.cancel()
+        polling = null
+        pollGatt?.let {
+            it.disconnect()
+            it.close()
         }
+        pollGatt = null
+        stopPassiveScan()
+        lastAdHex = null
         if (sleeping) {
             val c = _state.value as? Connection.Connected
-            if (c != null) _state.value = Connection.Disconnected(c.name, c.driver, c.session.state.value)
+            if (c != null) _state.value = Connection.Disconnected(c.name, c.driver, l.session.state.value)
         }
         session = null
+    }
+
+    /** GATT callbacks of a short connection: connect, discover, then answer reads. Nothing else. */
+    private inner class PollCallback(private val ready: CompletableDeferred<AndroidBrushLink>) : BluetoothGattCallback() {
+        @Volatile var link: AndroidBrushLink? = null
+
+        override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+            diag.log("short connection: state $newState (GATT status $status)")
+            if (newState == BluetoothProfile.STATE_CONNECTED && status == BluetoothGatt.GATT_SUCCESS) {
+                g.discoverServices()
+                return
+            }
+            link?.fail("disconnected")
+            ready.completeExceptionally(IOException("not connected (GATT status $status)"))
+        }
+
+        override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                ready.completeExceptionally(IOException("service discovery failed (GATT status $status)"))
+                return
+            }
+            val l = AndroidBrushLink(g, diag)
+            link = l
+            ready.complete(l)
+        }
+
+        // Android 13+
+        override fun onCharacteristicRead(g: BluetoothGatt, ch: BluetoothGattCharacteristic, value: ByteArray, status: Int) =
+            result(status, value)
+
+        // Android 12 and older
+        @Deprecated("Pre-Android-13 callback")
+        override fun onCharacteristicRead(g: BluetoothGatt, ch: BluetoothGattCharacteristic, status: Int) {
+            @Suppress("DEPRECATION")
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) result(status, ch.value ?: ByteArray(0))
+        }
+
+        private fun result(status: Int, value: ByteArray) {
+            if (status == BluetoothGatt.GATT_SUCCESS) link?.complete(value) else link?.fail("GATT status $status")
+        }
     }
 
     private fun stopScan() {
@@ -365,5 +496,8 @@ class BleConnector(
         const val SCAN_TIMEOUT_MS = 30_000L
         const val UNSUPPORTED_GRACE_MS = 4_000L
         const val PASSIVE_SILENCE_MS = 30_000L
+        const val MAX_POLL_ATTEMPTS = 2
+        const val POLL_RETRY_MS = 60_000L
+        const val POLL_TIMEOUT_MS = 15_000L
     }
 }

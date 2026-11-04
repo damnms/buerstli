@@ -113,7 +113,7 @@
     <string name="pressure_high">zu hoch!</string>
     <string name="info_sector">Bereich</string>
     <string name="sector_of">%1$d von %2$d</string>
-    <string name="passive_note">Bürstli hört nur mit, was diese Bürste sendet, ohne sich zu verbinden. Den Akkustand sendet sie dabei nicht.</string>
+    <string name="passive_note">Bürstli hört meist nur mit, was diese Bürste sendet. Nur für den Akkustand, den sie nicht sendet, verbindet sich Bürstli kurz, solange die Bürste ruht.</string>
     <string name="switch_deep_clean">Tiefenreinigung</string>
     <string name="switch_anti_splash">Spritzschutz</string>
     <string name="switch_power_ramp_up">Sanfter Anlauf (3 Sekunden)</string>

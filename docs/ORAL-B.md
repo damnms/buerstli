@@ -1,6 +1,7 @@
 # Oral-B: protocol notes
 
-Status: experimental, listens only (`OralBPassiveDriver`). Nobody has tried it with Bürstli yet.
+Status: experimental (`OralBPassiveDriver`): listens, and connects only briefly to read the battery.
+Nobody has tried it with Bürstli yet.
 
 Two sources, and every value below says which one it comes from:
 
@@ -77,7 +78,7 @@ so an iO it doesn't know by id got the old names.
   (app). The app calls them internally clean, soft, massage, polish, turbo, soft plus, tongue;
   the names above are the ones on the brush, as oralb-ble uses them.
 
-## Not built yet: battery level (needs a short connection)
+## Battery level (short connection)
 
 Service and characteristics use the base `A0F0xxxx-5047-4D53-8208-4F72616C2D42`. The battery
 is in characteristic `FF05` (read). oralb-ble reads it over a short active connection; a user
@@ -92,6 +93,12 @@ Layout of `FF05` by protocol version (app):
 
 Reading byte 1 instead of byte 0 gives values like 189 %, as an ESPHome example in the Home
 Assistant forum shows.
+
+What Bürstli does: once it heard the brush idle or charging and has no battery level yet, it
+stops listening, connects, reads `FF05` and disconnects; then it listens again. Not while
+brushing or paused: a user in the Arduino forum reports that the connection drops when brushing starts. At most
+two tries per listening, a minute apart. The brush doesn't advertise while connected, so live
+values pause for those few seconds.
 
 **Bürstli never writes to an Oral-B characteristic.** A user reports that writing to `FF06`
 resets the brush to factory settings.
