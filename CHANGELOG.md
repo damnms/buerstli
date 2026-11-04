@@ -6,6 +6,13 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-04
+
+### Added
+- Philips Sonicare: sets the brush's clock to the phone's time when it is off, as the official app
+  does, so new sessions get the right date. Untested on a real brush.
+- README: the Sonicare 7100 (HX742X) protocol is written down – testers wanted!
+
 ## [0.15.0] - 2026-11-04
 
 ### Added

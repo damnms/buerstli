@@ -1,0 +1,3 @@
+Added:
+- Philips Sonicare: sets the brush's clock to the phone's time when it is off, as the official app does, so new sessions get the right date. Untested on a real brush.
+- README: the Sonicare 7100 (HX742X) protocol is written down – testers wanted!
