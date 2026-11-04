@@ -3,6 +3,7 @@ package io.github.damnms.buerstli.drivers.oralb
 import io.github.damnms.buerstli.domain.Activity
 import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.domain.BrushCommand
+import io.github.damnms.buerstli.domain.BrushHeadLeft
 import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.BrushingRecord
 import io.github.damnms.buerstli.domain.CommandResult
@@ -297,7 +298,10 @@ class OralBTest {
             check(data.size == 2 && data[0] == 0x02.toByte()) { "unexpected write $bytes" }
             selected = data[1].toInt()
         }
-        override suspend fun enableNotifications(characteristic: UUID) = throw AssertionError("no subscriptions")
+        override suspend fun enableNotifications(characteristic: UUID) {
+            check(characteristic == OralBCodec.BRUSH_HEAD) { "subscribed to $characteristic" }
+            throw IOException("no brush head reminder on this brush")
+        }
     }
 
     @Test
@@ -345,5 +349,56 @@ class OralBTest {
     @Test
     fun `the driver says it can read a history`() {
         assertEquals(SupportLevel.EXPERIMENTAL, OralBPassiveDriver.capabilities.history)
+    }
+
+    // --- brush head reminder (official app, see docs/ORAL-B.md) ---
+
+    @Test
+    fun `brush head reminder layout depends on the protocol version`() {
+        assertEquals(BrushHeadLeft(days = 60, brushingSeconds = 3600), OralBCodec.brushHead(8, hex("00-3C-00-10-0E-05-00-2C-01")))
+        assertEquals(BrushHeadLeft(days = 30, brushingSeconds = 1800), OralBCodec.brushHead(5, hex("01-1E-00-08-07")))
+        assertNull(OralBCodec.brushHead(8, hex("FF-3C-00-10-0E-00-00-00-00"))) // reminder switched off
+        assertNull(OralBCodec.brushHead(5, hex("FF-1E-00-08-07")))
+        assertNull(OralBCodec.brushHead(5, hex("05-1E-00-08-07"))) // unknown state on older brushes
+        assertNull(OralBCodec.brushHead(8, hex("00-3C-00-10-0E"))) // wrong length for the protocol
+        assertNull(OralBCodec.brushHead(5, hex("00-3C-00-10-0E-00-00-00-00")))
+    }
+
+    /** Battery and an empty history; the reminder arrives as a notification once subscribed. */
+    private class FakeWithReminder(val session: () -> io.github.damnms.buerstli.domain.BrushSession) : BrushLink {
+        val subscribed = mutableListOf<UUID>()
+        override suspend fun read(characteristic: UUID): ByteArray = when (characteristic) {
+            OralBCodec.BATTERY -> byteArrayOf(0x50, 0, 0)
+            OralBCodec.SESSION_DATA -> ByteArray(23) // session id 0: no history
+            else -> throw IOException("not readable")
+        }
+        override suspend fun write(characteristic: UUID, data: ByteArray) {
+            check(characteristic == OralBCodec.CONFIGURE && data.size == 2 && data[0] == 0x02.toByte())
+        }
+        override suspend fun enableNotifications(characteristic: UUID) {
+            subscribed += characteristic
+            session().onNotification(characteristic, OralBTest().hex("00-3C-00-10-0E-00-00-00-00"))
+        }
+    }
+
+    @Test
+    fun `the short connection subscribes to the brush head reminder and shows it`() = runTest {
+        val session = OralBPassiveDriver.open(NoLink).apply { start(); onAdvertisement(ad(standby)) }
+        val link = FakeWithReminder { session }
+
+        session.poll(link)
+
+        assertEquals(listOf(OralBCodec.BRUSH_HEAD), link.subscribed)
+        assertEquals(BrushHeadLeft(60, 3600), session.state.value.brushHeadLeft)
+        session.onAdvertisement(ad(brushing)) // advertisements don't wipe it
+        assertEquals(BrushHeadLeft(60, 3600), session.state.value.brushHeadLeft)
+    }
+
+    @Test
+    fun `no reminder on the brush is no reason to connect again`() = runTest {
+        val session = OralBPassiveDriver.open(NoLink).apply { start(); onAdvertisement(ad(standby)) }
+        session.poll(FakeHistory(count = 1)) // its subscription fails
+        assertNull(session.state.value.brushHeadLeft)
+        assertFalse(session.wantsPoll)
     }
 }

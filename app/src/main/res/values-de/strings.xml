@@ -113,7 +113,7 @@
     <string name="pressure_high">zu hoch!</string>
     <string name="info_sector">Bereich</string>
     <string name="sector_of">%1$d von %2$d</string>
-    <string name="passive_note">Bürstli hört meist nur mit, was diese Bürste sendet. Nur für Akkustand und Verlauf, die sie nicht sendet, verbindet sich Bürstli kurz, solange die Bürste ruht.</string>
+    <string name="passive_note">Bürstli hört meist nur mit, was diese Bürste sendet. Nur für Akkustand, Verlauf und Bürstenkopf-Erinnerung, die sie nicht sendet, verbindet sich Bürstli kurz, solange die Bürste ruht.</string>
     <string name="switch_deep_clean">Tiefenreinigung</string>
     <string name="switch_anti_splash">Spritzschutz</string>
     <string name="switch_power_ramp_up">Sanfter Anlauf (3 Sekunden)</string>
@@ -134,4 +134,11 @@
     <string name="history_number">Nr. %1$d</string>
     <string name="history_time_of">%1$s von %2$s</string>
     <string name="history_pressure">%1$d s zu viel Druck</string>
+    <string name="info_head_left">Neuer Bürstenkopf</string>
+    <string name="info_head_left_value">%1$s oder nach %2$d Min. Putzen</string>
+    <string name="info_head_left_now">jetzt</string>
+    <plurals name="head_days">
+        <item quantity="one">in %d Tag</item>
+        <item quantity="other">in %d Tagen</item>
+    </plurals>
 </resources>

@@ -272,7 +272,7 @@ class BleConnector(
             silence?.cancel()
             diag.log("short connection ($pollAttempts/$MAX_POLL_ATTEMPTS) to read what the brush doesn't broadcast")
             try {
-                withTimeout(POLL_TIMEOUT_MS) { shortConnection(l.device) { link -> l.session.poll(link) } }
+                withTimeout(POLL_TIMEOUT_MS) { shortConnection(l.device, l.session) { link -> l.session.poll(link) } }
                 diag.log("short connection done")
             } catch (_: TimeoutCancellationException) {
                 diag.log("short connection: no answer within ${POLL_TIMEOUT_MS / 1000} s")
@@ -288,9 +288,9 @@ class BleConnector(
         }
     }
 
-    private suspend fun shortConnection(device: BluetoothDevice, block: suspend (BrushLink) -> Unit) {
+    private suspend fun shortConnection(device: BluetoothDevice, s: BrushSession, block: suspend (BrushLink) -> Unit) {
         val ready = CompletableDeferred<AndroidBrushLink>()
-        val cb = PollCallback(ready)
+        val cb = PollCallback(ready, s)
         val g = device.connectLe(appContext, cb) ?: throw IOException("Bluetooth refused the connection")
         pollGatt = g
         try {
@@ -335,8 +335,11 @@ class BleConnector(
         session = null
     }
 
-    /** GATT callbacks of a short connection: connect, discover, then answer reads and read requests. */
-    private inner class PollCallback(private val ready: CompletableDeferred<AndroidBrushLink>) : BluetoothGattCallback() {
+    /** GATT callbacks of a short connection: connect, discover, answer reads, read requests and subscriptions. */
+    private inner class PollCallback(
+        private val ready: CompletableDeferred<AndroidBrushLink>,
+        private val session: BrushSession,
+    ) : BluetoothGattCallback() {
         @Volatile var link: AndroidBrushLink? = null
 
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
@@ -362,6 +365,25 @@ class BleConnector(
         // Read requests some brushes need first (e.g. Oral-B: which session to read).
         override fun onCharacteristicWrite(g: BluetoothGatt, ch: BluetoothGattCharacteristic, status: Int) =
             result(status, ByteArray(0))
+
+        // Subscriptions, for values a brush only sends as a notification (e.g. Oral-B's brush head reminder).
+        override fun onDescriptorWrite(g: BluetoothGatt, d: BluetoothGattDescriptor, status: Int) =
+            result(status, ByteArray(0))
+
+        override fun onCharacteristicChanged(g: BluetoothGatt, ch: BluetoothGattCharacteristic, value: ByteArray) {
+            diag.log("short connection: notification ${value.hex()}")
+            session.onNotification(ch.uuid, value)
+        }
+
+        @Deprecated("Pre-Android-13 callback")
+        override fun onCharacteristicChanged(g: BluetoothGatt, ch: BluetoothGattCharacteristic) {
+            @Suppress("DEPRECATION")
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                val value = ch.value ?: return
+                diag.log("short connection: notification ${value.hex()}")
+                session.onNotification(ch.uuid, value)
+            }
+        }
 
         // Android 13+
         override fun onCharacteristicRead(g: BluetoothGatt, ch: BluetoothGattCharacteristic, value: ByteArray, status: Int) =
@@ -502,6 +524,6 @@ class BleConnector(
         const val PASSIVE_SILENCE_MS = 30_000L
         const val MAX_POLL_ATTEMPTS = 2
         const val POLL_RETRY_MS = 60_000L
-        const val POLL_TIMEOUT_MS = 30_000L // battery plus up to 30 history entries
+        const val POLL_TIMEOUT_MS = 35_000L // battery, up to 30 history entries, brush head reminder
     }
 }

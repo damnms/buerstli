@@ -1,6 +1,7 @@
 package io.github.damnms.buerstli.drivers.oralb
 
 import io.github.damnms.buerstli.domain.Activity
+import io.github.damnms.buerstli.domain.BrushHeadLeft
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.BrushingRecord
 import io.github.damnms.buerstli.domain.ModeName
@@ -35,6 +36,22 @@ object OralBCodec {
 
     /** The session selected through [CONFIGURE]. */
     val SESSION_DATA: UUID = uuid("ff29")
+
+    /** Brush head reminder; the official app subscribes to it and gets the value as a notification. */
+    val BRUSH_HEAD: UUID = uuid("ff2d")
+
+    /**
+     * Brush head reminder (official app): state, days left, brushing seconds left; from protocol 7
+     * also days and seconds since the reminder came up (not used). Null if it is switched off.
+     */
+    fun brushHead(protocol: Int, value: ByteArray): BrushHeadLeft? {
+        if (value.size != (if (protocol >= 7) 9 else 5)) return null
+        val u = IntArray(value.size) { value[it].toInt() and 0xFF }
+        val state = u[0]
+        val on = if (protocol >= 7) state != 0xFF && state != 0xFE else state == 0 || state == 1
+        if (!on) return null
+        return BrushHeadLeft(days = u[1] or (u[2] shl 8), brushingSeconds = u[3] or (u[4] shl 8))
+    }
 
     /** How many sessions newer brushes keep (official app); Bürstli reads no further back. */
     const val MAX_SESSIONS = 30

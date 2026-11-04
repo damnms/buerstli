@@ -7,7 +7,7 @@
 <li><b>Laifen Wave SE (LFTB01-SE)</b> – experimental, listens only: battery, modes, brushing time, brushing or idle, 30-second nudge, high frequency, flight mode.</li>
 <li><b>Laifen Kids TC51 (LFTB01-C)</b> – experimental, listens only: battery, brushing time, brushing or idle, child lock, 30-second nudge, high frequency, flight mode and more.</li>
 <li><b>Philips Sonicare</b> (classic models such as DiamondClean, Prestige, ExpertClean, Kids) – experimental and read-only, confirmed on a real DiamondClean 9000: battery, status, mode, intensity, brushing time and brush head wear.</li>
-<li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimental, listens and connects only briefly for battery and history: status, mode, brushing time, pressure, mouth area, battery and brushing history.</li>
+<li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimental, listens and connects only briefly for what it doesn't broadcast: status, mode, brushing time, pressure, mouth area, battery, brushing history and when the brush head is due.</li>
 </ul>
 
 <p><b>Your brush isn't supported yet?</b> Bürstli recognizes the Philips Sonicare 7100, Oclean and Xiaomi brushes – and any other brush you simply pick from a list of nearby devices. Bürstli then records a report in about a minute – it only listens, nothing on the brush is changed. Send it to the developers by messenger, e-mail or on GitHub, no technical knowledge needed.</p>

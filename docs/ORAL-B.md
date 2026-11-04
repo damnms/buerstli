@@ -1,7 +1,7 @@
 # Oral-B: protocol notes
 
-Status: experimental (`OralBPassiveDriver`): listens, and connects only briefly to read the battery
-and the brushing history.
+Status: experimental (`OralBPassiveDriver`): listens, and connects only briefly to read the battery,
+the brushing history and the brush head reminder.
 Nobody has tried it with Bürstli yet.
 
 Two sources, and every value below says which one it comes from:
@@ -123,6 +123,21 @@ Byte positions in `FF29` (little-endian; time in seconds since 2000-01-01 by the
 The app also reads low pressure, pressure events, average and maximum pressure and, from
 protocol 8, tongue time; Bürstli doesn't show those. The brush's clock is set by the official app;
 before 2015 Bürstli assumes it never was and shows no date.
+
+## Brush head reminder (same short connection) – app
+
+The app subscribes to `FF2D` and gets the value as a notification; Bürstli does the same, waits
+up to 3 seconds and tries once per listening (not every brush has it).
+
+| Byte | Meaning |
+|---|---|
+| 0 | state. Up to protocol 6: `00`/`01` on (counted by the brush / by the app), `FF` off. From protocol 7: `FF` off, `FE` interval, `00` on, `01` reset, `02` snoozed, other values a stage |
+| 1–2 | days left |
+| 3–4 | brushing seconds left |
+| 5–8 | from protocol 7 (9 bytes in total; 5 before): days and seconds since the reminder came up |
+
+Bürstli shows days and brushing time left unless the reminder is off; "interval" it treats as off
+too, because the app doesn't say what the numbers mean then.
 
 ## Writing
 

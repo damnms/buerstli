@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -548,6 +549,14 @@ private fun InfoReadings(state: BrushState, showTargetDuration: Boolean) {
             }
         }
         state.brushHeadWearPercent?.let { add(R.string.info_head_wear to stringResource(R.string.info_head_wear_value, it)) }
+        state.brushHeadLeft?.let { left ->
+            val minutes = (left.brushingSeconds + 59) / 60
+            add(R.string.info_head_left to if (left.days == 0 || minutes == 0) {
+                stringResource(R.string.info_head_left_now)
+            } else {
+                stringResource(R.string.info_head_left_value, pluralStringResource(R.plurals.head_days, left.days, left.days), minutes)
+            })
+        }
         state.pressureHigh?.let {
             add(R.string.info_pressure to stringResource(if (it) R.string.pressure_high else R.string.pressure_ok))
         }

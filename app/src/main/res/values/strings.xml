@@ -114,7 +114,7 @@
     <string name="pressure_high">too high!</string>
     <string name="info_sector">Area</string>
     <string name="sector_of">%1$d of %2$d</string>
-    <string name="passive_note">Bürstli mostly listens to what this brush broadcasts. Only for battery and history, which it doesn\'t broadcast, Bürstli connects for a moment while the brush is idle.</string>
+    <string name="passive_note">Bürstli mostly listens to what this brush broadcasts. Only for battery, history and the brush head reminder, which it doesn\'t broadcast, Bürstli connects for a moment while the brush is idle.</string>
     <string name="switch_deep_clean">Deep clean</string>
     <string name="switch_anti_splash">Anti-splash</string>
     <string name="switch_power_ramp_up">3-second power ramp-up</string>
@@ -135,4 +135,11 @@
     <string name="history_number">No. %1$d</string>
     <string name="history_time_of">%1$s of %2$s</string>
     <string name="history_pressure">too much pressure for %1$d s</string>
+    <string name="info_head_left">New brush head</string>
+    <string name="info_head_left_value">%1$s, or after %2$d min of brushing</string>
+    <string name="info_head_left_now">now</string>
+    <plurals name="head_days">
+        <item quantity="one">in %d day</item>
+        <item quantity="other">in %d days</item>
+    </plurals>
 </resources>

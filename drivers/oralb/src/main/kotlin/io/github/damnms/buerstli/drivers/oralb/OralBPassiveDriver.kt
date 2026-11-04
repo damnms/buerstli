@@ -12,15 +12,19 @@ import io.github.damnms.buerstli.domain.Capabilities
 import io.github.damnms.buerstli.domain.CommandResult
 import io.github.damnms.buerstli.domain.SupportLevel
 import io.github.damnms.buerstli.domain.ToothbrushDriver
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
 import java.util.UUID
 
 /**
  * Oral-B brushes that broadcast their state (iO, Genius, Smart, Pro, Triumph). Listens, and
- * connects only for a moment to read what the brush doesn't broadcast: battery and history.
+ * connects only for a moment to read what the brush doesn't broadcast: battery, history and the
+ * brush head reminder.
  * Read-only: the only thing ever written is the read request for a session (official app).
  */
 object OralBPassiveDriver : ToothbrushDriver {
@@ -41,17 +45,28 @@ private class OralBSession : BrushSession {
 
     private var protocol: Int? = null
     private var historyRead = false
+    private var brushHeadTried = false
+    @Volatile private var brushHeadArrived: CompletableDeferred<Unit>? = null
 
     override suspend fun start() {}
 
-    override fun onNotification(characteristic: UUID, value: ByteArray) {}
+    override fun onNotification(characteristic: UUID, value: ByteArray) {
+        if (characteristic != OralBCodec.BRUSH_HEAD) return
+        val p = protocol ?: return
+        OralBCodec.brushHead(p, value)?.let { left -> _state.update { it.copy(brushHeadLeft = left) } }
+        brushHeadArrived?.complete(Unit)
+    }
 
     override fun onAdvertisement(advertisement: Advertisement) {
         val data = advertisement.manufacturerData[OralBCodec.MANUFACTURER_ID] ?: return
         val decoded = OralBCodec.decode(data) ?: return
         protocol = OralBCodec.protocol(data)
         val known = _state.value
-        _state.value = decoded.copy(batteryPercent = known.batteryPercent, history = known.history)
+        _state.value = decoded.copy(
+            batteryPercent = known.batteryPercent,
+            history = known.history,
+            brushHeadLeft = known.brushHeadLeft,
+        )
     }
 
     /** Only while idle: a connection doesn't survive the start of brushing. */
@@ -59,7 +74,7 @@ private class OralBSession : BrushSession {
         get() = protocol != null && (_state.value.batteryPercent == null || !historyRead) &&
             _state.value.activity in setOf(Activity.STANDBY, Activity.CHARGING)
 
-    /** Battery, then history. Throws the first failure, so the adapter may try again for what's missing. */
+    /** Battery, history, brush head reminder. Throws the first failure, so the adapter may try again for what's missing. */
     override suspend fun poll(link: BrushLink) {
         val p = protocol ?: return
         var failure: IOException? = null
@@ -81,7 +96,29 @@ private class OralBSession : BrushSession {
                 failure = failure ?: e
             }
         }
+        if (!brushHeadTried) {
+            brushHeadTried = true // optional: not every brush has it, so one try is enough
+            readBrushHead(link)
+        }
         failure?.let { throw it }
+    }
+
+    /** Subscribe, as the official app does, and wait a moment for the value. */
+    private suspend fun readBrushHead(link: BrushLink) {
+        val arrived = CompletableDeferred<Unit>()
+        brushHeadArrived = arrived
+        try {
+            link.enableNotifications(OralBCodec.BRUSH_HEAD)
+            withTimeoutOrNull(BRUSH_HEAD_WAIT_MS) { arrived.await() }
+        } catch (_: IOException) {
+            // No reminder on this brush.
+        } finally {
+            brushHeadArrived = null
+        }
+    }
+
+    private companion object {
+        const val BRUSH_HEAD_WAIT_MS = 3_000L
     }
 
     /** Newest first, until the brush has no more. A failure after the first session keeps what came. */

@@ -42,6 +42,8 @@ data class BrushState(
     val brushingSeconds: Int? = null,
     /** How worn the brush head is, 0-100. */
     val brushHeadWearPercent: Int? = null,
+    /** Time left until the brush suggests a new head, for brushes that count it (e.g. Oral-B). */
+    val brushHeadLeft: BrushHeadLeft? = null,
     /** True if the brush reports too much pressure right now. */
     val pressureHigh: Boolean? = null,
     /** Area of the mouth the brush guides you through right now (1-based), and how many there are. */
@@ -58,6 +60,9 @@ data class BrushState(
         val UNKNOWN = BrushState()
     }
 }
+
+/** What's left of a brush head: whichever runs out first, days or brushing time. */
+data class BrushHeadLeft(val days: Int, val brushingSeconds: Int)
 
 /** One brushing session as the brush remembers it. Optional fields: not every brush keeps them. */
 data class BrushingRecord(
