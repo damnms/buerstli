@@ -44,6 +44,8 @@ data class BrushState(
     val brushHeadWearPercent: Int? = null,
     /** Score the brush gave the last brushing session, for brushes that rate it (e.g. Xiaomi). */
     val brushingScore: Int? = null,
+    /** Brushes that broadcast encrypted: whether Bürstli can read them. Null until it matters. */
+    val keyStatus: KeyStatus? = null,
     /** Time left until the brush suggests a new head, for brushes that count it (e.g. Oral-B). */
     val brushHeadLeft: BrushHeadLeft? = null,
     /** True if the brush reports too much pressure right now. */
@@ -61,6 +63,17 @@ data class BrushState(
     companion object {
         val UNKNOWN = BrushState()
     }
+}
+
+enum class KeyStatus {
+    /** The brush broadcasts encrypted and Bürstli has no key for it. */
+    MISSING,
+
+    /** The key doesn't decrypt the brush's broadcasts (e.g. the brush was set up again). */
+    WRONG,
+
+    /** The key works. */
+    OK,
 }
 
 /** What's left of a brush head: whichever runs out first, days or brushing time. */

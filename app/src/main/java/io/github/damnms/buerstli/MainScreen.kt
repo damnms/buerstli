@@ -21,7 +21,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch as SwitchControl
@@ -35,6 +37,7 @@ import androidx.compose.runtime.setValue
 import android.content.ClipData
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.toClipEntry
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.font.FontFamily
@@ -48,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import io.github.damnms.buerstli.ble.Connection
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.CommandResult
+import io.github.damnms.buerstli.domain.KeySpec
+import io.github.damnms.buerstli.domain.KeyStatus
 import io.github.damnms.buerstli.domain.ModeSpec
 import io.github.damnms.buerstli.domain.ParameterKind
 import io.github.damnms.buerstli.domain.Access
@@ -75,6 +80,8 @@ class Actions(
     val openPicker: () -> Unit,
     val closePicker: () -> Unit,
     val pick: (Nearby) -> Unit,
+    /** False if the text isn't a valid key. */
+    val saveKey: (String) -> Boolean,
 )
 
 class DurationUi(val draft: Int?, val save: SaveStatus?)
@@ -185,6 +192,10 @@ private fun ConnectionContent(
         )
         is Connection.Connected -> {
             BrushHeader(connection.name, connection.driver)
+            val keyStatus = brushState?.keyStatus
+            connection.driver.key?.let { spec ->
+                if (keyStatus == KeyStatus.MISSING || keyStatus == KeyStatus.WRONG) KeyCard(spec, keyStatus, actions)
+            }
             if (connection.driver.supportLevel == SupportLevel.EXPERIMENTAL) ExperimentalNote(connection.driver.passive, actions)
             if (brushState == null) {
                 Busy(stringResource(R.string.waiting_for_status), null)
@@ -479,6 +490,40 @@ private fun PickerContent(nearby: List<Nearby>, actions: Actions) {
             }
         }
         TextButton(onClick = actions.closePicker) { Text(stringResource(R.string.capture_cancel)) }
+    }
+}
+
+/** The brush broadcasts encrypted: why Bürstli shows nothing, and where the key goes. */
+@Composable
+private fun KeyCard(spec: KeySpec, status: KeyStatus, actions: Actions) {
+    var text by rememberSaveable { mutableStateOf("") }
+    var invalid by rememberSaveable { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
+    val chars = spec.bytes * 2
+    InfoCard {
+        Text(stringResource(R.string.key_title), style = MaterialTheme.typography.titleMedium)
+        Text(
+            if (status == KeyStatus.WRONG) stringResource(R.string.key_wrong)
+            else stringResource(R.string.key_missing, chars),
+        )
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it; invalid = false },
+            label = { Text(stringResource(R.string.key_label)) },
+            singleLine = true,
+            isError = invalid,
+            supportingText = if (invalid) {
+                { Text(stringResource(R.string.key_invalid, chars)) }
+            } else null,
+            textStyle = LocalTextStyle.current.copy(fontFamily = FontFamily.Monospace),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { if (actions.saveKey(text)) text = "" else invalid = true }) {
+                Text(stringResource(R.string.key_save))
+            }
+            TextButton(onClick = { uriHandler.openUri(spec.helpUrl) }) { Text(stringResource(R.string.key_help)) }
+        }
     }
 }
 

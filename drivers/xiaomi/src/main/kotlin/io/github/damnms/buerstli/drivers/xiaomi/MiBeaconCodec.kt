@@ -13,6 +13,11 @@ internal class MiBeacon(
     val frameCounter: Int,
     val encrypted: Boolean,
     val objects: List<MiObject>,
+    val version: Int = 0,
+    /** The device address as the frame carries it (little-endian), if it does. */
+    val mac: ByteArray? = null,
+    /** Where the objects (or, encrypted, the ciphertext) start. */
+    val objectsStart: Int = 0,
 )
 
 /**
@@ -59,7 +64,39 @@ internal object MiBeaconCodec {
         if (data.size < i) return null
         val encrypted = control and ENCRYPTED != 0
         val objects = if (encrypted || control and OBJECT_INCLUDED == 0) emptyList() else objects(data, i)
-        return MiBeacon(u16(data, 2), data[4].toInt() and 0xFF, encrypted, objects)
+        val mac = if (control and MAC_INCLUDED != 0) data.copyOfRange(5, 11) else null
+        return MiBeacon(u16(data, 2), data[4].toInt() and 0xFF, encrypted, objects, control ushr 12, mac, i)
+    }
+
+    /**
+     * The objects of an encrypted MiBeacon V4/V5 frame, or null if [key] doesn't fit or the frame
+     * can't be decrypted. AES-CCM: nonce = address (little-endian) + product id + frame counter +
+     * the 3-byte extended counter before the 4-byte tag; associated data 0x11.
+     * [address] is the brush's address ("AA:BB:CC:DD:EE:FF"), used when the frame doesn't carry it.
+     */
+    fun decrypt(data: ByteArray, beacon: MiBeacon, key: ByteArray, address: String?): List<MiObject>? {
+        if (!beacon.encrypted || beacon.version < 4 || key.size != 16) return null
+        if (data.size < beacon.objectsStart + 3 + EXT_COUNTER + TAG) return null
+        val mac = beacon.mac ?: address?.let(::littleEndianAddress) ?: return null
+        val end = data.size - EXT_COUNTER - TAG
+        val nonce = mac + data.copyOfRange(2, 5) + data.copyOfRange(end, end + EXT_COUNTER)
+        val plain = AesCcm.decrypt(
+            key = key,
+            nonce = nonce,
+            aad = byteArrayOf(0x11),
+            ciphertext = data.copyOfRange(beacon.objectsStart, end),
+            tag = data.copyOfRange(data.size - TAG, data.size),
+        ) ?: return null
+        return objects(plain, 0)
+    }
+
+    private const val EXT_COUNTER = 3
+    private const val TAG = 4
+
+    private fun littleEndianAddress(address: String): ByteArray? {
+        val parts = address.split(":")
+        if (parts.size != 6) return null
+        return parts.reversed().map { it.toIntOrNull(16)?.toByte() ?: return null }.toByteArray()
     }
 
     /** id (2 bytes, little-endian), length (1 byte), data. Stops at the first object that doesn't fit. */

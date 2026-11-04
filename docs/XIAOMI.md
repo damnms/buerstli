@@ -1,21 +1,23 @@
 # Xiaomi brushes: research notes
 
 Status: Bürstli **recognizes** every toothbrush in Xiaomi Home and offers the "help out" report.
-The **T500** has an experimental driver (`XiaomiT500Driver`) that only **listens** to its
-broadcasts. Bürstli sends **no command** to any Xiaomi brush. Nobody has tested anything below with
+The **T500**, **T700/T700i** and **T501** have experimental drivers that only **listen** to their
+broadcasts; the T700 and T501 broadcast encrypted and need the brush's [bindkey](#bindkey), which
+the user enters. Bürstli sends **no command** to any Xiaomi brush. Nobody has tested anything below with
 Bürstli yet. This file keeps what is known, what is only assumed, and what the first report
 should answer.
 
-## T500 driver: what it reads
+## Drivers: what they read
 
-Passive, like Oral-B: no connection. Frame layout and object ids as documented by
+All Xiaomi drivers are passive (`XiaomiPassiveDriver`): no connection. Frame layout and object ids as documented by
 [xiaomi-ble](https://github.com/Bluetooth-Devices/xiaomi-ble) (Home Assistant's built-in Xiaomi
 parser) and [ble_monitor](https://github.com/custom-components/ble_monitor), studied, not copied.
 
 **Frame** (service data `0xFE95`): frame control (2 bytes, LE), product id (2), frame counter (1),
 then the MAC (6, if bit 4), a capability byte (if bit 5; one more I/O byte if the capability has
 `0x20`), then objects (if bit 6): id (2, LE), length (1), data. Bit 3 means encrypted; bit 7 is
-mesh. Bürstli skips encrypted frames, mesh frames and versions below 2, as xiaomi-ble does.
+mesh. Bürstli skips mesh frames and versions below 2, as xiaomi-ble does. Encrypted frames are
+read with the user's key, see [Encrypted brushes](#encrypted-brushes-t700-t501).
 
 | Object | Data | In Bürstli | Seen on a real T500 |
 |---|---|---|---|
@@ -31,6 +33,43 @@ is worn, is from Xiaomi's object definition and should be checked against Mi Hom
 Per ble_monitor, an un-set-up T500 sends only an empty frame, so Bürstli shows nothing for it until
 the brush was set up with Mi Home once. The real T500 frame has frame control `0x3071`: not bound,
 old auth mode, not encrypted.
+
+## Encrypted brushes (T700, T501)
+
+Drivers only for models with a real frame known: `XiaomiT700Driver` (`0x0806`, `0x1790`; a real T700
+frame and its key in xiaomi-ble's tests) and `XiaomiT501Driver` (`0x3B94`; a real advertisement in
+xiaomi-ble#356, encrypted, MiBeacon V5). The Pro models and the others stay recognized only: nobody
+has published a frame from them.
+
+**Decryption** (MiBeacon V4/V5, as xiaomi-ble does it, implemented from that description): AES-CCM
+with the 16-byte bindkey, 4-byte tag, associated data `0x11`. Nonce (12 bytes): the device address
+(little-endian; from the frame if it carries it, else the Bluetooth address), product id and frame
+counter (bytes 2-4), then the 3-byte extended counter that sits just before the tag. The ciphertext
+runs from where the objects would start to the extended counter; decrypted, it holds the usual
+objects. Neither the JVM nor Android ships AES-CCM, so Bürstli builds it on plain AES (RFC 3610).
+Checked against the real T700 frame: it decrypts to `0x3003`, end of brushing, score 83.
+
+Older encrypted frames (V2/V3) use another scheme; Bürstli skips them. A frame that fails to
+decrypt counts as a wrong key only if the key never worked before, or twice in a row (as
+xiaomi-ble does): one damaged frame isn't a wrong key.
+
+This is reading only (ADR-6): the key decrypts what the brush broadcasts anyway; nothing is written,
+nothing is bound.
+
+## Bindkey
+
+The bindkey is made when the brush is set up with Xiaomi Home, and Xiaomi keeps it in the cloud.
+Bürstli can't get it itself (that would mean binding, see below), so the owner enters it once per
+brush. It changes when the brush is set up again.
+
+Ways to get it, both outside Bürstli and both need the owner's Xiaomi account:
+
+- [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor):
+  lists the devices of the account; for Bluetooth devices it shows the "BLE KEY", which is the bindkey.
+- Home Assistant's Xiaomi BLE integration can fetch it from the Xiaomi cloud when it finds the brush.
+
+Bürstli stores the key per Bluetooth address in the app's private storage (no backup), never logs it
+and never sends it anywhere. When it doesn't fit, Bürstli says so and asks again.
 
 ## What is known (and where from)
 
@@ -163,6 +202,9 @@ no code, neither from Mi Home nor from other projects.
 
 From a T500: does Bürstli show brushing, the score after brushing, battery and brush head, and do
 they match Mi Home? Is the brush head wear the right way round?
+
+From a T700, T700i or T501 with its key: does the key work, and what does Bürstli show? The T501
+especially: nobody knows yet which objects it sends.
 
 From any Xiaomi brush, the current report already records everything needed, without sending a
 command:

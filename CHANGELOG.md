@@ -6,6 +6,12 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Xiaomi T700, T700i and T501, experimental: they broadcast encrypted, so Bürstli asks for the
+  brush's key and then reads along. Bürstli still sends nothing to the brush. Untested – reports
+  welcome!
+- Brushes that broadcast encrypted: Bürstli says why it shows nothing and where the key goes.
+
 ## [0.16.0] - 2026-11-04
 
 ### Added

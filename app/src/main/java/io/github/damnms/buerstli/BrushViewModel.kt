@@ -34,6 +34,28 @@ class BrushViewModel(app: Application) : AndroidViewModel(app) {
     private val connector = BleConnector(app, Drivers.registry, viewModelScope, diagnostics)
     val connection: StateFlow<Connection> = connector.state
 
+    private val keys = BrushKeys(app)
+
+    init {
+        // A brush that broadcasts encrypted gets its stored key as soon as Bürstli listens to it.
+        viewModelScope.launch {
+            connection.collect { c ->
+                if (c is Connection.Connected && c.driver.key != null) c.session.setKey(keys.load(c.device.address))
+            }
+        }
+    }
+
+    /** False if [text] isn't a key of the right length; then nothing is stored. */
+    fun saveKey(text: String): Boolean {
+        val c = connection.value as? Connection.Connected ?: return false
+        val spec = c.driver.key ?: return false
+        val key = BrushKeys.parse(text, spec.bytes) ?: return false
+        keys.save(c.device.address, key)
+        diagnostics.log("key saved (${spec.bytes} bytes)") // never the key itself
+        c.session.setKey(key)
+        return true
+    }
+
     private val recorder = BrushRecorder(app, viewModelScope, diagnostics)
     val capture: StateFlow<CaptureState> = recorder.state
 

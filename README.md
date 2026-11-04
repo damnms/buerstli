@@ -24,7 +24,8 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Laifen | Kids TC51 (LFTB01-C) | `LFTB01-C…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, child lock, 30-second nudge, high frequency, flight mode, ramp-up, spin dry, pressure warning (shown) |
 | Oclean | X Pro, Z1, Y-series, … | `Oclean…` | 🔍 recognized, not supported yet | |
 | Xiaomi | Mi Smart Electric Toothbrush T500 | MiBeacon product id | 🧪 experimental, listens only; the brush must have been set up with Mi Home once | brushing/off, score of the last session, battery level, brush head wear ([notes](docs/XIAOMI.md)) |
-| Xiaomi | T501, T700, T700i, Pro models, kids, partner brands in Mi Home (24 more models) | MiBeacon product id | 🔍 recognized, not supported yet (most broadcast encrypted) ([notes](docs/XIAOMI.md)) | |
+| Xiaomi | T700, T700i, T501 | MiBeacon product id | 🧪 experimental, listens only; they broadcast encrypted, so Bürstli needs the brush's key ([how to get it](docs/XIAOMI.md#bindkey)) | brushing/off, score of the last session, and whatever else the brush broadcasts |
+| Xiaomi | Pro models, kids, partner brands in Mi Home (21 more models) | MiBeacon product id | 🔍 recognized, not supported yet (most broadcast encrypted) ([notes](docs/XIAOMI.md)) | |
 | Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
 | Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental; ✅ reading confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear; from the official app, untested: model number, firmware, mode names per model, brushing history, live pressure, switch mode and intensity ([notes](docs/SONICARE.md)) |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol, "Condor"); protocol [documented](docs/SONICARE.md#condor--app) – tester wanted! | |
@@ -77,11 +78,12 @@ Sonicares ("Condor"). What the official app does with it is
 someone who can try it. A report from your brush would be the first step: it shows whether it
 answers the way the app expects.
 
-**Got a Xiaomi?** Every toothbrush from Xiaomi Home is recognized, and the T500 has a first driver
-that only listens. A report from any Xiaomi brush helps: it shows whether the brush broadcasts
-encrypted, and whether it offers what Bürstli would need to read it without Mi Home. Bürstli sends
-nothing to the brush for that. Owners of a T500: does Bürstli show brushing, score, battery and
-brush head? [What a first report should answer](docs/XIAOMI.md#what-the-first-report-should-answer).
+**Got a Xiaomi?** Every toothbrush from Xiaomi Home is recognized; the T500, T700, T700i and T501
+have first drivers that only listen. The T700 and T501 broadcast encrypted: with the brush's key
+([how to get it](docs/XIAOMI.md#bindkey)) Bürstli can read them, and still sends nothing. A report
+from any other Xiaomi brush helps: it shows whether the brush broadcasts encrypted, and whether it
+offers what Bürstli would need to read it without Mi Home. Owners of a T500: does Bürstli show
+brushing, score, battery and brush head? [What a first report should answer](docs/XIAOMI.md#what-the-first-report-should-answer).
 
 The protocols have been researched by others already, which makes a driver much more likely:
 [philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble/blob/main/docs/BLE_PROTOCOL.md),

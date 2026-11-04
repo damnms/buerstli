@@ -101,6 +101,7 @@ fun App(vm: BrushViewModel = viewModel()) {
             openPicker = vm::openPicker,
             closePicker = vm::closePicker,
             pick = vm::pick,
+            saveKey = vm::saveKey,
         ),
     )
 }

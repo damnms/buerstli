@@ -97,6 +97,13 @@
     <string name="info_mode">Mode</string>
     <string name="info_intensity">Intensity</string>
     <string name="info_brushing_time">Brushing time</string>
+    <string name="key_title">This brush broadcasts encrypted</string>
+    <string name="key_missing">Bürstli can only read it with the brush\'s key (%1$d characters, the \"bindkey\"). With it, Bürstli still only listens and sends nothing to the brush. The key stays on this phone.</string>
+    <string name="key_wrong">The key doesn\'t fit. It changes when the brush is set up again in the vendor\'s app – enter the new one.</string>
+    <string name="key_label">Key</string>
+    <string name="key_save">Save</string>
+    <string name="key_invalid">%1$d hexadecimal characters (0–9, a–f), please.</string>
+    <string name="key_help">Where do I get it?</string>
     <string name="info_score">Last score</string>
     <string name="info_head_wear">Brush head</string>
     <string name="info_head_wear_value">%1$d %% worn</string>

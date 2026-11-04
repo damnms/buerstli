@@ -5,6 +5,7 @@ import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.domain.BrushCommand
 import io.github.damnms.buerstli.domain.BrushState
 import io.github.damnms.buerstli.domain.CommandResult
+import io.github.damnms.buerstli.domain.KeyStatus
 import io.github.damnms.buerstli.domain.NoLink
 import io.github.damnms.buerstli.domain.SupportLevel
 import kotlinx.coroutines.test.runTest
@@ -129,6 +130,88 @@ class XiaomiTest {
         // Built: capability included (0x20 in the capability byte: one I/O byte follows).
         val beacon = MiBeaconCodec.parse(hex("60-50-89-04-01-20-00-10-00-02-01-63"))!!
         assertEquals(MiBeaconCodec.TOOTHBRUSH, beacon.objects.single().id)
+    }
+
+    // --- encrypted brushes: the real T700 frame from xiaomi-ble, with the key from its test ---
+
+    private val t700Address = "ED:DE:34:3F:48:0C"
+    private val t700Key = hex("13-30-B9-9C-DE-D1-32-58-AC-C3-91-62-7E-97-71-F7")
+    private fun t700Ad(frame: String = t700Encrypted) =
+        Advertisement(null, serviceData = mapOf(MiBeaconCodec.SERVICE to hex(frame)), address = t700Address)
+
+    @Test
+    fun `the real T700 frame decrypts to what xiaomi-ble reads`() {
+        val data = hex(t700Encrypted)
+        val objects = MiBeaconCodec.decrypt(data, MiBeaconCodec.parse(data)!!, t700Key, t700Address)!!
+        assertEquals(MiBeaconCodec.BRUSHING, objects.single().id)
+        assertArrayEquals(hex("01-03-62-9D-64-53"), objects.single().data) // end of brushing, score 83
+    }
+
+    @Test
+    fun `a wrong key or a damaged frame doesn't decrypt`() {
+        val data = hex(t700Encrypted)
+        val beacon = MiBeaconCodec.parse(data)!!
+        assertNull(MiBeaconCodec.decrypt(data, beacon, ByteArray(16), t700Address))
+        assertNull(MiBeaconCodec.decrypt(data, beacon, t700Key, "ED:DE:34:3F:48:0D"))
+        val damaged = data.copyOf().also { it[6] = (it[6].toInt() xor 1).toByte() }
+        assertNull(MiBeaconCodec.decrypt(damaged, MiBeaconCodec.parse(damaged)!!, t700Key, t700Address))
+    }
+
+    @Test
+    fun `a T700 asks for the key right away`() {
+        assertEquals(KeyStatus.MISSING, XiaomiT700Driver.open(NoLink).state.value.keyStatus)
+        assertEquals(16, XiaomiT700Driver.key.bytes)
+    }
+
+    @Test
+    fun `with the key, the T700 is read`() {
+        val s = XiaomiT700Driver.open(NoLink)
+        s.setKey(t700Key)
+        s.onAdvertisement(t700Ad())
+        val state = s.state.value
+        assertEquals(KeyStatus.OK, state.keyStatus)
+        assertEquals(Activity.OFF, state.activity)
+        assertEquals(83, state.brushingScore)
+    }
+
+    @Test
+    fun `a key entered later is tried on the last frame at once`() {
+        val s = XiaomiT700Driver.open(NoLink)
+        s.onAdvertisement(t700Ad())
+        assertEquals(KeyStatus.MISSING, s.state.value.keyStatus)
+        s.setKey(t700Key)
+        assertEquals(KeyStatus.OK, s.state.value.keyStatus)
+        assertEquals(83, s.state.value.brushingScore)
+    }
+
+    @Test
+    fun `a wrong key is reported, and a right one fixes it`() {
+        val s = XiaomiT700Driver.open(NoLink)
+        s.setKey(ByteArray(16))
+        s.onAdvertisement(t700Ad())
+        assertEquals(KeyStatus.WRONG, s.state.value.keyStatus)
+        assertNull(s.state.value.brushingScore)
+        s.setKey(t700Key)
+        assertEquals(KeyStatus.OK, s.state.value.keyStatus)
+    }
+
+    @Test
+    fun `one damaged frame after a working key doesn't make it wrong, two do`() {
+        val s = XiaomiT700Driver.open(NoLink)
+        s.setKey(t700Key)
+        s.onAdvertisement(t700Ad())
+        val damaged = t700Encrypted.replaceRange(15, 17, "49") // first ciphertext byte
+        s.onAdvertisement(t700Ad(damaged))
+        assertEquals(KeyStatus.OK, s.state.value.keyStatus)
+        s.onAdvertisement(t700Ad(damaged))
+        assertEquals(KeyStatus.WRONG, s.state.value.keyStatus)
+    }
+
+    @Test
+    fun `the T500 doesn't ask for a key, it broadcasts in clear`() {
+        val s = session()
+        s.onAdvertisement(ad(t500Brushing))
+        assertNull(s.state.value.keyStatus)
     }
 
     @Test

@@ -18,5 +18,6 @@ fun android.bluetooth.le.ScanResult.toAdvertisement(): io.github.damnms.buerstli
         serviceUuids = record?.serviceUuids?.map { it.uuid } ?: emptyList(),
         manufacturerData = record.manufacturerMap(),
         serviceData = record?.serviceData?.mapKeys { it.key.uuid } ?: emptyMap(),
+        address = device.address,
     )
 }

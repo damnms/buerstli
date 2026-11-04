@@ -11,6 +11,18 @@ data class Advertisement(
     val manufacturerData: Map<Int, ByteArray> = emptyMap(),
     /** Service data by service UUID (e.g. Xiaomi's MiBeacon under 0xFE95). */
     val serviceData: Map<UUID, ByteArray> = emptyMap(),
+    /** Bluetooth address, "AA:BB:CC:DD:EE:FF". Some brushes need it to decrypt their broadcasts. */
+    val address: String? = null,
+)
+
+/**
+ * A key the user can enter for a brush that broadcasts encrypted (e.g. Xiaomi's bindkey).
+ * Bürstli only reads with it; it never sends the key anywhere.
+ */
+data class KeySpec(
+    val bytes: Int,
+    /** Where the user learns how to get the key. */
+    val helpUrl: String,
 )
 
 /**
@@ -40,6 +52,9 @@ interface ToothbrushDriver {
 
     fun recognizes(advertisement: Advertisement): Boolean
 
+    /** Non-null if the user can enter a key to read this brush's encrypted broadcasts. */
+    val key: KeySpec? get() = null
+
     /** Some brushes need Bluetooth pairing; Android then asks the user once. */
     val mayNeedPairing: Boolean get() = false
 
@@ -65,6 +80,9 @@ interface BrushSession {
 
     /** Called by the adapter for every advertisement of this brush (passive drivers). */
     fun onAdvertisement(advertisement: Advertisement) {}
+
+    /** Drivers with a [ToothbrushDriver.key]: the key stored for this brush, null if none. */
+    fun setKey(key: ByteArray?) {}
 
     /**
      * Passive sessions only: true while the session needs a value the brush doesn't broadcast

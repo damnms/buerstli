@@ -96,6 +96,13 @@
     <string name="info_mode">Modus</string>
     <string name="info_intensity">Intensität</string>
     <string name="info_brushing_time">Putzzeit</string>
+    <string name="key_title">Diese Bürste sendet verschlüsselt</string>
+    <string name="key_missing">Bürstli kann sie nur mit ihrem Schlüssel lesen (%1$d Zeichen, der „Bindkey“). Auch damit hört Bürstli nur mit und sendet nichts an die Bürste. Der Schlüssel bleibt auf diesem Handy.</string>
+    <string name="key_wrong">Der Schlüssel passt nicht. Er ändert sich, wenn die Bürste in der Hersteller-App neu eingerichtet wird – trag dann den neuen ein.</string>
+    <string name="key_label">Schlüssel</string>
+    <string name="key_save">Speichern</string>
+    <string name="key_invalid">Bitte %1$d hexadezimale Zeichen (0–9, a–f).</string>
+    <string name="key_help">Woher bekomme ich ihn?</string>
     <string name="info_score">Letzte Bewertung</string>
     <string name="info_head_wear">Bürstenkopf</string>
     <string name="info_head_wear_value">%1$d %% verbraucht</string>
