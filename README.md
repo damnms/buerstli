@@ -174,9 +174,10 @@ experimental until an owner confirms it.
 ## Legal
 
 This is an independent interoperability project. It is not affiliated with, endorsed by or
-supported by Laifen, Philips or Procter & Gamble (Oral-B). "Laifen", "Laifen Wave", "Philips",
-"Sonicare" and "Oral-B" are trademarks of their respective owners and are used here only to
-describe compatibility. Use at your own risk – worst case, your toothbrush forgets its favourite
+supported by Laifen, Philips, Procter & Gamble (Oral-B), Xiaomi or Oclean. "Laifen", "Laifen Wave",
+"Philips", "Sonicare", "Oral-B", "Xiaomi", "Mijia" and "Oclean" are trademarks of their respective
+owners and are used here only to describe compatibility. Tools by others that the docs point to
+(e.g. for a Xiaomi key) are not part of Bürstli; Bürstli has no rights or duties regarding them. Use at your own risk – worst case, your toothbrush forgets its favourite
 settings.
 
 ## License

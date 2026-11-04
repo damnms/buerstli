@@ -8,16 +8,17 @@
 <li><b>Laifen Kids TC51 (LFTB01-C)</b> – experimentell, hört nur mit: Akku, Putzdauer, putzt oder bereit, Kindersicherung, 30-Sekunden-Signal, Hochfrequenz, Flugmodus und mehr.</li>
 <li><b>Philips Sonicare</b> (klassische Modelle wie DiamondClean, Prestige, ExpertClean, Kids) – experimentell. An einer echten DiamondClean 9000 bestätigt: Akku, Zustand, Modus, Intensität, Putzzeit und Bürstenkopf-Verschleiss. Neu und noch ungetestet: Modellnummer, Firmware, Putzverlauf, Andruck-Warnung, Uhr der Bürste stellen sowie Modus und Intensität umstellen.</li>
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimentell, hört mit und verbindet sich nur kurz für das, was sie nicht sendet: Zustand, Modus, Putzzeit, Andruck, Kieferbereich, Akkustand, Putzverlauf und wann ein neuer Bürstenkopf fällig ist.</li>
+<li><b>Xiaomi T500, T700, T700i, T501</b> – experimentell, hört nur mit: putzt oder aus, Bewertung der letzten Putzsitzung; bei der T500 auch Akku und Bürstenkopf. T700 und T501 senden verschlüsselt: Bürstli liest sie mit dem Schlüssel der Bürste, den du einmal einträgst.</li>
 </ul>
 
-<p><b>Deine Bürste wird noch nicht unterstützt?</b> Bürstli erkennt die Philips Sonicare 7100, Oclean und Xiaomi – jede andere Bürste wählst du einfach aus einer Liste von Geräten in der Nähe. Bürstli nimmt dann in etwa einer Minute einen Bericht auf – es hört nur zu, an der Bürste wird nichts verändert. Den Bericht schickst du per Messenger, E-Mail oder über GitHub an die Entwickler, ganz ohne Technik-Kenntnisse.</p>
+<p><b>Deine Bürste wird noch nicht unterstützt?</b> Bürstli erkennt die Philips Sonicare 7100, Oclean und alle weiteren Xiaomi – jede andere Bürste wählst du einfach aus einer Liste von Geräten in der Nähe. Bürstli nimmt dann in etwa einer Minute einen Bericht auf – es hört nur zu, an der Bürste wird nichts verändert. Den Bericht schickst du per Messenger, E-Mail oder über GitHub an die Entwickler, ganz ohne Technik-Kenntnisse.</p>
 
 <p><b>Ehrlich in allem</b></p>
 <ul>
 <li>Eine Einstellung gilt erst als gespeichert, wenn die Bürste den neuen Wert selbst meldet.</li>
-<li>Experimentelle Treiber lesen nur, sie verändern nie etwas an deiner Bürste.</li>
+<li>Experimentelle Treiber lesen nur und verändern nie etwas an deiner Bürste – ausser bei Philips Sonicare: Dort stellt Bürstli auch Modus und Intensität um und stellt die Uhr der Bürste, so wie die offizielle App.</li>
 <li>„Für Nerds: Protokoll" zeigt jeden Bluetooth-Schritt. Es bleibt auf deinem Handy.</li>
 <li>Geschrieben mit Hilfe eines KI-Assistenten und Schritt für Schritt an einer echten Bürste getestet.</li>
 </ul>
 
-<p>Nicht mit Laifen, Philips oder Procter &amp; Gamble (Oral-B) verbunden. Alle Marken gehören ihren jeweiligen Inhabern und werden nur zur Beschreibung der Kompatibilität genannt.</p>
+<p>Nicht mit Laifen, Philips, Procter &amp; Gamble (Oral-B), Xiaomi oder Oclean verbunden. Alle Marken gehören ihren jeweiligen Inhabern und werden nur zur Beschreibung der Kompatibilität genannt.</p>

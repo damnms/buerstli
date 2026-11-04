@@ -62,7 +62,9 @@ The bindkey is made when the brush is set up with Xiaomi Home, and Xiaomi keeps 
 Bürstli can't get it itself (that would mean binding, see below), so the owner enters it once per
 brush. It changes when the brush is set up again.
 
-Ways to get it, both outside Bürstli and both need the owner's Xiaomi account:
+Ways to get it, both outside Bürstli and both need the owner's Xiaomi account. They are other
+people's projects, not Bürstli's: Bürstli has nothing to do with them, takes no responsibility for
+them and has no rights or duties regarding them. Whoever uses them does so under their terms.
 
 - [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor):
   lists the devices of the account; for Bluetooth devices it shows the "BLE KEY", which is the bindkey.

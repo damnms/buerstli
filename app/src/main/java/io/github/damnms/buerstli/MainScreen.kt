@@ -196,7 +196,7 @@ private fun ConnectionContent(
             connection.driver.key?.let { spec ->
                 if (keyStatus == KeyStatus.MISSING || keyStatus == KeyStatus.WRONG) KeyCard(spec, keyStatus, actions)
             }
-            if (connection.driver.supportLevel == SupportLevel.EXPERIMENTAL) ExperimentalNote(connection.driver.passive, actions)
+            if (connection.driver.supportLevel == SupportLevel.EXPERIMENTAL) ExperimentalNote(connection.driver, actions)
             if (brushState == null) {
                 Busy(stringResource(R.string.waiting_for_status), null)
             } else {
@@ -528,10 +528,19 @@ private fun KeyCard(spec: KeySpec, status: KeyStatus, actions: Actions) {
 }
 
 @Composable
-private fun ExperimentalNote(passive: Boolean, actions: Actions) {
+private fun ExperimentalNote(driver: ToothbrushDriver, actions: Actions) {
     InfoCard {
-        Text(stringResource(R.string.experimental_note), style = MaterialTheme.typography.bodyMedium)
-        if (passive) Text(stringResource(R.string.passive_note), style = MaterialTheme.typography.bodySmall)
+        Text(
+            stringResource(R.string.experimental_note) + " " +
+                stringResource(if (driver.changesBrush) R.string.experimental_changes else R.string.experimental_reads_only),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        if (driver.passive) {
+            Text(
+                stringResource(if (driver.connectsBriefly) R.string.passive_note else R.string.passive_only_note),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
         OutlinedButton(onClick = { actions.captureConnected(false) }) { Text(stringResource(R.string.capture_this_brush)) }
         TextButton(onClick = { actions.captureConnected(true) }) { Text(stringResource(R.string.capture_until_stopped)) }
     }

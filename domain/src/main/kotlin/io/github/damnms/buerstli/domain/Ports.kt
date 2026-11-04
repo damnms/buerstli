@@ -64,6 +64,15 @@ interface ToothbrushDriver {
      */
     val passive: Boolean get() = false
 
+    /** Passive drivers: true if the session may connect for a moment ([BrushSession.poll]). */
+    val connectsBriefly: Boolean get() = false
+
+    /**
+     * Experimental drivers that change something on the brush after all, by the maintainer's
+     * exception to ADR-6 (e.g. Sonicare). The UI must not claim they only read.
+     */
+    val changesBrush: Boolean get() = false
+
     /** Starts talking to a connected brush. */
     fun open(link: BrushLink): BrushSession
 }

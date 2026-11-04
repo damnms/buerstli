@@ -38,7 +38,7 @@ Rules, enforced by Gradle module boundaries:
 | **Model** | A brush type with one protocol, e.g. Laifen Wave (LFTB01). |
 | **Driver** | Code that recognizes a model and speaks its protocol. One per protocol. |
 | **Session** | A live conversation with one brush: over a connection, or by listening to its advertisements (passive drivers). |
-| **Passive driver** | Listens to what the brush broadcasts (e.g. Oral-B). For a value the brush doesn't broadcast, its session asks for a short connection (`wantsPoll`), reads it in `poll` and lets go; how often the adapter tries is the adapter's business. Read-only by nature. |
+| **Passive driver** | Listens to what the brush broadcasts (e.g. Oral-B, Xiaomi). Some (Oral-B, `connectsBriefly`) need a value the brush doesn't broadcast: the session asks for a short connection (`wantsPoll`), reads it in `poll` and lets go; how often the adapter tries is the adapter's business. Others (Xiaomi) never connect. Read-only by nature. |
 | **Mode** | A brushing program on the brush (Mode 1, 2, …). |
 | **Parameter** | A knob of a mode: strength, range, speed, … |
 | **Capabilities** | What a model can do; the UI is generated from them. |

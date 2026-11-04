@@ -32,6 +32,7 @@ object OralBPassiveDriver : ToothbrushDriver {
     override val supportLevel = SupportLevel.EXPERIMENTAL
     override val capabilities = Capabilities(modes = emptyList(), history = SupportLevel.EXPERIMENTAL)
     override val passive = true
+    override val connectsBriefly = true
 
     override fun recognizes(advertisement: Advertisement): Boolean =
         OralBCodec.MANUFACTURER_ID in advertisement.manufacturerData

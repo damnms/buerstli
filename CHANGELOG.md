@@ -12,6 +12,10 @@ All notable changes to Bürstli are documented here. The format follows
   welcome!
 - Brushes that broadcast encrypted: Bürstli says why it shows nothing and where the key goes.
 
+### Fixed
+- The notes on experimental brushes are right again: Xiaomi brushes are only listened to, Bürstli
+  never connects to them; Philips Sonicare is the one brush where Bürstli also changes settings.
+
 ## [0.16.0] - 2026-11-04
 
 ### Added

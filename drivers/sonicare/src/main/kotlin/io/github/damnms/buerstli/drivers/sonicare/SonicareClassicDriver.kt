@@ -27,6 +27,9 @@ object SonicareClassicDriver : ToothbrushDriver {
     )
     override val mayNeedPairing = true
 
+    /** Switches mode and intensity and sets the clock: ADR-6 exception, see docs/SONICARE.md. */
+    override val changesBrush = true
+
     override fun recognizes(advertisement: Advertisement): Boolean {
         // The 7100 series only offers the different "Condor" protocol.
         if (SonicareCodec.CONDOR_SERVICE in advertisement.serviceUuids &&
