@@ -24,6 +24,8 @@ import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.INTENSITY
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.LATEST_SESSION
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.MODEL_NUMBER
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.ROUTINE_LENGTH
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SENSOR_CONTROL
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SENSOR_DATA
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SESSION_CONTROL
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SESSION_COUNT
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SESSION_DATA
@@ -422,7 +424,7 @@ class SonicareTest {
     }
 
     @Test
-    fun `the codec builds only the app's reading messages, a mode and an intensity`() {
+    fun `the codec builds only the app's reading messages, the pressure stream, a mode and an intensity`() {
         val allowed = setOf(
             SESSION_TYPE to listOf<Byte>(0),
             SESSION_CONTROL to listOf<Byte>(1),
@@ -434,6 +436,8 @@ class SonicareTest {
         assertEquals(ACTIVE_SESSION to listOf<Byte>(0x34, 0x12), start.characteristic to start.bytes.toList())
         val mode = SonicareCodec.Request.SelectRoutine(4)
         assertEquals(AVAILABLE_ROUTINES to listOf<Byte>(4), mode.characteristic to mode.bytes.toList())
+        val pressure = SonicareCodec.Request.StreamPressure
+        assertEquals(SENSOR_CONTROL to listOf<Byte>(1, 0), pressure.characteristic to pressure.bytes.toList())
         val level = SonicareCodec.Request.SetIntensity(2)
         assertEquals(INTENSITY to listOf<Byte>(2), level.characteristic to level.bytes.toList())
         assertThrows(IllegalArgumentException::class.java) { SonicareCodec.Request.SelectRoutine(9) }
@@ -551,5 +555,51 @@ class SonicareTest {
         assertEquals(ModeName.WHITE_PLUS, SonicareCodec.mode(1, "HX9611")) // HX961X: Clean, White, Deep Clean
         assertEquals(ModeName.GUM_HEALTH, SonicareCodec.mode(1, "HX9601")) // HX960X: Clean, Gum Care, Deep Clean
         assertEquals(ModeName.TONGUE_CARE, SonicareCodec.mode(3, "HX9990")) // xian
+    }
+
+    // --- live pressure (app) ---
+
+    private fun withSensors() = withModel("HX991X", 0).apply {
+        values[SENSOR_CONTROL] = byteArrayOf()
+        values[SENSOR_DATA] = byteArrayOf()
+        values[HANDLE_STATE] = byteArrayOf(2) // brushing
+    }
+
+    @Test
+    fun `switches on only the pressure stream, as the app does`() = runTest {
+        val brush = withSensors()
+        SonicareClassicDriver.open(brush).apply { start() }
+
+        assertTrue(SENSOR_DATA in brush.subscribed)
+        assertEquals(listOf(SENSOR_CONTROL to listOf<Byte>(1, 0)), brush.writes.map { (u, d) -> u to d.toList() })
+    }
+
+    @Test
+    fun `shows too much pressure from the stream`() = runTest {
+        val session = SonicareClassicDriver.open(withSensors()).apply { start() }
+
+        session.onNotification(SENSOR_DATA, byteArrayOf(1, 0, 0, 0, 0x34, 0x12, 2)) // value, state 2
+        assertEquals(true, session.state.value.pressureHigh)
+        session.onNotification(SENSOR_DATA, byteArrayOf(1, 0, 0, 0, 0)) // short form, state 0
+        assertEquals(false, session.state.value.pressureHigh)
+        session.onNotification(SENSOR_DATA, ByteArray(16).also { it[0] = 4 }) // motion: ignored
+        assertEquals(false, session.state.value.pressureHigh)
+    }
+
+    @Test
+    fun `pressure is forgotten when brushing stops`() = runTest {
+        val session = SonicareClassicDriver.open(withSensors()).apply { start() }
+        session.onNotification(SENSOR_DATA, byteArrayOf(1, 0, 0, 0, 2))
+        assertEquals(true, session.state.value.pressureHigh)
+
+        session.onNotification(HANDLE_STATE, byteArrayOf(1)) // standby
+        assertNull(session.state.value.pressureHigh)
+    }
+
+    @Test
+    fun `sensor packets the app wouldn't read give no pressure`() {
+        assertNull(SonicareCodec.pressureHigh(byteArrayOf(1, 0, 0, 0))) // too short
+        assertNull(SonicareCodec.pressureHigh(byteArrayOf(64, 0, 0, 0, 2)))
+        assertNull(SonicareCodec.pressureHigh(byteArrayOf()))
     }
 }

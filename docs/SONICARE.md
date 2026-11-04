@@ -2,8 +2,8 @@
 
 Status: experimental (`SonicareClassicDriver`). Battery, status, mode, intensity, brushing time and
 routine length were confirmed on a real brush (see "Seen on a real brush"); the model number, the
-mode names per model, the brushing history and switching mode and intensity come from the official
-app and were **not seen on a real brush yet**.
+mode names per model, the brushing history, live pressure and switching mode and intensity come
+from the official app and were **not seen on a real brush yet**.
 
 Two sources, and every value below says which one it comes from:
 
@@ -84,8 +84,8 @@ the app reads them with. Bürstli column: what it does with it.
 | | `40E0` | session id to start at / the one being sent | u16, write, notify | app | writes the first id |
 | | `4100` | session data | notify | app | subscribes (history) |
 | | `4110` | control (write) and status (notify) | u8 | app | writes `01`, `02` |
-| `0005` Sensor | `4120` | which sensors to stream, bit mask (see "Sensor stream") | u16, write | app | – |
-| | `4130` | sensor stream | notify | app | – |
+| `0005` Sensor | `4120` | which sensors to stream, bit mask (see "Sensor stream") | u16, write | app | writes `01 00` |
+| | `4130` | sensor stream | notify | app | subscribes; reads pressure |
 | `0006` Brush head | `4210` | NFC tag version | | app | – |
 | | `4220` | factory mode | u8 | app | – |
 | | `4230` | serial number of the head | text | app | – |
@@ -171,7 +171,7 @@ the start as UTC and shows no date before 2015, assuming the clock was never set
 
 ## Sensor stream (live pressure) – app
 
-Not used by Bürstli yet. The app switches the stream on by writing a bit mask (u16, little-endian)
+The app switches the stream on by writing a bit mask (u16, little-endian)
 to `4120` and gets the data as notifications on `4130` (`CBTSensorServiceHandler`,
 `tuscany/ble/SensorDataParser.java`). Bits, as far as the packet types show: 1 pressure, 4 motion,
 64 ML estimates. The app writes 64 if the model supports ML estimates, otherwise 5 (pressure and
@@ -186,8 +186,12 @@ starts at byte 4:
 | 4 motion | bytes 4–15: gyro X, Y, Z, then acceleration X, Y, Z, each a signed 16-bit value; at least 16 bytes |
 | 64 ML estimate | bytes 4–7 a u32, then the estimate; at least 12 bytes |
 
-What the pressure value means (unit, scale) wasn't traced. Bürstli could show "too much pressure"
-live from type 1 alone; that would need writing `01 00` to `4120`, which Bürstli doesn't do yet.
+What the pressure value means (unit, scale) wasn't traced, so Bürstli doesn't show it.
+
+**What Bürstli does:** after connecting it subscribes to `4130` and writes `01 00` to `4120`, the
+pressure sensor only (the app's mask without motion and ML). From type 1 packets it shows "too
+much pressure" (state 2) or "fine"; other packets are ignored. Pressure is shown only while
+brushing or paused. A brush without the sensor service skips this. Not seen on a real brush.
 
 ## Changing mode and intensity – app
 
@@ -213,10 +217,11 @@ for it is right; the report shows it.
 ## Writing
 
 **What Bürstli writes to a Sonicare, and nothing else:** `4022` (a routine id the brush listed),
-`40B0` (0–2), and for the history `40D5` (`00`), `40E0` (a session id) and `4110` (`01`, `02`). The
-codec builds nothing else, it rejects ids and levels out of range, and a test checks every write. It
-never writes the routine state (`4082`, which starts and stops), the clock (`4050`), the settings
-(`4420`) or anything in the sensor, brush head or diagnostics services.
+`40B0` (0–2), for the history `40D5` (`00`), `40E0` (a session id) and `4110` (`01`, `02`), and
+`01 00` to `4120` for the pressure stream. The codec builds nothing else, it rejects ids and levels
+out of range, and a test checks every write. It never writes the routine state (`4082`, which
+starts and stops), the clock (`4050`), the settings (`4420`) or anything in the brush head or
+diagnostics services.
 
 Mode and intensity are an exception to ADR-6: the driver is experimental, but it changes them. The
 maintainer decided that, so that one test by an owner covers everything; the guards are the
@@ -369,6 +374,8 @@ than Oral-B's driver, and it needs someone with a 7100 to test.
   described, are times and durations right, and are the sessions still there afterwards in the
   official app?
 - Does `2A26` hold the firmware version as the official app shows it?
+- Pressure: does `4130` send type 1 packets after `01 00` on `4120`, and does "too high" show
+  when pressing hard?
 - Mode and intensity: which ids does `4022` list? Does switching a mode and changing the
   intensity work, and does the handle show the same afterwards? Does it work while brushing?
 

@@ -32,6 +32,10 @@ object SonicareCodec {
     val HEAD_LIMIT: UUID = philips(0x4280)
     val HEAD_USAGE: UUID = philips(0x4290)
 
+    // Sensor service (0005): which sensors to stream (write), and the stream (notify).
+    val SENSOR_CONTROL: UUID = philips(0x4120)
+    val SENSOR_DATA: UUID = philips(0x4130)
+
     // Storage service (0004): the brushing history, as the app fetches it.
     val LATEST_SESSION: UUID = philips(0x40D0)
     val SESSION_COUNT: UUID = philips(0x40D2)
@@ -152,6 +156,19 @@ object SonicareCodec {
     fun wearPercent(usage: Int?, limit: Int?): Int? =
         if (usage == null || limit == null || limit <= 0) null else (usage * 100 / limit).coerceIn(0, 100)
 
+    // --- live pressure ---
+
+    /**
+     * A sensor packet on `4130`: type in bytes 0–1, data from byte 4. Only type 1 (pressure) is
+     * read: 7 bytes have the value in 4–5 and the state in 6, shorter ones the state in 4.
+     * State 2 is too much pressure. Null for other packets.
+     */
+    fun pressureHigh(v: ByteArray): Boolean? {
+        if (u16(v) != 1) return null
+        val state = if (v.size == 7) v[6] else v.getOrNull(4) ?: return null
+        return (state.toInt() and 0xFF) == 2
+    }
+
     // --- brushing history ---
 
     /** Before 2015 the brush's clock was never set (the app sets it), so the time means nothing. */
@@ -178,13 +195,17 @@ object SonicareCodec {
 
     /**
      * The only messages Bürstli ever sends to a Sonicare: reading the history the way the app does,
-     * and the app's two settings, mode and intensity. Nothing else can be built here.
+     * switching on the pressure stream, and the app's two settings, mode and intensity. Nothing
+     * else can be built here.
      */
     sealed class Request(val characteristic: UUID, val bytes: ByteArray) {
         /** Switch to a mode, by routine id; only ids the brush lists in `4022`. */
         class SelectRoutine(routineId: Int) : Request(AVAILABLE_ROUTINES, byteArrayOf(routineId.toByte())) {
             init { require(routineId in ROUTINE_IDS.indices) { "no such routine id: $routineId" } }
         }
+
+        /** Stream the pressure sensor only (bit 1 of the mask); the app streams more. */
+        data object StreamPressure : Request(SENSOR_CONTROL, byteArrayOf(1, 0))
 
         /** 0 low, 1 medium, 2 high. */
         class SetIntensity(level: Int) : Request(INTENSITY, byteArrayOf(level.toByte())) {

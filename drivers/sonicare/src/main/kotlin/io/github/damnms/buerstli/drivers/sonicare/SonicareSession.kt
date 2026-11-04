@@ -1,5 +1,6 @@
 package io.github.damnms.buerstli.drivers.sonicare
 
+import io.github.damnms.buerstli.domain.Activity
 import io.github.damnms.buerstli.domain.BrushCommand
 import io.github.damnms.buerstli.domain.BrushLink
 import io.github.damnms.buerstli.domain.BrushSession
@@ -23,6 +24,7 @@ import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.INTENSITY
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.LATEST_SESSION
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.MODEL_NUMBER
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.ROUTINE_LENGTH
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SENSOR_DATA
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.Request
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SESSION_CONTROL
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.SESSION_COUNT
@@ -38,9 +40,9 @@ import java.io.IOException
 import java.util.UUID
 
 /**
- * Reads everything, and changes only mode and intensity, as the app does: confirmed by reading the
- * brush back (ADR-2), only modes the brush lists as available. A Sonicare drops the connection after ~6 s unless
- * something is subscribed, so subscriptions come first. Not every model has every characteristic.
+ * Reads everything (live pressure included), and changes only mode and intensity, as the app does:
+ * confirmed by reading the brush back (ADR-2), only modes the brush lists as available.
+ * A Sonicare drops the connection after ~6 s unless something is subscribed, so subscriptions come first. Not every model has every characteristic.
  * The model number is read before the mode, because what a mode number means depends on it.
  * Last, the brushing history, the way the official app fetches it (docs/SONICARE.md).
  */
@@ -72,6 +74,11 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
         optional { apply(MODEL_NUMBER, link.read(MODEL_NUMBER)) }
         (READ - HANDLE_STATE).forEach { uuid -> optional { apply(uuid, link.read(uuid)) } }
         optional { available = SonicareCodec.availableRoutines(link.read(AVAILABLE_ROUTINES)); updateMode() }
+        // Live pressure, as the app switches it on; brushes without the sensor service skip this.
+        optional {
+            link.enableNotifications(SENSOR_DATA)
+            send(Request.StreamPressure)
+        }
 
         optional {
             val history = readHistory()
@@ -131,6 +138,7 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
             FIRMWARE -> c.text(value)?.let { v -> _state.update { it.copy(firmwareVersion = v) } }
             BATTERY -> c.u8(value)?.let { v -> _state.update { it.copy(batteryPercent = v.coerceIn(0, 100)) } }
             HANDLE_STATE -> c.u8(value)?.let { handleState = it; updateActivity() }
+            SENSOR_DATA -> c.pressureHigh(value)?.let { v -> _state.update { it.copy(pressureHigh = v) } }
             BRUSHING_STATE -> c.u8(value)?.let { brushingState = it; updateActivity() }
             BRUSHING_MODE -> c.u8(value)?.let { routineNumber = it; updateMode() }
             INTENSITY -> c.u8(value)?.let { v -> intensity = v; _state.update { it.copy(intensity = c.intensity(v)) }; updateModes() }
@@ -160,8 +168,12 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
         }
     }
 
-    private fun updateActivity() =
-        _state.update { it.copy(activity = SonicareCodec.activity(handleState, brushingState)) }
+    private fun updateActivity() = _state.update {
+        val activity = SonicareCodec.activity(handleState, brushingState)
+        // Pressure only means something while brushing; the brush stops sending it afterwards.
+        val brushing = activity == Activity.BRUSHING || activity == Activity.PAUSED
+        it.copy(activity = activity, pressureHigh = if (brushing) it.pressureHigh else null)
+    }
 
     private fun updateWear() =
         _state.update { it.copy(brushHeadWearPercent = SonicareCodec.wearPercent(headUsage, headLimit)) }

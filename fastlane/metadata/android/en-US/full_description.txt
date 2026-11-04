@@ -6,7 +6,7 @@
 <li><b>Laifen Wave Pro (LFTB02)</b> – experimental, listens only: battery, brushing time, brushing or idle, pressure warning, 30-second nudge, high frequency, flight mode and its Pro features.</li>
 <li><b>Laifen Wave SE (LFTB01-SE)</b> – experimental, listens only: battery, modes, brushing time, brushing or idle, 30-second nudge, high frequency, flight mode.</li>
 <li><b>Laifen Kids TC51 (LFTB01-C)</b> – experimental, listens only: battery, brushing time, brushing or idle, child lock, 30-second nudge, high frequency, flight mode and more.</li>
-<li><b>Philips Sonicare</b> (classic models such as DiamondClean, Prestige, ExpertClean, Kids) – experimental. Confirmed on a real DiamondClean 9000: battery, status, mode, intensity, brushing time and brush head wear. New and untested: model number, firmware, brushing history, switching mode and intensity.</li>
+<li><b>Philips Sonicare</b> (classic models such as DiamondClean, Prestige, ExpertClean, Kids) – experimental. Confirmed on a real DiamondClean 9000: battery, status, mode, intensity, brushing time and brush head wear. New and untested: model number, firmware, brushing history, pressure warning, switching mode and intensity.</li>
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimental, listens and connects only briefly for what it doesn't broadcast: status, mode, brushing time, pressure, mouth area, battery, brushing history and when the brush head is due.</li>
 </ul>
 
