@@ -63,6 +63,11 @@ supported** and pick it from the list of Bluetooth devices nearby. Bürstli list
 it only reads, nothing on the brush is changed – and gives you a report to send by messenger,
 e-mail or as a [GitHub issue](../../issues/new?template=new-brush.yml).
 
+**Got an Oral-B?** Bürstli already shows a lot for it – battery, brushing history, when the brush
+head is due – but all of that comes from studying the official app, and nobody has tried it on a
+real brush yet. One report from an iO and one from an older Genius or Smart would settle most of
+it: [what a first report should answer](docs/ORAL-B.md#to-check-on-a-real-brush).
+
 The protocols have been researched by others already, which makes a driver much more likely:
 [philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble/blob/main/docs/BLE_PROTOCOL.md),
 [oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble) and, for Oclean,
@@ -140,8 +145,11 @@ For Oral-B, the official app was also studied to understand the protocol, see
 
 ## How this was made
 
-Bürstli was written with the help of an AI assistant (Claude). The protocol was verified step by
-step on a real brush, and the parser is tested against packets captured from that brush.
+Bürstli was written with the help of an AI assistant (Claude). For the Laifen Wave, the protocol
+was verified step by step on a real brush, and the parser is tested against packets captured from
+that brush. The Philips Sonicare driver was confirmed on a real DiamondClean 9000. Everything else
+is built on other people's research or on what the official app does (see Credits), and stays
+experimental until an owner confirms it.
 
 ## Legal
 

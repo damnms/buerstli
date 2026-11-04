@@ -146,6 +146,39 @@ that change or reset the brush (in the app, `34` is a factory reset), so the cod
 one message and refuses any other index; a test checks every write. A user also reports that
 writing to `FF06` resets the brush (the app calls it the button state); Bürstli never touches it.
 
+## To check on a real brush
+
+What the first reports should answer (the Bürstli report and its log show all of it):
+
+- Does the short connection work, and does the brush advertise again right after? How long is
+  the gap?
+- Does `FF21` accept a write with response (what Bürstli sends)? If not, the history fails with a
+  GATT status in the log.
+- Battery, history and brush head: the same values as in the official app? Are the session times
+  right? Bürstli takes the brush's clock as UTC, since the app sets it from UTC and writes the
+  time zone separately (`FF23`).
+- State 9: really a pause (the app), or off (oralb-ble)?
+- Mode 7 on older brushes: Pro Clean (the app) or Turbo (oralb-ble)?
+- Byte 9 from protocol 8: the right iO series? Which products are model ids 165 and 166?
+- Brush head reminder in state `FE` ("interval"): what do the numbers mean then?
+
+## Looking things up again
+
+So nobody has to start from scratch: the source was the official app **10.8.1** (XAPK from
+APKPure; the base APK is `com.pg.oralb.oralbapp.apk`). Flutter draws some screens, Bluetooth is
+plain Java/Kotlin. `jadx --no-res` decompiles it (about 28,000 files); everything about the brush
+is in `codes.alchemy.oralb.blesdk` (196 files, readable names):
+
+- `data/characteristic/CharacteristicParser.java` – parsing of everything: battery, sessions,
+  brush head, modes by protocol version.
+- `data/characteristic/model/Advertisement.java` and `devices/model/Brush.java` – advertisement
+  layout, model ids, iO series.
+- `data/characteristic/model/` – one class per characteristic with its short UUID (base UUID in
+  `Characteristic.java`); `Configure.java` and `Control.java` build the `FF21` commands.
+- `devices/BluetoothInteractor.java` – what the app reads and writes, in which order (session
+  sync, settings).
+- Protocol versions are matched in the order UNKNOWN, V001 … V009 (the `WhenMappings` tables).
+
 ## Reference: what else the app does (not used by Bürstli)
 
 Read from the official app for later; nothing here was seen on a real brush. Under ADR-6 anything
