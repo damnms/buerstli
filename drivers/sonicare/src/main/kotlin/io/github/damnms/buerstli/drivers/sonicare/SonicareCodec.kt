@@ -23,6 +23,7 @@ object SonicareCodec {
     val MODEL_NUMBER: UUID = sig(0x2A24)
     val FIRMWARE: UUID = sig(0x2A26)
     val HANDLE_STATE: UUID = philips(0x4010)
+    val HANDLE_TIME: UUID = philips(0x4050)
     val AVAILABLE_ROUTINES: UUID = philips(0x4022)
     val BRUSHING_MODE: UUID = philips(0x4080)
     val BRUSHING_STATE: UUID = philips(0x4082)
@@ -47,7 +48,7 @@ object SonicareCodec {
     fun u8(v: ByteArray): Int? = if (v.isNotEmpty()) v[0].toInt() and 0xFF else null
     fun u16(v: ByteArray, at: Int = 0): Int? =
         if (v.size >= at + 2) (v[at].toInt() and 0xFF) or ((v[at + 1].toInt() and 0xFF) shl 8) else null
-    private fun u32(v: ByteArray, at: Int): Long? =
+    fun u32(v: ByteArray, at: Int = 0): Long? =
         if (v.size >= at + 4) (u16(v, at)!!.toLong()) or (u16(v, at + 2)!!.toLong() shl 16) else null
 
     /** Device Information strings, without the padding some firmwares add. */
@@ -172,7 +173,7 @@ object SonicareCodec {
     // --- brushing history ---
 
     /** Before 2015 the brush's clock was never set (the app sets it), so the time means nothing. */
-    private const val CLOCK_SET_AFTER = 1_420_070_400L // 2015-01-01T00:00:00Z
+    const val CLOCK_SET_AFTER = 1_420_070_400L // 2015-01-01T00:00:00Z
 
     /**
      * One stored session: the first notification of that session on `4100`, 13, 16 or 18 bytes.
@@ -195,13 +196,21 @@ object SonicareCodec {
 
     /**
      * The only messages Bürstli ever sends to a Sonicare: reading the history the way the app does,
-     * switching on the pressure stream, and the app's two settings, mode and intensity. Nothing
-     * else can be built here.
+     * switching on the pressure stream, setting the clock, and the app's two settings, mode and
+     * intensity. Nothing else can be built here.
      */
     sealed class Request(val characteristic: UUID, val bytes: ByteArray) {
         /** Switch to a mode, by routine id; only ids the brush lists in `4022`. */
         class SelectRoutine(routineId: Int) : Request(AVAILABLE_ROUTINES, byteArrayOf(routineId.toByte())) {
             init { require(routineId in ROUTINE_IDS.indices) { "no such routine id: $routineId" } }
+        }
+
+        /** The brush's clock, seconds since 1970 (u32), as the app sets it from the phone. */
+        class SetClock(epochSeconds: Long) : Request(
+            HANDLE_TIME,
+            ByteArray(4) { i -> (epochSeconds shr (8 * i)).toByte() },
+        ) {
+            init { require(epochSeconds in CLOCK_SET_AFTER..0xFFFF_FFFFL) { "not a plausible time: $epochSeconds" } }
         }
 
         /** Stream the pressure sensor only (bit 1 of the mask); the app streams more. */

@@ -2,7 +2,7 @@
 
 Status: experimental (`SonicareClassicDriver`). Battery, status, mode, intensity, brushing time and
 routine length were confirmed on a real brush (see "Seen on a real brush"); the model number, the
-mode names per model, the brushing history, live pressure and switching mode and intensity come
+mode names per model, the brushing history, live pressure, setting the clock and switching mode and intensity come
 from the official app and were **not seen on a real brush yet**.
 
 Two sources, and every value below says which one it comes from:
@@ -71,7 +71,7 @@ the app reads them with. Bürstli column: what it does with it.
 | | `4020` | available routines | bytes | app | – |
 | | `4022` | available routine ids (read); the app writes a routine id here to change the mode | bytes | app | reads; writes a listed id |
 | | `4040` | cumulative motor runtime | ? | app | – |
-| | `4050` | handle clock, seconds since 1970 (the app writes the phone's time) | 32 bit | app | – (never written) |
+| | `4050` | handle clock, seconds since 1970 (the app writes the phone's time) | 32 bit | app | reads; sets it if off by more than 60 s |
 | `0002` Routine | `4070` | current session id | u16, notify | app | – |
 | | `4080` | mode (routine number), meaning per model, see "Modes" | u8, notify | psb, app, **seen** | reads, subscribes |
 | | `4082` | routine state: 0 inactive, 1 running, 2 paused, 3 completed, 4 terminated, 5 failed | u8 | psb, app, **seen** | reads, subscribes (2 = paused) |
@@ -167,7 +167,19 @@ A session is the first notification of that session; its length gives the versio
 | 17 | 1 regular session, 2 touch-up | 3 |
 
 Version 1 is 13 bytes. The app sets the brush's clock from the phone (`4050`), so Bürstli reads
-the start as UTC and shows no date before 2015, assuming the clock was never set.
+the start as UTC and shows no date before 2015, assuming the clock was never set. Bürstli sets the
+clock too (see "Clock"), but that only helps sessions brushed afterwards: a stored session keeps
+the time it was stamped with.
+
+## Clock – app
+
+The app writes the phone's time to `4050` on every connection: seconds since 1970, 4 bytes
+(`writeHandleTime`, `System.currentTimeMillis() / 1000`). That the bytes are little-endian like
+everything the app reads is our assumption; the helper that builds them (`qh.d`) wasn't read.
+
+What Bürstli does: read `4050`; if that fails, leave the clock alone. If it is off by more than
+60 seconds from the phone, write the phone's time and read it back (the read shows in the
+diagnostics log). Never if the phone's own date is before 2015. Not seen on a real brush.
 
 ## Sensor stream (live pressure) – app
 
@@ -217,15 +229,15 @@ for it is right; the report shows it.
 ## Writing
 
 **What Bürstli writes to a Sonicare, and nothing else:** `4022` (a routine id the brush listed),
-`40B0` (0–2), for the history `40D5` (`00`), `40E0` (a session id) and `4110` (`01`, `02`), and
-`01 00` to `4120` for the pressure stream. The codec builds nothing else, it rejects ids and levels
-out of range, and a test checks every write. It never writes the routine state (`4082`, which
-starts and stops), the clock (`4050`), the settings (`4420`) or anything in the brush head or
-diagnostics services.
+`40B0` (0–2), the clock `4050` (the phone's time, only if off by more than a minute), for the
+history `40D5` (`00`), `40E0` (a session id) and `4110` (`01`, `02`), and `01 00` to `4120` for the
+pressure stream. The codec builds nothing else, it rejects ids, levels and times out of range, and a
+test checks every write. It never writes the routine state (`4082`, which starts and stops), the
+settings (`4420`) or anything in the brush head or diagnostics services.
 
-Mode and intensity are an exception to ADR-6: the driver is experimental, but it changes them. The
-maintainer decided that, so that one test by an owner covers everything; the guards are the
-brush's own list and reading back.
+Mode, intensity and the clock are an exception to ADR-6: the driver is experimental, but it changes
+them. The maintainer decided that, so that one test by an owner covers everything; the guards are
+the brush's own list of modes, reading back, and for the clock reading it first.
 
 ## Condor – app
 
@@ -374,6 +386,8 @@ than Oral-B's driver, and it needs someone with a 7100 to test.
   described, are times and durations right, and are the sessions still there afterwards in the
   official app?
 - Does `2A26` hold the firmware version as the official app shows it?
+- Clock: does the log show `4050` read, written and read back with the phone's time, and do new
+  sessions get the right date afterwards?
 - Pressure: does `4130` send type 1 packets after `01 00` on `4120`, and does "too high" show
   when pressing hard?
 - Mode and intensity: which ids does `4022` list? Does switching a mode and changing the

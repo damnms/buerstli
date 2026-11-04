@@ -6,7 +6,7 @@
 <li><b>Laifen Wave Pro (LFTB02)</b> – experimentell, hört nur mit: Akku, Putzdauer, putzt oder bereit, Andruck-Warnung, 30-Sekunden-Signal, Hochfrequenz, Flugmodus und die Pro-Funktionen.</li>
 <li><b>Laifen Wave SE (LFTB01-SE)</b> – experimentell, hört nur mit: Akku, Modi, Putzdauer, putzt oder bereit, 30-Sekunden-Signal, Hochfrequenz, Flugmodus.</li>
 <li><b>Laifen Kids TC51 (LFTB01-C)</b> – experimentell, hört nur mit: Akku, Putzdauer, putzt oder bereit, Kindersicherung, 30-Sekunden-Signal, Hochfrequenz, Flugmodus und mehr.</li>
-<li><b>Philips Sonicare</b> (klassische Modelle wie DiamondClean, Prestige, ExpertClean, Kids) – experimentell. An einer echten DiamondClean 9000 bestätigt: Akku, Zustand, Modus, Intensität, Putzzeit und Bürstenkopf-Verschleiss. Neu und noch ungetestet: Modellnummer, Firmware, Putzverlauf, Andruck-Warnung sowie Modus und Intensität umstellen.</li>
+<li><b>Philips Sonicare</b> (klassische Modelle wie DiamondClean, Prestige, ExpertClean, Kids) – experimentell. An einer echten DiamondClean 9000 bestätigt: Akku, Zustand, Modus, Intensität, Putzzeit und Bürstenkopf-Verschleiss. Neu und noch ungetestet: Modellnummer, Firmware, Putzverlauf, Andruck-Warnung, Uhr der Bürste stellen sowie Modus und Intensität umstellen.</li>
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimentell, hört mit und verbindet sich nur kurz für das, was sie nicht sendet: Zustand, Modus, Putzzeit, Andruck, Kieferbereich, Akkustand, Putzverlauf und wann ein neuer Bürstenkopf fällig ist.</li>
 </ul>
 

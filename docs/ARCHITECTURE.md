@@ -88,8 +88,9 @@ app's pairing (e.g. Xiaomi's). Standard Bluetooth pairing through Android, which
 confirms, is not such a change. When in doubt, it counts as a change.
 
 Exception, decided by the maintainer: the experimental Sonicare driver also switches the mode and
-the intensity, so that a single test by an owner covers them. Guarded by the brush's own list of
-modes and by reading back (ADR-2); see [SONICARE.md](SONICARE.md).
+the intensity and sets the brush's clock, so that a single test by an owner covers them. Guarded by
+the brush's own list of modes, by reading back (ADR-2) and, for the clock, by reading it first; see
+[SONICARE.md](SONICARE.md#writing).
 
 For everything else, Bürstli recognizes the brush and lets its owner record a report in the app –
 also from an experimental driver, when something looks wrong.

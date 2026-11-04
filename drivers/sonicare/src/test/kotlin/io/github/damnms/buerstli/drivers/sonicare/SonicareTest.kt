@@ -18,6 +18,7 @@ import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_STATE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_TIME
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.FIRMWARE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HANDLE_STATE
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HANDLE_TIME
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HEAD_LIMIT
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HEAD_USAGE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.INTENSITY
@@ -424,7 +425,7 @@ class SonicareTest {
     }
 
     @Test
-    fun `the codec builds only the app's reading messages, the pressure stream, a mode and an intensity`() {
+    fun `the codec builds only the app's reading messages, the pressure stream, a mode, an intensity and the clock`() {
         val allowed = setOf(
             SESSION_TYPE to listOf<Byte>(0),
             SESSION_CONTROL to listOf<Byte>(1),
@@ -601,5 +602,50 @@ class SonicareTest {
         assertNull(SonicareCodec.pressureHigh(byteArrayOf(1, 0, 0, 0))) // too short
         assertNull(SonicareCodec.pressureHigh(byteArrayOf(64, 0, 0, 0, 2)))
         assertNull(SonicareCodec.pressureHigh(byteArrayOf()))
+    }
+
+    // --- clock (app) ---
+
+    private val phoneNow = 1_793_800_000L // 2026-11-04
+
+    private fun withClock(brushTime: Long) = diamondClean().apply {
+        values[HANDLE_TIME] = ByteArray(4) { i -> (brushTime shr (8 * i)).toByte() }
+        onWrite = { uuid, data -> if (uuid == HANDLE_TIME) values[HANDLE_TIME] = data }
+    }
+
+    @Test
+    fun `sets the brush's clock when it is off, and reads it back`() = runTest {
+        val brush = withClock(brushTime = 1_000)
+        SonicareSession(brush) { phoneNow }.start()
+
+        val expected = listOf<Byte>(0x40, 0x37, 0xEB.toByte(), 0x6A) // 1_793_800_000, little-endian
+        assertEquals(listOf(HANDLE_TIME to expected), brush.writes.map { (u, d) -> u to d.toList() })
+        assertEquals(2, brush.reads.count { it == HANDLE_TIME })
+    }
+
+    @Test
+    fun `leaves a clock alone that is right to the minute`() = runTest {
+        val brush = withClock(brushTime = phoneNow - 45)
+        SonicareSession(brush) { phoneNow }.start()
+
+        assertTrue(brush.writes.isEmpty())
+    }
+
+    @Test
+    fun `never sets a clock it couldn't read, nor from a phone with a wrong date`() = runTest {
+        val unreadable = diamondClean()
+        SonicareSession(unreadable) { phoneNow }.start()
+        assertTrue(unreadable.writes.isEmpty())
+
+        val wrongPhone = withClock(brushTime = phoneNow)
+        SonicareSession(wrongPhone) { 1_000L }.start()
+        assertTrue(wrongPhone.writes.isEmpty())
+    }
+
+    @Test
+    fun `the clock message takes only plausible times`() {
+        val m = SonicareCodec.Request.SetClock(phoneNow)
+        assertEquals(HANDLE_TIME to listOf<Byte>(0x40, 0x37, 0xEB.toByte(), 0x6A), m.characteristic to m.bytes.toList())
+        assertThrows(IllegalArgumentException::class.java) { SonicareCodec.Request.SetClock(1_000) }
     }
 }

@@ -18,6 +18,7 @@ import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_STATE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.BRUSHING_TIME
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.FIRMWARE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HANDLE_STATE
+import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HANDLE_TIME
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HEAD_LIMIT
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.HEAD_USAGE
 import io.github.damnms.buerstli.drivers.sonicare.SonicareCodec.INTENSITY
@@ -44,9 +45,14 @@ import java.util.UUID
  * confirmed by reading the brush back (ADR-2), only modes the brush lists as available.
  * A Sonicare drops the connection after ~6 s unless something is subscribed, so subscriptions come first. Not every model has every characteristic.
  * The model number is read before the mode, because what a mode number means depends on it.
- * Last, the brushing history, the way the official app fetches it (docs/SONICARE.md).
+ * Then the clock, if it is off, and the pressure stream; last, the brushing history, the way the
+ * official app fetches it (docs/SONICARE.md).
  */
-internal class SonicareSession(private val link: BrushLink) : BrushSession {
+internal class SonicareSession(
+    private val link: BrushLink,
+    /** Now, in seconds since 1970; a parameter so tests can fix it. */
+    private val now: () -> Long = { System.currentTimeMillis() / 1000 },
+) : BrushSession {
 
     private val _state = MutableStateFlow(BrushState.UNKNOWN)
     override val state: StateFlow<BrushState> = _state.asStateFlow()
@@ -74,6 +80,7 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
         optional { apply(MODEL_NUMBER, link.read(MODEL_NUMBER)) }
         (READ - HANDLE_STATE).forEach { uuid -> optional { apply(uuid, link.read(uuid)) } }
         optional { available = SonicareCodec.availableRoutines(link.read(AVAILABLE_ROUTINES)); updateMode() }
+        optional { setClockIfOff() }
         // Live pressure, as the app switches it on; brushes without the sensor service skip this.
         optional {
             link.enableNotifications(SENSOR_DATA)
@@ -119,6 +126,20 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
         if (intensity == level) return CommandResult.Confirmed
         send(Request.SetIntensity(level))
         return confirm(INTENSITY) { intensity == level }
+    }
+
+    /**
+     * The app sets the brush's clock to the phone's time on every connection. Bürstli only does it
+     * when the clock is off by more than [CLOCK_TOLERANCE_S], and only if it could read it first.
+     * Sessions stored earlier keep the time they were stamped with.
+     */
+    private suspend fun setClockIfOff() {
+        val brush = SonicareCodec.u32(link.read(HANDLE_TIME)) ?: return
+        val phone = now()
+        if (phone < SonicareCodec.CLOCK_SET_AFTER) return // the phone's own clock is off
+        if (kotlin.math.abs(phone - brush) <= CLOCK_TOLERANCE_S) return
+        send(Request.SetClock(phone))
+        link.read(HANDLE_TIME) // read back, so the log shows what the brush made of it
     }
 
     /** Reads [uuid] back until [applied] holds; the brush may take a moment. */
@@ -250,6 +271,7 @@ internal class SonicareSession(private val link: BrushLink) : BrushSession {
             ROUTINE_LENGTH, HEAD_LIMIT, HEAD_USAGE,
         )
         val STORAGE = setOf(ACTIVE_SESSION, SESSION_DATA, SESSION_CONTROL)
+        const val CLOCK_TOLERANCE_S = 60L
         const val CONFIRM_ATTEMPTS = 6
         const val CONFIRM_INTERVAL_MS = 300L
         const val MAX_SESSIONS = 30
