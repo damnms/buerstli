@@ -244,7 +244,7 @@ Plain Java/Kotlin, no Flutter. `jadx --no-res` decompiles it; Bluetooth is in `c
   session; `RoutineIdToBrushMode.java` – the xian modes; `views/mouthmap/BrushMode$Mode.java` – the
   default mode list.
 - Obfuscated, outside those packages: `dp/d1.java` (`h`: routine number → mode, `g`: xian) and
-  `dp/e0.java` (`e`: mode list per model number).
+  `dp/e0.java` (`b(device)`: the default list without a device, otherwise the private `e(device)` with the list per model number).
 - Condor: `com/philips/connectivity/condor/` and `com/philips/cdp/ohc/condor/`.
 
 ## Legal
