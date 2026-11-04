@@ -90,9 +90,19 @@ class DriversTest {
 
     @Test
     fun `Xiaomi toothbrushes are recognized by their product id`() {
-        listOf(0x0489, 0x0806, 0x1790).forEach {
-            assertEquals(Recognition.Unsupported("Xiaomi"), recognize(miBeacon(it)))
+        // Every toothbrush pd_id in Mi Home's device catalog (docs/XIAOMI.md).
+        listOf(
+            0x01A1, 0x0489, 0x1790, 0x3B94, 0x7B27, 0x7B2A, 0x8E95, // EU catalog
+            0x0440, 0x0806, 0x10C5, 0x1FF3, 0x4DD8, 0x6800, 0x6F5B, 0x759B, 0x7B29, // other regions
+            0x00CE, 0x05A1, 0x1767, 0x2A24, 0x3097, 0x30C6, 0x3228, 0x33E2, 0x342F, // partner brands
+        ).forEach {
+            assertEquals("product id 0x%04X".format(it), Recognition.Unsupported("Xiaomi"), recognize(miBeacon(it)))
         }
+    }
+
+    @Test
+    fun `the sterilizing cup in Mi Home's toothbrush category is not a toothbrush`() {
+        assertEquals(Recognition.Unknown, recognize(miBeacon(0x094A))) // zhij.toothbrush.bv1
     }
 
     @Test

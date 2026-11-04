@@ -6,6 +6,10 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Recognizes every toothbrush in Xiaomi Home's device catalog: 25 models, from Xiaomi, Mijia
+  and partner brands.
+
 ## [0.14.0] - 2026-11-04
 
 ### Added

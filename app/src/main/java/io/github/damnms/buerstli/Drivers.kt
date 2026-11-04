@@ -19,10 +19,39 @@ object Drivers {
     private const val PROCTER_AND_GAMBLE_COMPANY_ID = 0x00DC
 
     // Xiaomi: every Xiaomi device sends MiBeacon service data under 0xFE95; bytes 2-3 are the
-    // product id (little-endian). Toothbrush ids from ble_monitor: M1S-T500, T700, T700i;
-    // T501 from a real advertisement in Bluetooth-Devices/xiaomi-ble#356.
+    // product id (little-endian). The ids are the "pd_id" of every toothbrush in Mi Home's device
+    // catalog (docs/XIAOMI.md); they match the ids known from ble_monitor and xiaomi-ble#356.
     private val XIAOMI_SERVICE = UUID.fromString("0000fe95-0000-1000-8000-00805f9b34fb")
-    private val XIAOMI_TOOTHBRUSHES = setOf(0x0489, 0x0806, 0x1790, 0x3B94)
+    private val XIAOMI_TOOTHBRUSHES = setOf(
+        // Xiaomi / Mijia, in the EU catalog
+        0x01A1, // soocare.toothbrush.m1
+        0x0489, // soocare.toothbrush.m1s (T500)
+        0x1790, // k0918.toothbrush.t700i (T700)
+        0x3B94, // soocare.toothbrush.2501 (T501)
+        0x7B27, // xiaomi.toothbrush.24peu (Servo-oscillation Pro)
+        0x7B2A, // xiaomi.toothbrush.24pgl (Servo-oscillation Pro)
+        0x8E95, // xiaomi.toothbrush.p02gl (Multi-oscillation Pro)
+        // Xiaomi / Mijia, other regions only
+        0x0440, // soocare.toothbrush.mc1 (Mitu kids)
+        0x0806, // k0918.toothbrush.t700
+        0x10C5, // soocare.toothbrush.t501
+        0x1FF3, // soocare.toothbrush.1501 (T501)
+        0x4DD8, // xiaomi.toothbrush.p001
+        0x6800, // xiaomi.toothbrush.24p
+        0x6F5B, // xiaomi.toothbrush.p002
+        0x759B, // xiaomi.toothbrush.m04 (kids Pro)
+        0x7B29, // xiaomi.toothbrush.24pkr
+        // Partner brands sold through Mi Home, China catalog only
+        0x00CE, // soocare.toothbrush.x3 (Soocas)
+        0x05A1, // k0918.toothbrush.kid01 (Dr.Bei kids)
+        0x1767, // nancii.toothbrush.t600
+        0x2A24, // eizi.toothbrush.sy01
+        0x3097, // xmlong.toothbrush.r02
+        0x30C6, // xmlong.toothbrush.r05
+        0x3228, // jrj.toothbrush.j3m800
+        0x33E2, // xjyd.toothbrush.k1
+        0x342F, // hlznkj.toothbrush.se40a
+    )
 
     private fun xiaomiProductId(data: ByteArray?): Int? =
         if (data == null || data.size < 4) null else (data[2].toInt() and 0xFF) or ((data[3].toInt() and 0xFF) shl 8)
