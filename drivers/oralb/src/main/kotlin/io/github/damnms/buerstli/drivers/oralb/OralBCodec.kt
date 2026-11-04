@@ -2,7 +2,9 @@ package io.github.damnms.buerstli.drivers.oralb
 
 import io.github.damnms.buerstli.domain.Activity
 import io.github.damnms.buerstli.domain.BrushState
+import io.github.damnms.buerstli.domain.BrushingRecord
 import io.github.damnms.buerstli.domain.ModeName
+import java.time.Instant
 import java.util.UUID
 
 /**
@@ -23,8 +25,72 @@ object OralBCodec {
 
     private fun uuid(short: String): UUID = UUID.fromString("a0f0$short-5047-4d53-8208-4f72616c2d42")
 
-    /** Read-only. Never write to any Oral-B characteristic (FF06 is reported to reset the brush). */
     val BATTERY: UUID = uuid("ff05")
+
+    /**
+     * The brush's command characteristic. It also takes commands that change or reset the brush,
+     * so Bürstli writes exactly one thing to it: [selectSession]. Nothing else, anywhere.
+     */
+    val CONFIGURE: UUID = uuid("ff21")
+
+    /** The session selected through [CONFIGURE]. */
+    val SESSION_DATA: UUID = uuid("ff29")
+
+    /** How many sessions newer brushes keep (official app); Bürstli reads no further back. */
+    const val MAX_SESSIONS = 30
+
+    private const val READ_DATA: Byte = 0x02
+
+    /** "Put session [index] (0 = newest) into [SESSION_DATA]" – a read request, as the official app sends it. */
+    fun selectSession(index: Int): ByteArray {
+        require(index in 0 until MAX_SESSIONS) { "session index $index" }
+        return byteArrayOf(READ_DATA, index.toByte())
+    }
+
+    /** The brush's clock counts seconds from here. */
+    private val CLOCK_START: Instant = Instant.parse("2000-01-01T00:00:00Z")
+
+    /** Earlier than this, the brush's clock was never set (it starts at 2000 then). */
+    private val CLOCK_SET: Instant = Instant.parse("2015-01-01T00:00:00Z")
+
+    /**
+     * One session from [SESSION_DATA] (official app). Null if there is none: too short, the app's
+     * all-0x44 filler, or session id 0.
+     */
+    fun session(protocol: Int, value: ByteArray): BrushingRecord? {
+        if (protocol !in 1..9) return null
+        val needed = when {
+            protocol <= 5 -> 16
+            protocol <= 7 -> 21
+            else -> 23
+        }
+        if (value.size < needed || value.all { it == 0x44.toByte() }) return null
+        val u = IntArray(value.size) { value[it].toInt() and 0xFF }
+        fun u16(i: Int) = u[i] or (u[i + 1] shl 8)
+        val seconds = u16(0).toLong() or (u16(2).toLong() shl 16)
+        val started = CLOCK_START.plusSeconds(seconds).takeIf { it >= CLOCK_SET }
+        val record = if (protocol <= 5) {
+            val highPressure = u16(8) * if (protocol <= 3) 10 else 1 // tenths of a second
+            BrushingRecord(
+                number = u16(14) and 0x1FFF,
+                brushedSeconds = u16(4),
+                startedAt = started,
+                modeName = olderModes[u[7]],
+                targetSeconds = (u16(12) and 0x1FFF).takeIf { it > 0 },
+                highPressureSeconds = (highPressure + 5) / 10,
+            )
+        } else {
+            BrushingRecord(
+                number = u16(4) and 0x1FFF,
+                brushedSeconds = u16(8),
+                startedAt = started,
+                modeName = ioModes[u[19]],
+                targetSeconds = (u16(6) and 0x1FFF).takeIf { it > 0 },
+                highPressureSeconds = (u16(10) + 5) / 10,
+            )
+        }
+        return record.takeIf { it.number != 0 }
+    }
 
     private enum class Family { SMART, IO }
 

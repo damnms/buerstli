@@ -335,7 +335,7 @@ class BleConnector(
         session = null
     }
 
-    /** GATT callbacks of a short connection: connect, discover, then answer reads. Nothing else. */
+    /** GATT callbacks of a short connection: connect, discover, then answer reads and read requests. */
     private inner class PollCallback(private val ready: CompletableDeferred<AndroidBrushLink>) : BluetoothGattCallback() {
         @Volatile var link: AndroidBrushLink? = null
 
@@ -358,6 +358,10 @@ class BleConnector(
             link = l
             ready.complete(l)
         }
+
+        // Read requests some brushes need first (e.g. Oral-B: which session to read).
+        override fun onCharacteristicWrite(g: BluetoothGatt, ch: BluetoothGattCharacteristic, status: Int) =
+            result(status, ByteArray(0))
 
         // Android 13+
         override fun onCharacteristicRead(g: BluetoothGatt, ch: BluetoothGattCharacteristic, value: ByteArray, status: Int) =
@@ -498,6 +502,6 @@ class BleConnector(
         const val PASSIVE_SILENCE_MS = 30_000L
         const val MAX_POLL_ATTEMPTS = 2
         const val POLL_RETRY_MS = 60_000L
-        const val POLL_TIMEOUT_MS = 15_000L
+        const val POLL_TIMEOUT_MS = 30_000L // battery plus up to 30 history entries
     }
 }

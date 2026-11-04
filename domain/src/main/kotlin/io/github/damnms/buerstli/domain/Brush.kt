@@ -16,6 +16,8 @@ data class Capabilities(
     val brushingDuration: DurationSpec? = null,
     /** On/off settings the model reports, and whether Bürstli may change them. */
     val switches: Map<Switch, Access> = emptyMap(),
+    /** Null if Bürstli can't read a brushing history; EXPERIMENTAL until checked on a real brush. */
+    val history: SupportLevel? = null,
 ) {
     fun mode(index: Int): ModeSpec? = modes.firstOrNull { it.index == index }
 }
@@ -49,11 +51,27 @@ data class BrushState(
     val modelName: String? = null,
     /** Firmware as the brush reports it, written the way the vendor app shows it. */
     val firmwareVersion: String? = null,
+    /** Brushing sessions the brush remembers, newest first. Bürstli stores none of them itself. */
+    val history: List<BrushingRecord> = emptyList(),
 ) {
     companion object {
         val UNKNOWN = BrushState()
     }
 }
+
+/** One brushing session as the brush remembers it. Optional fields: not every brush keeps them. */
+data class BrushingRecord(
+    /** The brush's own number for the session. */
+    val number: Int,
+    val brushedSeconds: Int,
+    /** Null if the brush doesn't know when (e.g. its clock was never set). */
+    val startedAt: java.time.Instant? = null,
+    val modeName: ModeName? = null,
+    /** The brushing time that was set. */
+    val targetSeconds: Int? = null,
+    /** How long the pressure was too high. */
+    val highPressureSeconds: Int? = null,
+)
 
 /** Allowed brushing durations, e.g. 60..300 s in 30 s steps. */
 data class DurationSpec(val seconds: IntRange, val stepSeconds: Int) {

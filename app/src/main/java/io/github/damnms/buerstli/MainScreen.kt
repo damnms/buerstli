@@ -309,6 +309,47 @@ private fun BrushView(
             actions = actions,
         )
     }
+    driver.capabilities.history?.let { level ->
+        HistoryCard(state.history, experimental = level == SupportLevel.EXPERIMENTAL)
+    }
+}
+
+@Composable
+private fun HistoryCard(history: List<io.github.damnms.buerstli.domain.BrushingRecord>, experimental: Boolean) {
+    fun time(s: Int) = "%d:%02d".format(s / 60, s % 60)
+    val dateFormat = java.time.format.DateTimeFormatter
+        .ofLocalizedDateTime(java.time.format.FormatStyle.SHORT)
+        .withZone(java.time.ZoneId.systemDefault())
+    InfoCard {
+        Text(stringResource(R.string.history), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.history_hint), style = MaterialTheme.typography.bodySmall)
+        if (experimental) {
+            Text(stringResource(R.string.history_experimental), style = MaterialTheme.typography.bodySmall)
+        }
+        if (history.isEmpty()) {
+            Text(stringResource(R.string.history_empty), style = MaterialTheme.typography.bodyMedium)
+        }
+        history.forEach { r ->
+            Column(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        listOfNotNull(
+                            r.startedAt?.let { dateFormat.format(it) } ?: stringResource(R.string.history_number, r.number),
+                            r.modeName?.let { modeLabel(it) },
+                        ).joinToString(" · "),
+                    )
+                    Text(
+                        r.targetSeconds?.let { stringResource(R.string.history_time_of, time(r.brushedSeconds), time(it)) }
+                            ?: time(r.brushedSeconds),
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                r.highPressureSeconds?.takeIf { it > 0 }?.let {
+                    Text(stringResource(R.string.history_pressure, it), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+    }
 }
 
 @Composable

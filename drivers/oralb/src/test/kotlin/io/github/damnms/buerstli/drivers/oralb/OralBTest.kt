@@ -4,6 +4,7 @@ import io.github.damnms.buerstli.domain.Activity
 import io.github.damnms.buerstli.domain.Advertisement
 import io.github.damnms.buerstli.domain.BrushCommand
 import io.github.damnms.buerstli.domain.BrushLink
+import io.github.damnms.buerstli.domain.BrushingRecord
 import io.github.damnms.buerstli.domain.CommandResult
 import io.github.damnms.buerstli.domain.ModeName
 import io.github.damnms.buerstli.domain.NoLink
@@ -15,6 +16,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
+import java.time.Instant
 import java.util.UUID
 
 /**
@@ -22,7 +24,7 @@ import java.util.UUID
  * Oral-B integration. Expected values are what oralb-ble itself decodes for the same bytes.
  */
 class OralBTest {
-    private fun hex(s: String) = s.split("-").map { it.toInt(16).toByte() }.toByteArray()
+    fun hex(s: String) = s.split("-").map { it.toInt(16).toByte() }.toByteArray()
     private fun decode(s: String) = OralBCodec.decode(hex(s))!!
     private fun ad(s: String) = Advertisement(name = "Oral-B Toothbrush", manufacturerData = mapOf(0x00DC to hex(s)))
 
@@ -176,7 +178,10 @@ class OralBTest {
             reads += characteristic
             return values[characteristic] ?: throw IOException("not found")
         }
-        override suspend fun write(characteristic: UUID, data: ByteArray) { writes++ }
+        override suspend fun write(characteristic: UUID, data: ByteArray) {
+            writes++
+            throw IOException("not found")
+        }
         override suspend fun enableNotifications(characteristic: UUID) { writes++ }
     }
 
@@ -197,17 +202,20 @@ class OralBTest {
     }
 
     @Test
-    fun `the short connection only reads the battery and keeps it`() = runTest {
+    fun `a brush without readable history still gives its battery, and keeps it`() = runTest {
         val session = OralBPassiveDriver.open(NoLink).apply { start() }
         session.onAdvertisement(ad(standby))
         val link = FakeOralB(mapOf(OralBCodec.BATTERY to hex("CB-3C-00")))
 
-        session.poll(link)
+        try {
+            session.poll(link)
+            throw AssertionError("expected IOException for the missing history")
+        } catch (_: IOException) {
+        }
 
-        assertEquals(listOf(OralBCodec.BATTERY), link.reads)
-        assertEquals(0, link.writes)
+        assertEquals(listOf(OralBCodec.BATTERY), link.reads) // the history read failed at its write
         assertEquals(75, session.state.value.batteryPercent)
-        assertFalse(session.wantsPoll)
+        assertTrue(session.wantsPoll) // the history is still missing
         session.onAdvertisement(ad(brushing)) // advertisements don't wipe the battery
         assertEquals(75, session.state.value.batteryPercent)
         assertEquals(Activity.BRUSHING, session.state.value.activity)
@@ -218,5 +226,124 @@ class OralBTest {
         val session = OralBPassiveDriver.open(NoLink).apply { start() }
         session.onAdvertisement(ad(standby))
         session.poll(FakeOralB())
+    }
+
+    // --- brushing history over the same short connection (official app, see docs/ORAL-B.md) ---
+    // Hand-made sessions in the app's layout.
+
+    /** 2026-11-04 07:00:00 UTC in the brush's clock: seconds since 2000-01-01. */
+    private val time = "70-94-7D-32"
+
+    @Test
+    fun `session layout of protocol 8 and later`() {
+        // id 0x123 (user 1) · set 2:00, 4 sectors · brushed 2:05 · high pressure 3.5 s · … · Gum Care · battery 80 %
+        val r = OralBCodec.session(8, hex("$time-23-21-78-80-7D-00-23-00-00-00-00-00-02-00-01-02-50-00-00"))!!
+        assertEquals(BrushingRecord(
+            number = 0x123, brushedSeconds = 125, startedAt = Instant.parse("2026-11-04T07:00:00Z"),
+            modeName = ModeName.GUM_CARE, targetSeconds = 120, highPressureSeconds = 4,
+        ), r)
+        assertNull(OralBCodec.session(8, hex("$time-23-21-78-80-7D-00-23-00-00-00-00-00-02-00-01-02-50-00"))) // 22 bytes
+    }
+
+    @Test
+    fun `session layout up to protocol 5`() {
+        // brushed 2:00 · 1 start · Daily Clean · high pressure 12 (x10 up to protocol 3) · … · set 2:00 · id 7
+        val r = OralBCodec.session(3, hex("$time-78-00-01-01-0C-00-02-50-78-80-07-00"))!!
+        assertEquals(BrushingRecord(
+            number = 7, brushedSeconds = 120, startedAt = Instant.parse("2026-11-04T07:00:00Z"),
+            modeName = ModeName.DAILY_CLEAN, targetSeconds = 120, highPressureSeconds = 12,
+        ), r)
+        assertEquals(1, OralBCodec.session(4, hex("$time-78-00-01-01-0C-00-02-50-78-80-07-00"))!!.highPressureSeconds)
+    }
+
+    @Test
+    fun `no session behind id 0 or the all-0x44 filler, and no date from a clock never set`() {
+        assertNull(OralBCodec.session(3, hex("$time-78-00-01-01-0C-00-02-50-78-80-00-00")))
+        assertNull(OralBCodec.session(3, ByteArray(16) { 0x44 }))
+        assertNull(OralBCodec.session(3, hex("10-00-00-00-78-00-01-01-0C-00-02-50-78-80-07-00"))!!.startedAt)
+    }
+
+    @Test
+    fun `selecting a session is the only thing ever written, and only in its one form`() {
+        assertEquals("02-00", OralBCodec.selectSession(0).joinToString("-") { "%02X".format(it) })
+        assertEquals("02-1D", OralBCodec.selectSession(29).joinToString("-") { "%02X".format(it) })
+        listOf(-1, 30, 52).forEach { i ->
+            try {
+                OralBCodec.selectSession(i)
+                throw AssertionError("index $i must be refused")
+            } catch (_: IllegalArgumentException) {
+            }
+        }
+    }
+
+    /** A brush with [count] sessions (newest has id [count]), battery 80 %; checks every write. */
+    private class FakeHistory(val count: Int, val failAt: Int? = null) : BrushLink {
+        var selected: Int? = null
+        val writes = mutableListOf<String>()
+        override suspend fun read(characteristic: UUID): ByteArray = when (characteristic) {
+            OralBCodec.BATTERY -> byteArrayOf(0x50, 0, 0)
+            OralBCodec.SESSION_DATA -> {
+                val i = selected ?: throw IOException("nothing selected")
+                if (i == failAt) throw IOException("gone")
+                val id = if (i < count) count - i else 0
+                OralBTest().hex("70-94-7D-32-%02X-00-78-80-78-00-00-00-00-00-00-00-00-00-01-00-50-00-00".format(id))
+            }
+            else -> throw IOException("not readable here")
+        }
+        override suspend fun write(characteristic: UUID, data: ByteArray) {
+            val bytes = data.joinToString("-") { "%02X".format(it) }
+            writes += bytes
+            check(characteristic == OralBCodec.CONFIGURE) { "write to $characteristic" }
+            check(data.size == 2 && data[0] == 0x02.toByte()) { "unexpected write $bytes" }
+            selected = data[1].toInt()
+        }
+        override suspend fun enableNotifications(characteristic: UUID) = throw AssertionError("no subscriptions")
+    }
+
+    @Test
+    fun `the short connection reads battery and history, newest first, until the brush has no more`() = runTest {
+        val session = OralBPassiveDriver.open(NoLink).apply { start() }
+        session.onAdvertisement(ad(standby))
+        val link = FakeHistory(count = 3)
+
+        session.poll(link)
+
+        assertEquals(listOf("02-00", "02-01", "02-02", "02-03"), link.writes)
+        assertEquals(listOf(3, 2, 1), session.state.value.history.map { it.number })
+        assertEquals(80, session.state.value.batteryPercent)
+        assertFalse(session.wantsPoll)
+        session.onAdvertisement(ad(brushing))
+        assertEquals(3, session.state.value.history.size) // advertisements don't wipe it
+    }
+
+    @Test
+    fun `at most 30 sessions, and a later failure keeps what was read`() = runTest {
+        val full = OralBPassiveDriver.open(NoLink).apply { start(); onAdvertisement(ad(standby)) }
+        val link = FakeHistory(count = 100)
+        full.poll(link)
+        assertEquals(30, full.state.value.history.size)
+        assertEquals("02-1D", link.writes.last())
+
+        val partial = OralBPassiveDriver.open(NoLink).apply { start(); onAdvertisement(ad(standby)) }
+        partial.poll(FakeHistory(count = 5, failAt = 2))
+        assertEquals(2, partial.state.value.history.size)
+        assertFalse(partial.wantsPoll)
+    }
+
+    @Test
+    fun `if not even the first session comes, the adapter hears about it and may try again`() = runTest {
+        val session = OralBPassiveDriver.open(NoLink).apply { start(); onAdvertisement(ad(standby)) }
+        try {
+            session.poll(FakeHistory(count = 5, failAt = 0))
+            throw AssertionError("expected IOException")
+        } catch (_: IOException) {
+        }
+        assertEquals(80, session.state.value.batteryPercent)
+        assertTrue(session.wantsPoll)
+    }
+
+    @Test
+    fun `the driver says it can read a history`() {
+        assertEquals(SupportLevel.EXPERIMENTAL, OralBPassiveDriver.capabilities.history)
     }
 }

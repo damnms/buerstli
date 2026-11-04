@@ -12,6 +12,8 @@ All notable changes to Bürstli are documented here. The format follows
   real brush yet – reports welcome!
 - Oral-B: battery level. Bürstli connects for a moment while the brush is idle, reads it and
   only listens again. Not seen on a real brush yet either.
+- Oral-B: brushing history straight from the brush – when, how long, which mode and how long
+  the pressure was too high, for up to 30 sessions. Reading it deletes nothing. Experimental.
 
 ### Fixed
 - Oral-B: iO models Bürstli doesn't know by name showed the wrong mode names.

@@ -1,6 +1,7 @@
 # Oral-B: protocol notes
 
-Status: experimental (`OralBPassiveDriver`): listens, and connects only briefly to read the battery.
+Status: experimental (`OralBPassiveDriver`): listens, and connects only briefly to read the battery
+and the brushing history.
 Nobody has tried it with Bürstli yet.
 
 Two sources, and every value below says which one it comes from:
@@ -100,8 +101,35 @@ brushing or paused: a user in the Arduino forum reports that the connection drop
 two tries per listening, a minute apart. The brush doesn't advertise while connected, so live
 values pause for those few seconds.
 
-**Bürstli never writes to an Oral-B characteristic.** A user reports that writing to `FF06`
-resets the brush to factory settings.
+## Brushing history (same short connection) – app
+
+To read session *n* (0 = newest), the app writes `02 n` ("read data") to `FF21` and then reads
+`FF29`. Reading deletes nothing; the app itself remembers which sessions it already has.
+Bürstli reads sessions 0, 1, 2, … and stops at session id 0, at the app's "no data" filler (every
+byte `0x44`), or after 30 (newer brushes keep 30). If a later read fails, it keeps what it got.
+
+Byte positions in `FF29` (little-endian; time in seconds since 2000-01-01 by the brush's clock):
+
+| | protocol 1–5 (16 bytes) | protocol 6–7 (21) / 8–9 (23) |
+|---|---|---|
+| start time | 0–3 | 0–3 |
+| session id (low 13 bits) | 14–15 | 4–5 |
+| set brushing time (low 13 bits; top 3: sectors) | 12–13 | 6–7 |
+| brushing time | 4–5 | 8–9 |
+| mode (numbering by protocol, as above) | 7 | 19 |
+| high pressure, tenths of a second | 8–9 (×10 up to protocol 3) | 10–11 |
+| battery at the end | 11 | 20 |
+
+The app also reads low pressure, pressure events, average and maximum pressure and, from
+protocol 8, tongue time; Bürstli doesn't show those. The brush's clock is set by the official app;
+before 2015 Bürstli assumes it never was and shows no date.
+
+## Writing
+
+**`02 n` to `FF21` is the only thing Bürstli ever writes to an Oral-B.** `FF21` also takes commands
+that change or reset the brush (in the app, `34` is a factory reset), so the codec builds only this
+one message and refuses any other index; a test checks every write. A user also reports that
+writing to `FF06` resets the brush (the app calls it the button state); Bürstli never touches it.
 
 ## Legal
 

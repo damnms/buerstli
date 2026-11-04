@@ -27,7 +27,7 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
 | Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental, read-only; ✅ confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear (not seen on a real brush yet) |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
-| Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens, connects briefly for the battery | status, mode, brushing time, pressure, mouth area, exact iO series, battery level ([notes](docs/ORAL-B.md)) |
+| Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens, connects briefly for battery and history | status, mode, brushing time, pressure, mouth area, exact iO series, battery level, brushing history ([notes](docs/ORAL-B.md)) |
 
 ### Laifen Wave: the hidden fourth mode
 

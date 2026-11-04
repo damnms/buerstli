@@ -113,7 +113,7 @@
     <string name="pressure_high">zu hoch!</string>
     <string name="info_sector">Bereich</string>
     <string name="sector_of">%1$d von %2$d</string>
-    <string name="passive_note">Bürstli hört meist nur mit, was diese Bürste sendet. Nur für den Akkustand, den sie nicht sendet, verbindet sich Bürstli kurz, solange die Bürste ruht.</string>
+    <string name="passive_note">Bürstli hört meist nur mit, was diese Bürste sendet. Nur für Akkustand und Verlauf, die sie nicht sendet, verbindet sich Bürstli kurz, solange die Bürste ruht.</string>
     <string name="switch_deep_clean">Tiefenreinigung</string>
     <string name="switch_anti_splash">Spritzschutz</string>
     <string name="switch_power_ramp_up">Sanfter Anlauf (3 Sekunden)</string>
@@ -127,4 +127,11 @@
     <string name="picker_title">Welche ist deine Bürste?</string>
     <string name="picker_hint">Schalte die Bürste ein und halte sie nah ans Handy – sie steht dann meist ganz oben. Die Liste zeigt Bluetooth-Geräte in der Nähe; sie bleibt auf diesem Handy, und nur das Gerät, das du antippst, kommt in einen Bericht.</string>
     <string name="picker_searching">Suche Geräte in der Nähe…</string>
+    <string name="history">Putzverlauf</string>
+    <string name="history_hint">Direkt aus der Bürste, ganz ohne Cloud. Bürstli speichert selbst nichts, es zeigt, was sich die Bürste merkt.</string>
+    <string name="history_experimental">Noch experimentell. Sieht was komisch aus? Kopier das Log und melde dich.</string>
+    <string name="history_empty">Die Bürste hat noch nichts erzählt.</string>
+    <string name="history_number">Nr. %1$d</string>
+    <string name="history_time_of">%1$s von %2$s</string>
+    <string name="history_pressure">%1$d s zu viel Druck</string>
 </resources>
