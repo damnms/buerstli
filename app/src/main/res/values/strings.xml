@@ -97,6 +97,7 @@
     <string name="info_mode">Mode</string>
     <string name="info_intensity">Intensity</string>
     <string name="info_brushing_time">Brushing time</string>
+    <string name="info_score">Last score</string>
     <string name="info_head_wear">Brush head</string>
     <string name="info_head_wear_value">%1$d %% worn</string>
     <string name="activity_off">off</string>

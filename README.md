@@ -23,7 +23,8 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Laifen | Wave SE (LFTB01-SE) | `LFTB01-SE…` | 🧪 experimental, listens only | battery, modes, brushing time, brushing/idle, 30-second nudge, high frequency, flight mode (shown) |
 | Laifen | Kids TC51 (LFTB01-C) | `LFTB01-C…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, child lock, 30-second nudge, high frequency, flight mode, ramp-up, spin dry, pressure warning (shown) |
 | Oclean | X Pro, Z1, Y-series, … | `Oclean…` | 🔍 recognized, not supported yet | |
-| Xiaomi | T500, T501, T700, T700i, Pro models, kids, partner brands in Mi Home (25 models) | MiBeacon product id | 🔍 recognized, not supported yet ([notes](docs/XIAOMI.md)) | |
+| Xiaomi | Mi Smart Electric Toothbrush T500 | MiBeacon product id | 🧪 experimental, listens only; the brush must have been set up with Mi Home once | brushing/off, score of the last session, battery level, brush head wear ([notes](docs/XIAOMI.md)) |
+| Xiaomi | T501, T700, T700i, Pro models, kids, partner brands in Mi Home (24 more models) | MiBeacon product id | 🔍 recognized, not supported yet (most broadcast encrypted) ([notes](docs/XIAOMI.md)) | |
 | Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
 | Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental; ✅ reading confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear; from the official app, untested: model number, firmware, mode names per model, brushing history, switch mode and intensity ([notes](docs/SONICARE.md)) |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol) | |
@@ -68,9 +69,16 @@ head is due – but all of that comes from studying the official app, and nobody
 real brush yet. One report from an iO and one from an older Genius or Smart would settle most of
 it: [what a first report should answer](docs/ORAL-B.md#to-check-on-a-real-brush).
 
+**Got a Xiaomi?** Every toothbrush from Xiaomi Home is recognized, and the T500 has a first driver
+that only listens. A report from any Xiaomi brush helps: it shows whether the brush broadcasts
+encrypted, and whether it offers what Bürstli would need to read it without Mi Home. Bürstli sends
+nothing to the brush for that. Owners of a T500: does Bürstli show brushing, score, battery and
+brush head? [What a first report should answer](docs/XIAOMI.md#what-the-first-report-should-answer).
+
 The protocols have been researched by others already, which makes a driver much more likely:
 [philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble/blob/main/docs/BLE_PROTOCOL.md),
-[oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble) and, for Oclean,
+[oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble),
+[xiaomi-ble](https://github.com/Bluetooth-Devices/xiaomi-ble) and, for Oclean,
 [ha-oclean-integration](https://github.com/Giallo1O/ha-oclean-integration/blob/main/docs/BLE-PROTOCOL-REFERENCE.md).
 Experimental drivers are built on that research and only read; they become "tested" once an owner
 confirms them with Bürstli.
@@ -139,9 +147,11 @@ The protocol knowledge comes from earlier interoperability work, which deserves 
 [marc-alexis-com/laifen-toolbox](https://github.com/marc-alexis-com/laifen-toolbox) (Linux CLI), and for
 Philips Sonicare [mtheli/philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble) (Home Assistant integration, MIT),
 and for Oral-B [Bluetooth-Devices/oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble) (the library behind Home
-Assistant's Oral-B integration, MIT), whose test suite also provides the real advertisements our tests use.
-For Oral-B and Philips Sonicare, the official apps were also studied to understand the protocol, see
-[docs/ORAL-B.md](docs/ORAL-B.md) and [docs/SONICARE.md](docs/SONICARE.md). No code was copied from any of them, and none from an official app.
+Assistant's Oral-B integration, MIT), whose test suite also provides the real advertisements our tests use,
+and for Xiaomi [Bluetooth-Devices/xiaomi-ble](https://github.com/Bluetooth-Devices/xiaomi-ble) (Apache-2.0) and
+[custom-components/ble_monitor](https://github.com/custom-components/ble_monitor) (MIT), whose tests provide our real Xiaomi frames.
+For Oral-B, Philips Sonicare and Xiaomi, the official apps were also studied to understand the protocol, see
+[docs/ORAL-B.md](docs/ORAL-B.md), [docs/SONICARE.md](docs/SONICARE.md) and [docs/XIAOMI.md](docs/XIAOMI.md). No code was copied from any of them, and none from an official app.
 
 ## How this was made
 

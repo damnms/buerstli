@@ -81,6 +81,7 @@ dependencies {
     implementation(project(":drivers:laifen"))
     implementation(project(":drivers:sonicare"))
     implementation(project(":drivers:oralb"))
+    implementation(project(":drivers:xiaomi"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

@@ -8,6 +8,7 @@ import io.github.damnms.buerstli.drivers.laifen.LaifenWaveSeDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
 import io.github.damnms.buerstli.drivers.oralb.OralBPassiveDriver
 import io.github.damnms.buerstli.drivers.sonicare.SonicareClassicDriver
+import io.github.damnms.buerstli.drivers.xiaomi.XiaomiT500Driver
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.util.UUID
@@ -90,14 +91,19 @@ class DriversTest {
 
     @Test
     fun `Xiaomi toothbrushes are recognized by their product id`() {
-        // Every toothbrush pd_id in Mi Home's device catalog (docs/XIAOMI.md).
+        // Every toothbrush pd_id in Mi Home's device catalog (docs/XIAOMI.md), except the T500.
         listOf(
-            0x01A1, 0x0489, 0x1790, 0x3B94, 0x7B27, 0x7B2A, 0x8E95, // EU catalog
+            0x01A1, 0x1790, 0x3B94, 0x7B27, 0x7B2A, 0x8E95, // EU catalog
             0x0440, 0x0806, 0x10C5, 0x1FF3, 0x4DD8, 0x6800, 0x6F5B, 0x759B, 0x7B29, // other regions
             0x00CE, 0x05A1, 0x1767, 0x2A24, 0x3097, 0x30C6, 0x3228, 0x33E2, 0x342F, // partner brands
         ).forEach {
             assertEquals("product id 0x%04X".format(it), Recognition.Unsupported("Xiaomi"), recognize(miBeacon(it)))
         }
+    }
+
+    @Test
+    fun `the Xiaomi T500 gets the experimental passive driver`() {
+        assertEquals(Recognition.Supported(XiaomiT500Driver), recognize(miBeacon(0x0489)))
     }
 
     @Test

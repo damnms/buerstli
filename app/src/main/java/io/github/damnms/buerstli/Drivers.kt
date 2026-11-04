@@ -8,6 +8,7 @@ import io.github.damnms.buerstli.drivers.laifen.LaifenWaveSeDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
 import io.github.damnms.buerstli.drivers.oralb.OralBPassiveDriver
 import io.github.damnms.buerstli.drivers.sonicare.SonicareClassicDriver
+import io.github.damnms.buerstli.drivers.xiaomi.XiaomiT500Driver
 import java.util.UUID
 
 /** Composition root: every supported toothbrush is registered here. */
@@ -23,7 +24,7 @@ object Drivers {
     // catalog (docs/XIAOMI.md); they match the ids known from ble_monitor and xiaomi-ble#356.
     private val XIAOMI_SERVICE = UUID.fromString("0000fe95-0000-1000-8000-00805f9b34fb")
     private val XIAOMI_TOOTHBRUSHES = setOf(
-        // Xiaomi / Mijia, in the EU catalog
+        // Xiaomi / Mijia, in the EU catalog (the T500 has a driver, which comes first)
         0x01A1, // soocare.toothbrush.m1
         0x0489, // soocare.toothbrush.m1s (T500)
         0x1790, // k0918.toothbrush.t700i (T700)
@@ -67,6 +68,7 @@ object Drivers {
             LaifenTc51Driver, // experimental, listens only
             SonicareClassicDriver, // experimental, read-only
             OralBPassiveDriver, // experimental, listens only
+            XiaomiT500Driver, // experimental, listens only
         ),
         // Recognized, but no driver yet: Bürstli offers to record a report instead.
         knownUnsupported = listOf(

@@ -1,9 +1,36 @@
 # Xiaomi brushes: research notes
 
-Status: Bürstli **recognizes** Xiaomi brushes and offers the "help out" report. There is **no
-driver** and Bürstli sends **no command** to them. Nobody has tested anything below with
+Status: Bürstli **recognizes** every toothbrush in Xiaomi Home and offers the "help out" report.
+The **T500** has an experimental driver (`XiaomiT500Driver`) that only **listens** to its
+broadcasts. Bürstli sends **no command** to any Xiaomi brush. Nobody has tested anything below with
 Bürstli yet. This file keeps what is known, what is only assumed, and what the first report
 should answer.
+
+## T500 driver: what it reads
+
+Passive, like Oral-B: no connection. Frame layout and object ids as documented by
+[xiaomi-ble](https://github.com/Bluetooth-Devices/xiaomi-ble) (Home Assistant's built-in Xiaomi
+parser) and [ble_monitor](https://github.com/custom-components/ble_monitor), studied, not copied.
+
+**Frame** (service data `0xFE95`): frame control (2 bytes, LE), product id (2), frame counter (1),
+then the MAC (6, if bit 4), a capability byte (if bit 5; one more I/O byte if the capability has
+`0x20`), then objects (if bit 6): id (2, LE), length (1), data. Bit 3 means encrypted; bit 7 is
+mesh. Bürstli skips encrypted frames, mesh frames and versions below 2, as xiaomi-ble does.
+
+| Object | Data | In Bürstli | Seen on a real T500 |
+|---|---|---|---|
+| `0x0010` toothbrush | `00` + counter: brushing started; `01` + score: brushing ended | Brushing / off, last score | start, counter 3 (xiaomi-ble and ble_monitor tests); the end with score only on other brushes |
+| `0x3003` brushing | `00`/`01` start/end, timestamp (4, not used), score | same | T700 (encrypted), not the T500 |
+| `0x100A` battery | percent | battery | per ble_monitor, no frame in the tests |
+| `0x1013` consumable | percent **left** (Xiaomi's object definition) | brush head wear = 100 − left | per ble_monitor, no frame in the tests |
+
+The counter at the start of brushing is not understood, so Bürstli doesn't show it. The score has no
+known maximum; the reference frames have 83 and 99. That `0x1013` counts what is left, not what
+is worn, is from Xiaomi's object definition and should be checked against Mi Home's display.
+
+Per ble_monitor, an un-set-up T500 sends only an empty frame, so Bürstli shows nothing for it until
+the brush was set up with Mi Home once. The real T500 frame has frame control `0x3071`: not bound,
+old auth mode, not encrypted.
 
 ## What is known (and where from)
 
@@ -134,7 +161,11 @@ no code, neither from Mi Home nor from other projects.
 
 ## What the first report should answer
 
-The current report already records everything needed, without sending a command:
+From a T500: does Bürstli show brushing, the score after brushing, battery and brush head, and do
+they match Mi Home? Is the brush head wear the right way round?
+
+From any Xiaomi brush, the current report already records everything needed, without sending a
+command:
 
 1. **Frame control** (bytes 0-1 of the `0xFE95` service data, not masked): is the brush bound,
    and with which auth mode? Decode the bits with the

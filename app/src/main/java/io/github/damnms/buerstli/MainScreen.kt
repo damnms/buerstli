@@ -553,6 +553,7 @@ private fun InfoReadings(state: BrushState, showTargetDuration: Boolean) {
                 add(R.string.duration_title to stringResource(R.string.duration_value, d / 60, d % 60))
             }
         }
+        state.brushingScore?.let { add(R.string.info_score to "$it") }
         state.brushHeadWearPercent?.let { add(R.string.info_head_wear to stringResource(R.string.info_head_wear_value, it)) }
         state.brushHeadLeft?.let { left ->
             val minutes = (left.brushingSeconds + 59) / 60

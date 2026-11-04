@@ -42,6 +42,8 @@ data class BrushState(
     val brushingSeconds: Int? = null,
     /** How worn the brush head is, 0-100. */
     val brushHeadWearPercent: Int? = null,
+    /** Score the brush gave the last brushing session, for brushes that rate it (e.g. Xiaomi). */
+    val brushingScore: Int? = null,
     /** Time left until the brush suggests a new head, for brushes that count it (e.g. Oral-B). */
     val brushHeadLeft: BrushHeadLeft? = null,
     /** True if the brush reports too much pressure right now. */
