@@ -14,7 +14,7 @@ import java.util.UUID
 
 internal class XiaomiPassiveSession(
     private val productIds: Set<Int>,
-    encrypted: Boolean,
+    private val encrypted: Boolean,
 ) : BrushSession {
     private val _state = MutableStateFlow(BrushState(keyStatus = if (encrypted) KeyStatus.MISSING else null))
     override val state: StateFlow<BrushState> = _state.asStateFlow()
@@ -39,6 +39,8 @@ internal class XiaomiPassiveSession(
         val beacon = MiBeaconCodec.parse(data) ?: return
         if (beacon.productId !in productIds) return
         if (beacon.encrypted) {
+            // Only drivers with a key read encrypted frames; for the others no key could be entered.
+            if (!encrypted) return
             lastEncrypted = data to advertisement.address
             read(data, beacon, advertisement.address)
         } else {
