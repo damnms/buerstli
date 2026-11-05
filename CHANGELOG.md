@@ -6,25 +6,17 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-05
+
 ### Added
-- Oclean, experimental and read-only: model, firmware and battery of every Oclean; the X series
-  (X, X Pro, X Ultra, …) also shows its stored brushing sessions with the time brushed and the
-  score. Bürstli only asks for them, with two read commands; it never sends the command the app
-  deletes them with, and doesn't set the brush's clock. Untested – reports welcome!
-- Xiaomi T700, T700i and T501, experimental: they broadcast encrypted, so Bürstli asks for the
-  brush's key and then reads along. Bürstli still sends nothing to the brush. Untested – reports
-  welcome!
-- Brushes that broadcast encrypted: Bürstli says why it shows nothing and where the key goes.
-- A saved key can be removed again.
-- Xiaomi: the nerd log shows each decrypted frame, so an owner can show what the brush sends; reports
-  describe each Xiaomi frame in words (encrypted, bound, auth mode). The log now also shows service
-  data of brushes Bürstli listens to.
+- Oclean, experimental and read-only: model, firmware and battery; the X series also shows its
+  brushing history with the score. Untested – reports welcome!
+- Xiaomi T700, T700i and T501, experimental: read with the brush's key, which you enter and can
+  remove again. Untested – reports welcome!
+- Xiaomi: the nerd log shows decrypted frames; reports describe each frame in words.
 
 ### Fixed
-- Xiaomi T500: an encrypted broadcast no longer shows "key missing"; the T500 has no key to enter,
-  so Bürstli skips such frames again.
-- The notes on experimental brushes are right again: Xiaomi brushes are only listened to, Bürstli
-  never connects to them; Philips Sonicare is the one brush where Bürstli also changes settings.
+- The notes on experimental brushes are right again: only Philips Sonicare also changes settings.
 
 ## [0.16.0] - 2026-11-04
 
