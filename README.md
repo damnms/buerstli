@@ -26,10 +26,10 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 | Xiaomi | Mi Smart Electric Toothbrush T500 | MiBeacon product id | 🧪 experimental, listens only; the brush must have been set up with Mi Home once | brushing/off, score of the last session, battery level, brush head wear ([notes](docs/XIAOMI.md)) |
 | Xiaomi | T700, T700i, T501 | MiBeacon product id | 🧪 experimental, listens only; they broadcast encrypted, so Bürstli needs the brush's key ([how to get it](docs/XIAOMI.md#bindkey)) | brushing/off, score of the last session, and whatever else the brush broadcasts |
 | Xiaomi | Pro models, kids, partner brands in Mi Home (21 more models) | MiBeacon product id | 🔍 recognized, not supported yet (most broadcast encrypted) ([notes](docs/XIAOMI.md)) | |
-| Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
 | Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental; ✅ reading confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear; from the official app, untested: model number, firmware, mode names per model, brushing history, live pressure, switch mode and intensity ([notes](docs/SONICARE.md)) |
 | Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol, "Condor"); protocol [documented](docs/SONICARE.md#condor--app) – tester wanted! | |
 | Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens, connects briefly for what it doesn't broadcast | status, mode, brushing time, pressure, mouth area, exact iO series, battery level, brushing history, brush head reminder ([notes](docs/ORAL-B.md)) |
+| Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
 
 ### Laifen Wave: the hidden fourth mode
 
