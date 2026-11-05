@@ -22,20 +22,24 @@ Bluetooth, and that's it — the app doesn't even have the permission to access 
 
 ## Supported brushes
 
-| Brand | Model | Bluetooth name | Status | Features |
-|---|---|---|---|---|
-| Laifen | Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real brush | battery, modes, edit and switch modes, brushing time, 30-second nudge, high frequency ([the hidden fourth mode](docs/LAIFEN.md#the-hidden-fourth-mode)), start/stop, flight mode, firmware version |
-| Laifen | Wave Pro (LFTB02) | `LFTB02-S-…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, pressure warning, 30-second nudge, high frequency, flight mode, Pro features (shown) |
-| Laifen | Wave SE (LFTB01-SE) | `LFTB01-SE…` | 🧪 experimental, listens only | battery, modes, brushing time, brushing/idle, 30-second nudge, high frequency, flight mode (shown) |
-| Laifen | Kids TC51 (LFTB01-C) | `LFTB01-C…` | 🧪 experimental, listens only | battery, brushing time, brushing/idle, child lock, 30-second nudge, high frequency, flight mode, ramp-up, spin dry, pressure warning (shown) |
-| Oclean | X series (X, X Pro, X Ultra, X Pro Elite, X Pro Digital, …), Z1 | `Oclean…` | 🧪 experimental, read-only; other Oclean models: model and battery only | model, firmware, battery, brushing history with time brushed and score ([notes](docs/OCLEAN.md)) |
-| Oral-B | iO, Genius, Smart, Pro, Triumph | broadcasts manufacturer data | 🧪 experimental, listens, connects briefly for what it doesn't broadcast | status, mode, brushing time, pressure, mouth area, exact iO series, battery level, brushing history, brush head reminder ([notes](docs/ORAL-B.md)) |
-| Philips | Sonicare (classic: DiamondClean, Prestige, ExpertClean, Kids, …) | `Philips Sonicare`, `Philips OHC` | 🧪 experimental; ✅ reading confirmed on a DiamondClean 9000 (HX960X) – thanks to my awesome brother! | battery, status, mode, intensity, brushing time, brush head wear; from the official app, untested: model number, firmware, mode names per model, brushing history, live pressure, switch mode and intensity ([notes](docs/SONICARE.md)) |
-| Philips | Sonicare 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet (different protocol, "Condor"); protocol [documented](docs/SONICARE.md#condor--app) – tester wanted! | |
-| Xiaomi | Mi Smart Electric Toothbrush T500 | MiBeacon product id | 🧪 experimental, listens only; the brush must have been set up with Mi Home once | brushing/off, score of the last session, battery level, brush head wear ([notes](docs/XIAOMI.md)) |
-| Xiaomi | T700, T700i, T501 | MiBeacon product id | 🧪 experimental, listens only; they broadcast encrypted, so Bürstli needs the brush's key ([how to get it](docs/XIAOMI.md#bindkey)) | brushing/off, score of the last session, and whatever else the brush broadcasts |
-| Xiaomi | Pro models, kids, partner brands in Mi Home (21 more models) | MiBeacon product id | 🔍 recognized, not supported yet (most broadcast encrypted) ([notes](docs/XIAOMI.md)) | |
-| Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | – | ✋ pick it from the list of nearby devices | |
+| Brand | Model | Status | What you see |
+|---|---|---|---|
+| [Laifen](docs/LAIFEN.md) | Wave (LFTB01) | ✅ tested | battery, modes, brushing time, start/stop, the [hidden fourth mode](docs/LAIFEN.md#the-hidden-fourth-mode) – and you can change them |
+| | Wave Pro, Wave SE, Kids TC51 | 🧪 experimental | battery, brushing time, brushing/idle, settings |
+| [Oclean](docs/OCLEAN.md) | X series (X, X Pro, X Ultra, X Pro Elite, …), Z1 | 🧪 experimental | battery, brushing history, score |
+| | other Oclean models | 🧪 experimental | model, battery |
+| [Oral-B](docs/ORAL-B.md) | iO, Genius, Smart, Pro, Triumph | 🧪 experimental | status, mode, pressure, battery, brushing history |
+| [Philips Sonicare](docs/SONICARE.md) | DiamondClean, Prestige, ExpertClean, Kids, … | 🧪 experimental ¹ | battery, mode, intensity, brush head; switching mode and intensity |
+| | 7100 (HX742X) | 🔍 recognized | a report – tester wanted |
+| [Xiaomi](docs/XIAOMI.md) | T500, T700, T700i, T501 | 🧪 experimental ² | brushing/off, score of the last session |
+| | 21 more models in Mi Home | 🔍 recognized | a report |
+| Any other brush | Playbrush, usmile, Ailoria, MOVA, Tesla, … | ✋ pick it by hand | a report |
+
+¹ Reading confirmed on a DiamondClean 9000 – thanks to my awesome brother!
+² The T700 and T501 broadcast encrypted: Bürstli needs the brush's key ([how to get it](docs/XIAOMI.md#bindkey)).
+The T500 must have been set up with Mi Home once.
+
+Everything each brush shows, its Bluetooth name and what is still untested: follow the brand's link.
 
 ✅ **tested**: confirmed by an owner with Bürstli. 🧪 **experimental**: built from other people's
 research verified on real brushes, or from what the official app does, not yet tried with Bürstli.

@@ -15,6 +15,12 @@ Two sources, and every value below says which one it comes from:
 
 No code was copied from either; this file describes the protocol in our own words.
 
+## What Bürstli shows
+
+| Models | Recognized by | Status | Shows |
+|---|---|---|---|
+| iO, Genius, Smart, Pro, Triumph | manufacturer data of Procter & Gamble in the broadcast | 🧪 experimental: listens, connects briefly for what it doesn't broadcast | status, mode, brushing time, pressure, mouth area, exact iO series, battery level, brushing history, brush head reminder |
+
 ## Advertisements
 
 Manufacturer data, company id `0x00DC` (Procter & Gamble). Byte positions after the company id:

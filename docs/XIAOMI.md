@@ -7,6 +7,14 @@ the user enters. Bürstli sends **no command** to any Xiaomi brush. Nobody has t
 Bürstli yet. This file keeps what is known, what is only assumed, and what the first report
 should answer.
 
+## What Bürstli shows
+
+| Models | Recognized by | Status | Shows |
+|---|---|---|---|
+| Mi Smart Electric Toothbrush T500 | MiBeacon product id | 🧪 experimental, listens only; the brush must have been set up with Mi Home once | brushing/off, score of the last session, battery level, brush head wear |
+| T700, T700i, T501 | MiBeacon product id | 🧪 experimental, listens only; they broadcast encrypted, so Bürstli needs the brush's [key](#bindkey) | brushing/off, score of the last session, and whatever else the brush broadcasts |
+| Pro models, kids, partner brands in Mi Home (21 more models) | MiBeacon product id | 🔍 recognized, not supported yet (most broadcast encrypted) | a report |
+
 ## Drivers: what they read
 
 All Xiaomi drivers are passive (`XiaomiPassiveDriver`): no connection. Frame layout and object ids as documented by

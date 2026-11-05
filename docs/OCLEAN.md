@@ -16,6 +16,16 @@ Sources, studied to understand the protocol (interoperability, ADR-6), not copie
 
 This file keeps what is known, what is only assumed, and what the first report should answer.
 
+## What Bürstli shows
+
+| Model | Status | Shows |
+|---|---|---|
+| X series (X, X Pro, X Ultra, X Pro Elite, X Pro Digital, …) and Z1 | 🧪 experimental, read-only | model, firmware, battery, brushing history with time brushed, set time and score |
+| every other Oclean | 🧪 experimental, read-only | model, firmware, battery |
+
+Recognized by the Bluetooth name `Oclean…` or the Oclean service. Which models get which commands:
+[What the driver does](#what-the-driver-does).
+
 ## What the driver does
 
 `OcleanDriver` takes every device whose name starts with "Oclean" (any case) or that advertises

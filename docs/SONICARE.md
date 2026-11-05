@@ -16,6 +16,13 @@ Two sources, and every value below says which one it comes from:
 
 No code was copied from either; this file describes the protocol in our own words.
 
+## What Bürstli shows
+
+| Models | Bluetooth name | Status | Shows |
+|---|---|---|---|
+| classic: DiamondClean, Prestige, ExpertClean, Kids, … | `Philips Sonicare`, `Philips OHC` | 🧪 experimental; ✅ reading confirmed on a DiamondClean 9000 (HX960X) | battery, status, mode, intensity, brushing time, brush head wear; from the official app, untested: model number, firmware, mode names per model, brushing history, live pressure, switching mode and intensity, setting the clock |
+| 7100 (HX742X) | `Philips Sonicare` | 🔍 recognized, not supported yet: a different protocol, [Condor](#condor--app) | a report |
+
 ## Seen on a real brush
 
 A brush reported as "DiamondClean 9000", model number **HX960X**, firmware 1.5.3, with Bürstli

@@ -1,13 +1,15 @@
 # Laifen: protocol notes
 
-Status:
+## What Bürstli shows
 
-| Model | Bluetooth name | Driver | Status |
+| Model | Bluetooth name | Status | Shows |
 |---|---|---|---|
-| Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | `LaifenWaveV1Driver` | **tested** on a real LFTB01-P: reads and changes everything listed in the README |
-| Wave Pro (LFTB02) | `LFTB02-S-…` | `LaifenWaveProDriver` | experimental, connects and listens, writes nothing |
-| Wave SE (LFTB01-SE) | `LFTB01-SE…` | `LaifenWaveSeDriver` | experimental, connects and listens, writes nothing |
-| Kids TC51 (LFTB01-C) | `LFTB01-C…` | `LaifenTc51Driver` | experimental, connects and listens, writes nothing; its charging base (`TC51BB…`) is left alone |
+| Wave (LFTB01) | `LFTB01-…` except `-SE`, `-C` | ✅ tested on a real LFTB01-P | battery, modes, edit and switch modes, brushing time, 30-second nudge, high frequency ([the hidden fourth mode](#the-hidden-fourth-mode)), start/stop, flight mode, firmware version |
+| Wave Pro (LFTB02) | `LFTB02-S-…` | 🧪 experimental, connects and listens, writes nothing | battery, brushing time, brushing/idle, pressure warning, 30-second nudge, high frequency, flight mode, Pro features (shown) |
+| Wave SE (LFTB01-SE) | `LFTB01-SE…` | 🧪 experimental, connects and listens, writes nothing | battery, modes, brushing time, brushing/idle, 30-second nudge, high frequency, flight mode (shown) |
+| Kids TC51 (LFTB01-C) | `LFTB01-C…` | 🧪 experimental, connects and listens, writes nothing; its charging base (`TC51BB…`) is left alone | battery, brushing time, brushing/idle, child lock, 30-second nudge, high frequency, flight mode, ramp-up, spin dry, pressure warning (shown) |
+
+Drivers: `LaifenWaveV1Driver`, `LaifenWaveProDriver`, `LaifenWaveSeDriver`, `LaifenTc51Driver`.
 
 Sources, studied to understand the protocol, no code copied:
 [laifen-toolbox](https://github.com/marc-alexis-com/laifen-toolbox) (`docs/PROTOCOL.md`, including
