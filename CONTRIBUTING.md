@@ -36,12 +36,17 @@ under `src/main/` changes without a changelog entry.
 
 ## Releasing
 
-1. Rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` and add a fresh empty `## [Unreleased]`.
-2. Set `versionName = "x.y.z"` and increase `versionCode` in `app/build.gradle.kts`.
-3. Run `scripts/changelog.sh fastlane`. It writes the short "what's new" that F-Droid and
-   Obtainium show (`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, max. 500
-   characters) from the changelog section.
-4. Commit, then `git tag -a vx.y.z -m "Bürstli x.y.z" && git push origin main vx.y.z`.
+`scripts/release.sh x.y.z` prepares the release commit:
+
+1. It renames `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` and adds a fresh empty `## [Unreleased]`.
+2. It sets `versionName = "x.y.z"` and increases `versionCode` in `app/build.gradle.kts`.
+3. It writes the short "what's new" that F-Droid and Obtainium show
+   (`fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`, max. 500 characters) from the
+   changelog section. If the section is longer, it stops and changes nothing: shorten the entries
+   and run it again.
+4. It runs the release check and commits everything as "Release x.y.z", the new store notes included.
+
+Then tag and push, as the script prints: `git tag -a vx.y.z -m "Bürstli x.y.z" && git push origin main vx.y.z`.
 
 The release workflow checks that tag, app version, changelog and store notes agree, builds and signs the APK,
 and publishes the changelog section as release notes.
