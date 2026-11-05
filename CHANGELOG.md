@@ -7,6 +7,10 @@ All notable changes to Bürstli are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Oclean, experimental and read-only: model, firmware and battery of every Oclean; the X series
+  (X, X Pro, X Ultra, …) also shows its stored brushing sessions with the time brushed and the
+  score. Bürstli asks for them the way the official app does, but never sends the command the app
+  deletes them with, and doesn't set the brush's clock. Untested – reports welcome!
 - Xiaomi T700, T700i and T501, experimental: they broadcast encrypted, so Bürstli asks for the
   brush's key and then reads along. Bürstli still sends nothing to the brush. Untested – reports
   welcome!

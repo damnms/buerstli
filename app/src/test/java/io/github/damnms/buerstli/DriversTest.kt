@@ -6,6 +6,7 @@ import io.github.damnms.buerstli.drivers.laifen.LaifenTc51Driver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveProDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveSeDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
+import io.github.damnms.buerstli.drivers.oclean.OcleanDriver
 import io.github.damnms.buerstli.drivers.oralb.OralBPassiveDriver
 import io.github.damnms.buerstli.drivers.sonicare.SonicareClassicDriver
 import io.github.damnms.buerstli.drivers.xiaomi.XiaomiT500Driver
@@ -77,10 +78,10 @@ class DriversTest {
     }
 
     @Test
-    fun `Oclean is recognized by name or service, no driver yet`() {
-        assertEquals(Recognition.Unsupported("Oclean"), recognize(Advertisement("Oclean X Pro")))
+    fun `Oclean gets the experimental driver, by name or service`() {
+        assertEquals(Recognition.Supported(OcleanDriver), recognize(Advertisement("Oclean X Pro")))
         assertEquals(
-            Recognition.Unsupported("Oclean"),
+            Recognition.Supported(OcleanDriver),
             recognize(Advertisement(null, listOf(UUID.fromString("8082caa8-41a6-4021-91c6-56f9b954cc18")))),
         )
     }

@@ -6,6 +6,7 @@ import io.github.damnms.buerstli.drivers.laifen.LaifenTc51Driver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveProDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveSeDriver
 import io.github.damnms.buerstli.drivers.laifen.LaifenWaveV1Driver
+import io.github.damnms.buerstli.drivers.oclean.OcleanDriver
 import io.github.damnms.buerstli.drivers.oralb.OralBPassiveDriver
 import io.github.damnms.buerstli.drivers.sonicare.SonicareClassicDriver
 import io.github.damnms.buerstli.drivers.xiaomi.XiaomiT500Driver
@@ -60,9 +61,6 @@ object Drivers {
     private fun xiaomiProductId(data: ByteArray?): Int? =
         if (data == null || data.size < 4) null else (data[2].toInt() and 0xFF) or ((data[3].toInt() and 0xFF) shl 8)
 
-    // From the Oclean Home Assistant integration (Giallo1O/ha-oclean-integration).
-    private val OCLEAN_SERVICE = UUID.fromString("8082caa8-41a6-4021-91c6-56f9b954cc18")
-
     val registry = DriverRegistry(
         drivers = listOf(
             LaifenWaveV1Driver,
@@ -71,6 +69,7 @@ object Drivers {
             LaifenTc51Driver, // experimental, listens only
             SonicareClassicDriver, // experimental, read-only
             OralBPassiveDriver, // experimental, listens only
+            OcleanDriver, // experimental, read-only; query commands only for the X series
             XiaomiT500Driver, // experimental, listens only
             XiaomiT700Driver, // experimental, listens only, encrypted: needs the user's key
             XiaomiT501Driver, // experimental, listens only, encrypted: needs the user's key
@@ -82,11 +81,6 @@ object Drivers {
                 ad.name?.let { "Sonicare" in it || it.startsWith("Philips OHC") } == true ||
                     SONICARE_CLASSIC in ad.serviceUuids || SONICARE_CONDOR in ad.serviceUuids ||
                     PHILIPS_COMPANY_ID in ad.manufacturerData
-            },
-            // Oclean: session data needs query commands. ADR-6 allows them for reading, but a driver
-            // waits for an owner who tests it. Reports first, to see what the brush tells unasked.
-            KnownBrush("Oclean") { ad ->
-                ad.name?.startsWith("Oclean", ignoreCase = true) == true || OCLEAN_SERVICE in ad.serviceUuids
             },
             KnownBrush("Xiaomi") { ad -> xiaomiProductId(ad.serviceData[XIAOMI_SERVICE]) in XIAOMI_TOOTHBRUSHES },
             KnownBrush("Oral-B") { ad ->
