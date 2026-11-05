@@ -32,7 +32,8 @@ command), add it to `:domain` with tests, and explain why in the pull request.
 [CHANGELOG.md](CHANGELOG.md) follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Every user-visible change gets a line under `## [Unreleased]`, in the section that fits
 (`Added`, `Changed`, `Fixed`, `Removed`), written for users, not developers. CI fails if code
-under `src/main/` changes without a changelog entry.
+under `src/main/` changes without a changelog entry, and warns once the entries under
+`[Unreleased]` no longer fit the 500 characters F-Droid and Obtainium show.
 
 ## Releasing
 

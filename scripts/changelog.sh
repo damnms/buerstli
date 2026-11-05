@@ -4,6 +4,7 @@
 #   changelog.sh notes VERSION          print the release notes of VERSION
 #   changelog.sh check-release VERSION  tag, app version and changelog must agree
 #   changelog.sh check-updated BASE HEAD  user-visible code changed => CHANGELOG.md too
+#   changelog.sh check-length          warn if [Unreleased] won't fit the stores' 500 characters
 #   changelog.sh fastlane               write the store "what's new" for the current app version
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -79,6 +80,23 @@ case "${1:-}" in
       echo >&2
       echo "WARNING: the changelog section is longer than the 500 characters stores show, so it was" >&2
       echo "         cut and entries are MISSING above. Shorten the entries in $CHANGELOG instead." >&2
+    fi
+    ;;
+  check-length)
+    # A warning, not a failure: entries can be shortened any time before the release, and
+    # scripts/release.sh refuses to release them too long.
+    if [ -z "$(section Unreleased)" ]; then
+      echo "Nothing under [Unreleased]."; exit 0
+    fi
+    if store_text Unreleased | grep -q '^More: '; then
+      msg="The [Unreleased] entries are longer than the 500 characters F-Droid and Obtainium show; shorten them before the release."
+      if [ -n "${GITHUB_ACTIONS:-}" ]; then
+        echo "::warning file=$CHANGELOG,title=Store notes too long::$msg"
+      else
+        echo "WARNING: $msg" >&2
+      fi
+    else
+      echo "The [Unreleased] entries fit the store notes."
     fi
     ;;
   *)
