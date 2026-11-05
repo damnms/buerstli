@@ -1,4 +1,4 @@
-# Xiaomi brushes: research notes
+# Xiaomi: protocol notes
 
 Status: Bürstli **recognizes** every toothbrush in Xiaomi Home and offers the "help out" report.
 The **T500**, **T700/T700i** and **T501** have experimental drivers that only **listen** to their
@@ -200,7 +200,7 @@ Binding changes the brush (new keys, no longer bound to Mi Home), so under **ADR
 allowed for an experimental driver: nothing is implemented until an owner tests it with Bürstli. Bürstli implements from the protocol descriptions only and copies
 no code, neither from Mi Home nor from other projects.
 
-## What the first report should answer
+## To check on a real brush
 
 From a T500: does Bürstli show brushing, the score after brushing, battery and brush head, and do
 they match Mi Home? Is the brush head wear the right way round?

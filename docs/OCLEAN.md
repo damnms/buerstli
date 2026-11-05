@@ -1,4 +1,4 @@
-# Oclean brushes: research notes
+# Oclean: protocol notes
 
 Status: an **experimental, read-only driver** (`OcleanDriver`), not yet tested with Bürstli. It reads
 model, firmware and battery of every Oclean and the stored sessions of the X series; see
@@ -15,6 +15,35 @@ Sources, studied to understand the protocol (interoperability, ADR-6), not copie
   [Real brushes](#real-brushes-ha-oclean-integration).
 
 This file keeps what is known, what is only assumed, and what the first report should answer.
+
+## What the driver does
+
+`OcleanDriver` takes every device whose name starts with "Oclean" (any case) or that advertises
+`OCLEAN_SERVICE`. After connecting, for **every** Oclean, only standard characteristics: Model Number,
+Hardware Revision, Firmware Revision, battery (`2A19`, subscribed if possible). The model shown is the
+retail name if known, else the Model Number, or "Oclean" + the code from the Hardware Revision.
+
+Only for the models of a known family (`OcleanCodec.family`) it also subscribes to `…fbb86` and
+`…fbb90` and sends two read commands:
+
+| Family | Models (2A24) | `0303` to | Records |
+|---|---|---|---|
+| X | the app's type-1 models (Y3, Y3S, Y3T, Y3M, Y3MT, Y3N, Y3MN, Y3MTN, Y3MD, Y3D, Y3D1, Y3D2, R3L), Y3MH, V1a | `fbb89` | with year |
+| X Pro Elite | Y3P, Y3PD, Y3PB | `fbb89` | without year |
+| Z1 | Y5 | `fbb85` | with year (assumed: no real record known) |
+
+Left out: the X Pro 20 (its inline record has no time brushed) and the X Ultra 20 (no capture known).
+
+1. `0303`, only if `2A19` gave no battery; battery from byte 3.
+2. `0307` to `…fbb89`; the sessions from `…fbb90`. Full records with count × 42 bytes; count 0 with
+   the short record inline; if the brush stops sending before the count is reached (1.5 s quiet),
+   what came is read, the last record may be short. No answer within 8 s: no history.
+
+The history shows every record newest first, with the time brushed (bytes 9–10, the set time if
+empty), the set time and the start. Oclean doesn't number sessions; Bürstli counts them, the oldest
+as 1. The score of the newest full record is shown as the last score.
+
+Nothing else is sent: no `0202`, no clock, no setting.
 
 ## Finding the brush
 
@@ -199,36 +228,7 @@ Where it differs from the app:
 - Its `0302` layout differs from the one above (battery in byte 0, brush-head counters at 25–31),
   units unknown. Bürstli doesn't read `0302` yet.
 
-## What the driver does
-
-`OcleanDriver` takes every device whose name starts with "Oclean" (any case) or that advertises
-`OCLEAN_SERVICE`. After connecting, for **every** Oclean, only standard characteristics: Model Number,
-Hardware Revision, Firmware Revision, battery (`2A19`, subscribed if possible). The model shown is the
-retail name if known, else the Model Number, or "Oclean" + the code from the Hardware Revision.
-
-Only for the models of a known family (`OcleanCodec.family`) it also subscribes to `…fbb86` and
-`…fbb90` and sends two read commands:
-
-| Family | Models (2A24) | `0303` to | Records |
-|---|---|---|---|
-| X | the app's type-1 models (Y3, Y3S, Y3T, Y3M, Y3MT, Y3N, Y3MN, Y3MTN, Y3MD, Y3D, Y3D1, Y3D2, R3L), Y3MH, V1a | `fbb89` | with year |
-| X Pro Elite | Y3P, Y3PD, Y3PB | `fbb89` | without year |
-| Z1 | Y5 | `fbb85` | with year (assumed: no real record known) |
-
-Left out: the X Pro 20 (its inline record has no time brushed) and the X Ultra 20 (no capture known).
-
-1. `0303`, only if `2A19` gave no battery; battery from byte 3.
-2. `0307` to `…fbb89`; the sessions from `…fbb90`. Full records with count × 42 bytes; count 0 with
-   the short record inline; if the brush stops sending before the count is reached (1.5 s quiet),
-   what came is read, the last record may be short. No answer within 8 s: no history.
-
-The history shows every record newest first, with the time brushed (bytes 9–10, the set time if
-empty), the set time and the start. Oclean doesn't number sessions; Bürstli counts them, the oldest
-as 1. The score of the newest full record is shown as the last score.
-
-Nothing else is sent: no `0202`, no clock, no setting.
-
-## Open questions for the first report
+## To check on a real brush
 
 1. What does the brush advertise as its name, and which `2A24` / `2A27` values does it have?
 2. Does the battery come from `2A19`, and does `0303` agree?

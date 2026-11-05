@@ -44,7 +44,8 @@ Rules, enforced by Gradle module boundaries:
 | **Capabilities** | What a model can do; the UI is generated from them. |
 | **Support level** | `VERIFIED` = tested on real hardware, otherwise `EXPERIMENTAL`. |
 | **Known brush** | A brush Bürstli recognizes but has no driver for. |
-| **Capture report** | What Bürstli recorded from a known brush, read-only, for building its driver. |
+| **Key** | A secret the owner enters so Bürstli can read a brush that broadcasts encrypted (Xiaomi's bindkey). Stays on the phone. |
+| **Capture report** | What Bürstli recorded from a brush, read-only, for building or checking its driver. |
 
 ## Decisions
 
@@ -61,12 +62,14 @@ whatever modes and parameters the driver declares, so a new brand needs no UI ch
 unless it brings a genuinely new concept.
 
 **ADR-4: No DI framework, no database.** A handful of objects wired by hand in `Drivers.kt`
-and `BrushViewModel` is easier to read than Hilt. Settings live on the brush, so there is
-nothing to persist.
+and `BrushViewModel` is easier to read than Hilt. Settings and brushing histories live on the
+brush, so Bürstli keeps nothing of them. The one thing it stores is the keys owners enter
+(`BrushKeys`, app-private preferences).
 
-**ADR-5: The driver interface follows reality, not speculation.** It is shaped by the one
-protocol we know. When the second brand arrives and doesn't fit, the interface changes then
-— not before.
+**ADR-5: The driver interface follows reality, not speculation.** It was shaped by the first
+protocol, the Laifen Wave's, and changes only when a real brand doesn't fit: passive drivers came
+with Oral-B, short connections (`wantsPoll`) with its battery, keys with Xiaomi's encrypted
+broadcasts. Nothing is added for a brand that might come.
 
 **ADR-6: Experimental drivers only on verified research, and they never change the brush.** A
 driver may be added without a Bürstli tester if its protocol was documented *and verified on real
@@ -75,9 +78,11 @@ until an owner confirms it with Bürstli: every capability is `Access.READ_ONLY`
 
 The official vendor app counts as verified research too: what it reads and sends is what real
 brushes do every day. Bürstli studies it only to understand the protocol (interoperability) and
-never copies its code. Where the vendor app and other research disagree, the vendor app wins.
-Either way, the brand's protocol notes record where each value comes from and whether it was
-seen on a real brush, so a report can confirm or correct it (e.g. [ORAL-B.md](ORAL-B.md), [SONICARE.md](SONICARE.md)).
+never copies its code. What real brushes were seen to send wins over everything; otherwise, where
+the vendor app and other research disagree, the vendor app wins (Oclean is an example of the
+first: owners' captures showed formats the app version studied doesn't read). Either way, the
+brand's protocol notes record where each value comes from and whether it was seen on a real brush,
+so a report can confirm or correct it. They are listed in [docs/README.md](README.md).
 
 Read-only means that nothing on the brush changes, not that nothing is sent. Some protocols can't
 be read at all without messages (a handshake, subscribing, asking for values, acknowledging what

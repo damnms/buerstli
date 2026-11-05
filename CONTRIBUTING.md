@@ -20,9 +20,13 @@ on real brushes by someone else, or is what the official app does (see ADR-6 in
    and nothing that changes the brush. Messages a protocol needs just to be read (handshake,
    subscribe, query, acknowledge) are fine if the verified implementation sends them too (ADR-6).
    Changes are only enabled after someone tried them on a real brush.
-4. **Register** the driver in `app/.../Drivers.kt` and add the module to `app/build.gradle.kts`.
-5. **Try it** on the brush. If everything works, switch to `VERIFIED` and update the
-   support table in the README.
+4. **Register** the driver in `app/.../Drivers.kt`, include the module in `settings.gradle.kts`
+   and add it to `app/build.gradle.kts`. If the brush was a `KnownBrush`, remove that entry.
+5. **Document** it in `docs/<BRAND>.md`, like the other brands (see [docs/README.md](docs/README.md)):
+   status, sources, what the driver reads and sends, where each value comes from, and a section
+   "To check on a real brush". Add the brush to the README's table, its tester list and credits,
+   and to the store listing (see below).
+6. **Try it** on the brush. If everything works, switch to `VERIFIED` and update the README.
 
 If your brush needs a concept the domain doesn't have yet (a new parameter, a new
 command), add it to `:domain` with tests, and explain why in the pull request.
@@ -67,4 +71,5 @@ list of supported brushes.
 - The release build must stay reproducible (CI builds it twice and compares). If a change breaks
   this, find out why before merging; F-Droid relies on it.
 - No `INTERNET` permission, no analytics, no accounts. Ever.
-- Commit messages: short imperative summary ("Add Oral-B iO driver").
+- Commit messages: a short summary, prefixed with the brand or area ("Oclean: read the X Pro
+  Elite's history", "CI: warn when the store notes won't fit"), then why, if it isn't obvious.
