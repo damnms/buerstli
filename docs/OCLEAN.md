@@ -173,12 +173,21 @@ Its users' logs show:
 - Sometimes the count is 1 and still only those 13 bytes follow.
 - The X Pro Elite (Y3P) answers with an empty header and streams its sessions differently; the X Pro
   20 (X20) shifts the record by four bytes. ha-oclean-integration handles both separately.
-- `fbb89` can't be subscribed to, only written.
+- `fbb89` can't be subscribed to, only written. The X series' firmware wants **all** query commands
+  there (`0303` too), not on `fbb85` as app 4.0.8 sends them (its changelog, "TYPE1 command routing").
+- An Oclean X (OCLEANY3M, firmware 1.0.0.20) returned all 32 stored sessions on every poll (issue
+  #137), as full 42-byte records. One of them, a run of about 8 s:
+  `1a 09 11 14 0d 32 00 00 78 00 08 64 … 01 00 ff…` = 2026-09-17 20:13:50, set 120 s, brushed 8 s,
+  score 1 (byte 33).
 
 Where it differs from the app:
 
 - It sends `0202` on every poll and calls it a device-info query; in app 4.0.8 `0202` is the library's
-  `clearRunningDate`, sent after the sessions were read. Bürstli doesn't send it.
+  `clearRunningDate`. The app sends it only after `readRunningData` delivered sessions and it has
+  stored them, and the brush answers with just "OK". But the 32-session buffer above was read with
+  the integration, which sends `0202` (to `fbb89`) before every `0307`: sent that way, it deleted
+  nothing on that brush. Whether it deletes when sent to `fbb85`, as the app does, is open; Bürstli
+  doesn't send it either way.
 - It sets the brush's clock (`0201`, `020E`) on every poll; Bürstli doesn't (ADR-6).
 - Its `0302` layout differs from the one above (battery in byte 0, brush-head counters at 25–31),
   units unknown. Bürstli doesn't read `0302` yet.
@@ -193,7 +202,8 @@ retail name if known, else the Model Number, or "Oclean" + the code from the Har
 Only for the X series (`OcleanCodec.TYPE_1`: the app's type-1 models plus OCLEANY3MH and OCLEANV1a,
 without Y3P and X20) it also subscribes to `…fbb86` and `…fbb90` and sends:
 
-1. `0303` to `…fbb85`, only if `2A19` gave no battery; battery from byte 3.
+1. `0303` to `…fbb89`, only if `2A19` gave no battery; battery from byte 3. (`fbb89` because the X
+   series' firmware wants its queries there, see above; the app sends it to `fbb85`.)
 2. `0307` to `…fbb89`; the sessions from `…fbb90`. Full records with count × 42 bytes; count 0 with
    the short record inline; if the brush stops sending before the count is reached (1.5 s quiet),
    what came is read, the last record may be short. No answer within 8 s: no history.
@@ -209,5 +219,7 @@ Nothing else is sent: no `0202`, no clock, no setting.
 1. What does the brush advertise as its name, and which `2A24` / `2A27` values does it have?
 2. Does the battery come from `2A19`, and does `0303` agree?
 3. Does `0307` bring the full records (count > 0) or only the newest inline? With which MTU?
-4. Do the records stay on the brush when nobody sends `0202`, and how many does it keep?
+4. Does `0202` to `fbb85` delete the sessions? With nRF Connect: `0307` to `fbb89` and note the
+   count in the `*B#` header; `0202` to `fbb85`; `0307` again. (To `fbb89` it deletes nothing on an
+   Oclean X, see above.)
 5. Is the brush's clock in local time, and does it match what the app shows?

@@ -20,7 +20,11 @@ object OcleanCodec {
     val WRITE: UUID = UUID.fromString("9d84b9a3-000c-49d8-9183-855b673fbb85")
     /** Replies to commands on [WRITE] (OCLEAN_READ_INFO), notify. */
     val REPLY: UUID = UUID.fromString("5f78df94-798c-46f5-990a-855b673fbb86")
-    /** The request for brushing sessions goes here (OCLEAN_SEND_BRUSH_CMD); write only. */
+    /**
+     * Read commands of the X series go here (OCLEAN_SEND_BRUSH_CMD); write only. The app 4.0.8 sends
+     * only `0307` here and `0303` to [WRITE], but ha-oclean-integration found that the X series'
+     * firmware wants all its queries here.
+     */
     val SESSION_REQUEST: UUID = UUID.fromString("5f78df94-798c-46f5-990a-855b673fbb89")
     /** Brushing sessions (OCLEAN_RECEIVE_BRUSH), notify. */
     val SESSIONS: UUID = UUID.fromString("5f78df94-798c-46f5-990a-855b673fbb90")

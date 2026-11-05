@@ -13,7 +13,6 @@ import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.MODEL_NUMBER
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.REPLY
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.SESSIONS
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.SESSION_REQUEST
-import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.WRITE
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -27,7 +26,8 @@ import java.util.UUID
 
 /**
  * Frames marked "real" are notifications of real brushes from the tests of ha-oclean-integration
- * (MIT): an Oclean X (OCLEANY3M), February 2026. Expected values are what the formats in
+ * (MIT), an Oclean X (OCLEANY3M) in February 2026, and one record an Oclean X owner posted in its
+ * issue #137. Expected values are what the formats in
  * docs/OCLEAN.md give for those bytes. Frames marked "built" are put together here from the
  * record layout, for cases without a real frame.
  */
@@ -44,6 +44,10 @@ class OcleanTest {
 
     /** Real: reply to 0303 of an idle Oclean X; byte 3 of the payload is the battery, 29 %. */
     private val status = "0303020e4b1d0000"
+
+    /** Real (issue #137): a full record of a run of about 8 s, 2026-09-17 20:13:50, set 120 s, score 1. */
+    private val record8s = "1a0911140d3200007800086400000000001100000000000007" +
+        "0a1f0012100f00000100ffffffffffffff"
 
     /**
      * Built: a full 42-byte record. [valid] is the time brushed; an aborted run keeps the set time
@@ -96,7 +100,7 @@ class OcleanTest {
             if (uuid == SESSION_REQUEST && data.contentEquals(OcleanCodec.QUERY_SESSIONS)) {
                 frames.forEach { s.onNotification(SESSIONS, it) }
             }
-            if (uuid == WRITE && data.contentEquals(OcleanCodec.QUERY_STATUS)) s.onNotification(REPLY, hex(status))
+            if (uuid == SESSION_REQUEST && data.contentEquals(OcleanCodec.QUERY_STATUS)) s.onNotification(REPLY, hex(status))
         }
         return s
     }
@@ -156,7 +160,7 @@ class OcleanTest {
         s.start()
         assertEquals(29, s.state.value.batteryPercent)
         assertEquals("Oclean X Pro", s.state.value.modelName)
-        assertEquals(listOf(WRITE to "0303", SESSION_REQUEST to "0307"), link.writes)
+        assertEquals(listOf(SESSION_REQUEST to "0303", SESSION_REQUEST to "0307"), link.writes)
     }
 
     @Test
@@ -181,6 +185,17 @@ class OcleanTest {
         assertEquals(8, history[1].brushedSeconds)
         assertEquals(120, history[1].targetSeconds)
         assertEquals(97, s.state.value.brushingScore)
+    }
+
+    @Test
+    fun `a real full record, over several notifications`() = runTest {
+        val s = session(oclean("OCLEANY3M"), *packets(hex(record8s)).toTypedArray())
+        s.start()
+        val r = s.state.value.history.single()
+        assertEquals(Instant.parse("2026-09-17T20:13:50Z"), r.startedAt)
+        assertEquals(8, r.brushedSeconds)
+        assertEquals(120, r.targetSeconds)
+        assertEquals(1, s.state.value.brushingScore)
     }
 
     @Test

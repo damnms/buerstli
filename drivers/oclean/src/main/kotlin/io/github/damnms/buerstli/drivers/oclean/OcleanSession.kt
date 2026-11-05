@@ -12,7 +12,6 @@ import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.MODEL_NUMBER
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.REPLY
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.SESSIONS
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.SESSION_REQUEST
-import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.WRITE
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,8 +25,8 @@ import java.util.UUID
 /**
  * Only reads. Every Oclean: the model from Device Information, firmware and battery, which are
  * standard characteristics. Only brushes of the type-1 protocol ([OcleanCodec.TYPE_1]) also get the
- * two read commands, `0303` (status, for the battery if 2A19 fails) and `0307` (stored sessions), as
- * the official app sends them. Bürstli never sends `0202`, which most likely deletes the sessions,
+ * two read commands, `0303` (status, for the battery if 2A19 fails) and `0307` (stored sessions),
+ * both to [SESSION_REQUEST] as ha-oclean-integration found the firmware wants them. Bürstli never sends `0202`, which most likely deletes the sessions,
  * and doesn't set the brush's clock.
  */
 internal class OcleanSession(
@@ -59,7 +58,7 @@ internal class OcleanSession(
 
         optional {
             link.enableNotifications(REPLY)
-            if (_state.value.batteryPercent == null) link.write(WRITE, OcleanCodec.QUERY_STATUS)
+            if (_state.value.batteryPercent == null) link.write(SESSION_REQUEST, OcleanCodec.QUERY_STATUS)
         }
         optional {
             val sessions = readSessions()
