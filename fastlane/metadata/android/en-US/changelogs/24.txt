@@ -1,0 +1,2 @@
+Added:
+- Oclean X Pro Elite, X Pro Digital and Z1: their brushing history too, experimental. The X Pro Elite keeps no year, so Bürstli takes the latest one that isn't in the future. Untested – reports welcome!

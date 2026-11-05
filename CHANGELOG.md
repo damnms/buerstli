@@ -6,6 +6,8 @@ All notable changes to Bürstli are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-05
+
 ### Added
 - Oclean X Pro Elite, X Pro Digital and Z1: their brushing history too, experimental. The X Pro
   Elite keeps no year, so Bürstli takes the latest one that isn't in the future. Untested – reports

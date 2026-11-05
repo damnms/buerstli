@@ -17,8 +17,8 @@ android {
         applicationId = "io.github.damnms.buerstli"
         minSdk = 26
         targetSdk = 37
-        versionCode = 23
-        versionName = "0.17.0"
+        versionCode = 24
+        versionName = "0.18.0"
     }
 
     signingConfigs {
