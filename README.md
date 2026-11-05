@@ -78,6 +78,12 @@ Sonicares ("Condor"). What the official app does with it is
 someone who can try it. A report from your brush would be the first step: it shows whether it
 answers the way the app expects.
 
+**Got an Oclean?** Bürstli reads model, firmware and battery of every Oclean, and the brushing
+history of the X series and the Z1 – built from the official app and from what owners found with
+ha-oclean-integration, but not yet tried with Bürstli. It only asks the brush for its data; it never
+sends the command the app deletes the history with, and doesn't set the clock. One report from an X
+or X Pro would answer most of it: [what a first report should answer](docs/OCLEAN.md#open-questions-for-the-first-report).
+
 **Got a Xiaomi?** Every toothbrush from Xiaomi Home is recognized; the T500, T700, T700i and T501
 have first drivers that only listen. The T700 and T501 broadcast encrypted: with the brush's key
 ([how to get it](docs/XIAOMI.md#bindkey)) Bürstli can read them, and still sends nothing. Got one
@@ -160,9 +166,12 @@ Philips Sonicare [mtheli/philips_sonicare_ble](https://github.com/mtheli/philips
 and for Oral-B [Bluetooth-Devices/oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble) (the library behind Home
 Assistant's Oral-B integration, MIT), whose test suite also provides the real advertisements our tests use,
 and for Xiaomi [Bluetooth-Devices/xiaomi-ble](https://github.com/Bluetooth-Devices/xiaomi-ble) (Apache-2.0) and
-[custom-components/ble_monitor](https://github.com/custom-components/ble_monitor) (MIT), whose tests provide our real Xiaomi frames.
-For Oral-B, Philips Sonicare and Xiaomi, the official apps were also studied to understand the protocol, see
-[docs/ORAL-B.md](docs/ORAL-B.md), [docs/SONICARE.md](docs/SONICARE.md) and [docs/XIAOMI.md](docs/XIAOMI.md). No code was copied from any of them, and none from an official app.
+[custom-components/ble_monitor](https://github.com/custom-components/ble_monitor) (MIT), whose tests provide our real Xiaomi frames,
+and for Oclean [deniskie/ha-oclean-integration](https://github.com/deniskie/ha-oclean-integration) (Home Assistant
+integration, MIT), whose tests and issues provide our real Oclean frames.
+For Oral-B, Philips Sonicare, Xiaomi and Oclean, the official apps were also studied to understand the protocol, see
+[docs/ORAL-B.md](docs/ORAL-B.md), [docs/SONICARE.md](docs/SONICARE.md), [docs/XIAOMI.md](docs/XIAOMI.md) and
+[docs/OCLEAN.md](docs/OCLEAN.md). No code was copied from any of them, and none from an official app.
 
 ## How this was made
 

@@ -8,10 +8,11 @@
 <li><b>Laifen Kids TC51 (LFTB01-C)</b> – experimentell, hört nur mit: Akku, Putzdauer, putzt oder bereit, Kindersicherung, 30-Sekunden-Signal, Hochfrequenz, Flugmodus und mehr.</li>
 <li><b>Philips Sonicare</b> (klassische Modelle wie DiamondClean, Prestige, ExpertClean, Kids) – experimentell. An einer echten DiamondClean 9000 bestätigt: Akku, Zustand, Modus, Intensität, Putzzeit und Bürstenkopf-Verschleiss. Neu und noch ungetestet: Modellnummer, Firmware, Putzverlauf, Andruck-Warnung, Uhr der Bürste stellen sowie Modus und Intensität umstellen.</li>
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimentell, hört mit und verbindet sich nur kurz für das, was sie nicht sendet: Zustand, Modus, Putzzeit, Andruck, Kieferbereich, Akkustand, Putzverlauf und wann ein neuer Bürstenkopf fällig ist.</li>
+<li><b>Oclean</b> – experimentell, liest nur: Modell, Firmware und Akku jeder Oclean; Putzverlauf mit geputzter Zeit und Bewertung bei der X-Serie (X, X Pro, X Ultra, X Pro Elite, …) und der Z1.</li>
 <li><b>Xiaomi T500, T700, T700i, T501</b> – experimentell, hört nur mit: putzt oder aus, Bewertung der letzten Putzsitzung; bei der T500 auch Akku und Bürstenkopf. T700 und T501 senden verschlüsselt: Bürstli liest sie mit dem Schlüssel der Bürste, den du einmal einträgst.</li>
 </ul>
 
-<p><b>Deine Bürste wird noch nicht unterstützt?</b> Bürstli erkennt die Philips Sonicare 7100, Oclean und alle weiteren Xiaomi – jede andere Bürste wählst du einfach aus einer Liste von Geräten in der Nähe. Bürstli nimmt dann in etwa einer Minute einen Bericht auf – es hört nur zu, an der Bürste wird nichts verändert. Den Bericht schickst du per Messenger, E-Mail oder über GitHub an die Entwickler, ganz ohne Technik-Kenntnisse.</p>
+<p><b>Deine Bürste wird noch nicht unterstützt?</b> Bürstli erkennt die Philips Sonicare 7100 und alle weiteren Xiaomi – jede andere Bürste wählst du einfach aus einer Liste von Geräten in der Nähe. Bürstli nimmt dann in etwa einer Minute einen Bericht auf – es hört nur zu, an der Bürste wird nichts verändert. Den Bericht schickst du per Messenger, E-Mail oder über GitHub an die Entwickler, ganz ohne Technik-Kenntnisse.</p>
 
 <p><b>Ehrlich in allem</b></p>
 <ul>

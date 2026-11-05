@@ -8,10 +8,11 @@
 <li><b>Laifen Kids TC51 (LFTB01-C)</b> – experimental, listens only: battery, brushing time, brushing or idle, child lock, 30-second nudge, high frequency, flight mode and more.</li>
 <li><b>Philips Sonicare</b> (classic models such as DiamondClean, Prestige, ExpertClean, Kids) – experimental. Confirmed on a real DiamondClean 9000: battery, status, mode, intensity, brushing time and brush head wear. New and untested: model number, firmware, brushing history, pressure warning, setting the brush's clock, switching mode and intensity.</li>
 <li><b>Oral-B</b> (iO, Genius, Smart, Pro, Triumph) – experimental, listens and connects only briefly for what it doesn't broadcast: status, mode, brushing time, pressure, mouth area, battery, brushing history and when the brush head is due.</li>
+<li><b>Oclean</b> – experimental, read-only: model, firmware and battery of every Oclean; brushing history with the time brushed and the score on the X series (X, X Pro, X Ultra, X Pro Elite, …) and the Z1.</li>
 <li><b>Xiaomi T500, T700, T700i, T501</b> – experimental, listens only: brushing or off, score of the last session; on the T500 also battery and brush head. The T700 and T501 broadcast encrypted: Bürstli reads them with the brush's key, which you enter once.</li>
 </ul>
 
-<p><b>Your brush isn't supported yet?</b> Bürstli recognizes the Philips Sonicare 7100, Oclean and all other Xiaomi brushes – and any other brush you simply pick from a list of nearby devices. Bürstli then records a report in about a minute – it only listens, nothing on the brush is changed. Send it to the developers by messenger, e-mail or on GitHub, no technical knowledge needed.</p>
+<p><b>Your brush isn't supported yet?</b> Bürstli recognizes the Philips Sonicare 7100 and all other Xiaomi brushes – and any other brush you simply pick from a list of nearby devices. Bürstli then records a report in about a minute – it only listens, nothing on the brush is changed. Send it to the developers by messenger, e-mail or on GitHub, no technical knowledge needed.</p>
 
 <p><b>Honest about everything</b></p>
 <ul>
