@@ -13,6 +13,7 @@ import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.MODEL_NUMBER
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.REPLY
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.SESSIONS
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.SESSION_REQUEST
+import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.WRITE
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,8 +27,8 @@ import java.util.UUID
 
 /**
  * Frames marked "real" are notifications of real brushes from the tests of ha-oclean-integration
- * (MIT), an Oclean X (OCLEANY3M) in February 2026, and one record an Oclean X owner posted in its
- * issue #137. Expected values are what the formats in
+ * (MIT), an Oclean X (OCLEANY3M) and an X Pro Elite (OCLEANY3P) in February 2026, and one record
+ * an Oclean X owner posted in its issue #137. Expected values are what the formats in
  * docs/OCLEAN.md give for those bytes. Frames marked "built" are put together here from the
  * record layout, for cases without a real frame.
  */
@@ -41,6 +42,12 @@ class OcleanTest {
 
     /** Real: count 1, but only the short record follows; 2026-02-24 21:53:19, 150 s. */
     private val countOneShort = "03072a422300011a02181535134c009600960b03"
+
+    /**
+     * Real, X Pro Elite (OCLEANY3P), polled 2026-02-25: count 1, a short record without a year.
+     * Month 8, day 27, 00:33:40, set 120 s, brushed 120 s (the brush's clock was off).
+     */
+    private val proEliteYearless = "03072a4223000100081b00212800007800780000"
 
     /** Real: reply to 0303 of an idle Oclean X; byte 3 of the payload is the battery, 29 %. */
     private val status = "0303020e4b1d0000"
@@ -93,14 +100,19 @@ class OcleanTest {
         },
     )
 
-    /** Opens a session on [link] whose brush answers the session request with [frames]. */
+    private val now = Instant.parse("2026-02-25T12:00:00Z")
+
+    /**
+     * Opens a session on [link] whose brush answers the session request with [frames], and the
+     * status query with [status] wherever it arrives; the test checks where it went.
+     */
     private fun session(link: FakeOclean, vararg frames: ByteArray): OcleanSession {
-        val s = OcleanSession(link, utc)
+        val s = OcleanSession(link, utc) { now }
         link.onWrite = { uuid, data ->
             if (uuid == SESSION_REQUEST && data.contentEquals(OcleanCodec.QUERY_SESSIONS)) {
                 frames.forEach { s.onNotification(SESSIONS, it) }
             }
-            if (uuid == SESSION_REQUEST && data.contentEquals(OcleanCodec.QUERY_STATUS)) s.onNotification(REPLY, hex(status))
+            if (data.contentEquals(OcleanCodec.QUERY_STATUS)) s.onNotification(REPLY, hex(status))
         }
         return s
     }
@@ -198,6 +210,45 @@ class OcleanTest {
         assertEquals(1, s.state.value.brushingScore)
     }
 
+    // --- X Pro Elite and Z1 ---
+
+    @Test
+    fun `an X Pro Elite keeps no year, so it is the latest that isn't in the future`() = runTest {
+        val link = oclean("OCLEANY3P")
+        val s = session(link, hex(proEliteYearless))
+        s.start()
+        val r = s.state.value.history.single()
+        assertEquals(Instant.parse("2025-08-27T00:33:40Z"), r.startedAt) // August 2026 would be ahead
+        assertEquals(120, r.brushedSeconds)
+        assertEquals("Oclean X Pro Elite", s.state.value.modelName)
+        assertEquals(listOf(SESSION_REQUEST to "0307"), link.writes)
+    }
+
+    @Test
+    fun `a record without year and month is an unset clock, nothing is made up`() {
+        val stream = OcleanCodec.SessionStream(utc) { now }.apply { yearless = true }
+        assertEquals(emptyList<Any>(), stream.accept(hex("03072a4223000000001b00212800007800780000")))
+    }
+
+    @Test
+    fun `only X Pro Elite records may lack the year`() {
+        val stream = OcleanCodec.SessionStream(utc) { now }
+        assertNull(stream.accept(hex(proEliteYearless))) // count 1: waits for the rest
+        assertEquals(emptyList<Any>(), stream.flush())
+    }
+
+    /** Assumed: the Z1 sends its sessions like the X series; ha-oclean-integration reads them alike. */
+    @Test
+    fun `a Z1 gets the status query on fbb85, the session request on fbb89`() = runTest {
+        val link = oclean("OCLEANY5", battery = null)
+        val s = session(link, hex(inline2min))
+        s.start()
+        assertEquals(listOf(WRITE to "0303", SESSION_REQUEST to "0307"), link.writes)
+        assertEquals(29, s.state.value.batteryPercent)
+        assertEquals("Oclean Z1", s.state.value.modelName)
+        assertEquals(1, s.state.value.history.size)
+    }
+
     @Test
     fun `no answer leaves the history empty`() = runTest {
         val s = session(oclean("OCLEANY3M"))
@@ -210,11 +261,11 @@ class OcleanTest {
 
     @Test
     fun `brushes of other protocols get no command at all`() = runTest {
-        val link = oclean("OCLEANY3P")
+        val link = oclean("OCLEANX20")
         val s = session(link, hex(inline2min))
         s.start()
         assertTrue(link.writes.isEmpty())
-        assertEquals("Oclean X Pro Elite", s.state.value.modelName)
+        assertEquals("Oclean X Pro 20", s.state.value.modelName)
         assertEquals(80, s.state.value.batteryPercent)
         assertTrue(s.state.value.history.isEmpty())
     }
@@ -240,7 +291,7 @@ class OcleanTest {
 
     @Test
     fun `empty slots, impossible dates and a garbled count give no session`() {
-        val stream = OcleanCodec.SessionStream(utc)
+        val stream = OcleanCodec.SessionStream(utc) { now }
         assertEquals(emptyList<Any>(), stream.accept(hex("03072a42230000000215102c1c00007800780201"))) // year 0
         assertEquals(emptyList<Any>(), stream.accept(hex("03072a422300001a0d15102c1c00007800780201"))) // month 13
         assertEquals(emptyList<Any>(), stream.accept(hex("03072a4223ffff1a02")))

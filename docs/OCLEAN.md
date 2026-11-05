@@ -171,8 +171,15 @@ Its users' logs show:
   = 2026-02-21 16:44:28, 120 s set, 120 s brushed. App 4.0.8 would drop this (count 0 means no data
   to it); the brushes may run firmware the app reads elsewhere.
 - Sometimes the count is 1 and still only those 13 bytes follow.
-- The X Pro Elite (Y3P) answers with an empty header and streams its sessions differently; the X Pro
-  20 (X20) shifts the record by four bytes. ha-oclean-integration handles both separately.
+- The X Pro Elite (OCLEANY3P, issue #49) uses the same `*B#` transfer, but its records keep **no
+  year**: byte 0 is 0, then month, day, time as usual. Real, polled 2026-02-25:
+  `03 07 2a 42 23 00 01 00 08 1b 00 21 28 00 00 78 00 78 00 00` = count 1, 27 August 00:33:40 (its
+  clock was off), 120 s. ha-oclean-integration takes the latest year that isn't in the future; a
+  month of 0 means the clock was never set.
+- The X Pro 20 (OCLEANX20, issue #37) sends its newest session inline four bytes later (`00 00 00 8d`
+  first), cut after the set time: `… 1a 03 09 07 39 26 03 00 b4` = 2026-03-09 07:57:38, set 180 s.
+  The time brushed isn't in it.
+- The Z1 (OCLEANY5, issue #69) takes `0303` on `fbb85` and only `0307` on `fbb89`.
 - `fbb89` can't be subscribed to, only written. The X series' firmware wants **all** query commands
   there (`0303` too), not on `fbb85` as app 4.0.8 sends them (its changelog, "TYPE1 command routing").
 - An Oclean X (OCLEANY3M, firmware 1.0.0.20) returned all 32 stored sessions on every poll (issue
@@ -199,11 +206,18 @@ Where it differs from the app:
 Hardware Revision, Firmware Revision, battery (`2A19`, subscribed if possible). The model shown is the
 retail name if known, else the Model Number, or "Oclean" + the code from the Hardware Revision.
 
-Only for the X series (`OcleanCodec.TYPE_1`: the app's type-1 models plus OCLEANY3MH and OCLEANV1a,
-without Y3P and X20) it also subscribes to `…fbb86` and `…fbb90` and sends:
+Only for the models of a known family (`OcleanCodec.family`) it also subscribes to `…fbb86` and
+`…fbb90` and sends two read commands:
 
-1. `0303` to `…fbb89`, only if `2A19` gave no battery; battery from byte 3. (`fbb89` because the X
-   series' firmware wants its queries there, see above; the app sends it to `fbb85`.)
+| Family | Models (2A24) | `0303` to | Records |
+|---|---|---|---|
+| X | the app's type-1 models (Y3, Y3S, Y3T, Y3M, Y3MT, Y3N, Y3MN, Y3MTN, Y3MD, Y3D, Y3D1, Y3D2, R3L), Y3MH, V1a | `fbb89` | with year |
+| X Pro Elite | Y3P, Y3PD, Y3PB | `fbb89` | without year |
+| Z1 | Y5 | `fbb85` | with year (assumed: no real record known) |
+
+Left out: the X Pro 20 (its inline record has no time brushed) and the X Ultra 20 (no capture known).
+
+1. `0303`, only if `2A19` gave no battery; battery from byte 3.
 2. `0307` to `…fbb89`; the sessions from `…fbb90`. Full records with count × 42 bytes; count 0 with
    the short record inline; if the brush stops sending before the count is reached (1.5 s quiet),
    what came is read, the last record may be short. No answer within 8 s: no history.

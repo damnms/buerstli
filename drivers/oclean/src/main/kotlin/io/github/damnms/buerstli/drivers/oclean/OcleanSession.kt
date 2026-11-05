@@ -12,6 +12,7 @@ import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.MODEL_NUMBER
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.REPLY
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.SESSIONS
 import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.SESSION_REQUEST
+import io.github.damnms.buerstli.drivers.oclean.OcleanCodec.WRITE
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,26 +20,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
+import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
 
 /**
  * Only reads. Every Oclean: the model from Device Information, firmware and battery, which are
- * standard characteristics. Only brushes of the type-1 protocol ([OcleanCodec.TYPE_1]) also get the
- * two read commands, `0303` (status, for the battery if 2A19 fails) and `0307` (stored sessions),
- * both to [SESSION_REQUEST] as ha-oclean-integration found the firmware wants them. Bürstli never sends `0202`, which most likely deletes the sessions,
+ * standard characteristics. Only models of a known family ([OcleanCodec.family]) also get the two
+ * read commands, `0303` (status, for the battery if 2A19 fails) and `0307` (stored sessions), to the
+ * characteristics ha-oclean-integration found their firmware wants. Bürstli never sends `0202`, which most likely deletes the sessions,
  * and doesn't set the brush's clock.
  */
 internal class OcleanSession(
     private val link: BrushLink,
     /** The zone the brush's clock is read in; a parameter so tests can fix it. */
     private val zone: ZoneId = ZoneId.systemDefault(),
+    /** Now; a parameter so tests can fix it (for records without a year). */
+    private val now: () -> Instant = Instant::now,
 ) : BrushSession {
 
     private val _state = MutableStateFlow(BrushState.UNKNOWN)
     override val state: StateFlow<BrushState> = _state.asStateFlow()
 
-    private val stream = OcleanCodec.SessionStream(zone)
+    private val stream = OcleanCodec.SessionStream(zone, now)
 
     /** Session notifications while the sessions are being fetched, null otherwise. */
     @Volatile private var inbox: Channel<ByteArray>? = null
@@ -54,11 +58,13 @@ internal class OcleanSession(
         optional { apply(BATTERY, link.read(BATTERY)) }
 
         // Other Oclean protocols differ; no command goes to a brush nobody has checked.
-        if (!OcleanCodec.isType1(modelNumber, code)) return
+        val family = OcleanCodec.family(modelNumber, code) ?: return
+        stream.yearless = family.yearless
 
         optional {
             link.enableNotifications(REPLY)
-            if (_state.value.batteryPercent == null) link.write(SESSION_REQUEST, OcleanCodec.QUERY_STATUS)
+            val statusTo = if (family.statusToWrite) WRITE else SESSION_REQUEST
+            if (_state.value.batteryPercent == null) link.write(statusTo, OcleanCodec.QUERY_STATUS)
         }
         optional {
             val sessions = readSessions()

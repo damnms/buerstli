@@ -3,6 +3,7 @@ package io.github.damnms.buerstli.drivers.oclean
 import io.github.damnms.buerstli.domain.BrushingRecord
 import java.io.ByteArrayOutputStream
 import java.time.DateTimeException
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
@@ -47,16 +48,37 @@ object OcleanCodec {
     private const val MAX_RECORDS = 100
 
     /**
-     * Models that speak this protocol, by Model Number (2A24): those the app 4.0.8 gives to its
-     * type-1 handler (variant 1), plus OCLEANY3MH and OCLEANV1a, confirmed by ha-oclean-integration
-     * on real brushes. The X Pro Elite (Y3P) and X Pro 20 send their sessions differently and are
-     * left out until someone checks them.
+     * How a family of models is read. `0307` always goes to [SESSION_REQUEST]; `0303` too, unless
+     * [statusToWrite], then to [WRITE]. [yearless] brushes keep no year in their session records
+     * (byte 0 is 0), so the year is the latest that doesn't put the session in the future.
      */
-    val TYPE_1 = setOf(
-        "OCLEANY3", "OCLEANY3S", "OCLEANY3T", "OCLEANY3M", "OCLEANY3MH", "OCLEANY3MT", "OCLEANY3N",
-        "OCLEANY3MN", "OCLEANY3MTN", "OCLEANY3MD", "OCLEANY3D", "OCLEANY3D1", "OCLEANY3D2", "OCLEANR3L",
-        "OCLEANV1a",
-    )
+    enum class Family(val statusToWrite: Boolean, val yearless: Boolean) {
+        /** The X series: the app 4.0.8's type-1 models. */
+        X(statusToWrite = false, yearless = false),
+
+        /** X Pro Elite and its variants: like the X series, records without a year. */
+        X_PRO_ELITE(statusToWrite = false, yearless = true),
+
+        /** Z1. */
+        Z1(statusToWrite = true, yearless = false),
+    }
+
+    /**
+     * Models Bürstli sends the read commands to, by Model Number (2A24). The app 4.0.8 gives the X
+     * series to its type-1 handler; ha-oclean-integration confirmed on real brushes the X
+     * (OCLEANY3M, OCLEANY3MH), X Pro (OCLEANY3), X Ultra (OCLEANV1a), X Pro Elite (OCLEANY3P, issue
+     * #49: records without a year), X Pro Digital (OCLEANY3PB) and Z1 (OCLEANY5, issue #69). Left out:
+     * the X Pro 20 (OCLEANX20), which sends its newest session without the time brushed, and the X
+     * Ultra 20 (OCLEANV20), of which no capture is known.
+     */
+    private val FAMILIES: Map<String, Family> =
+        listOf(
+            "OCLEANY3", "OCLEANY3S", "OCLEANY3T", "OCLEANY3M", "OCLEANY3MH", "OCLEANY3MT", "OCLEANY3N",
+            "OCLEANY3MN", "OCLEANY3MTN", "OCLEANY3MD", "OCLEANY3D", "OCLEANY3D1", "OCLEANY3D2", "OCLEANR3L",
+            "OCLEANV1a",
+        ).associateWith { Family.X } +
+            listOf("OCLEANY3P", "OCLEANY3PD", "OCLEANY3PB").associateWith { Family.X_PRO_ELITE } +
+            mapOf("OCLEANY5" to Family.Z1)
 
     /** Retail names, as ha-oclean-integration found them on real brushes. */
     private val RETAIL_NAMES = mapOf(
@@ -90,8 +112,8 @@ object OcleanCodec {
         else -> RETAIL_NAMES[modelNumber] ?: modelNumber
     }
 
-    /** True if Bürstli may send the type-1 read commands to this brush. */
-    fun isType1(modelNumber: String?, code: String?): Boolean = code == null && modelNumber in TYPE_1
+    /** The family whose read commands Bürstli may send; null: standard characteristics only. */
+    fun family(modelNumber: String?, code: String?): Family? = if (code != null) null else FAMILIES[modelNumber]
 
     /** Battery percent from a reply to [QUERY_STATUS]: `03 03`, then byte 3 of the payload. */
     fun statusBattery(value: ByteArray): Int? {
@@ -106,15 +128,25 @@ object OcleanCodec {
      * A session record: start (year − 2000, month, day, hour, minute, second), program, the set
      * time (2 bytes, big-endian, seconds), the time actually brushed (2 bytes), …, score (byte 33).
      * Short records, as a brush sends its newest session inline, stop after the time brushed.
-     * The start is the brush's own clock, read in [zone]. Null if the record makes no sense.
+     * The start is the brush's own clock, read in [zone]. If [now] is given, byte 0 = 0 means the
+     * brush keeps no year (X Pro Elite): the latest year that doesn't put the start after [now].
+     * Null if the record makes no sense.
      */
-    fun session(data: ByteArray, offset: Int, length: Int, number: Int, zone: ZoneId): Session? {
+    fun session(data: ByteArray, offset: Int, length: Int, number: Int, zone: ZoneId, now: Instant? = null): Session? {
         if (length < 11 || offset + length > data.size) return null
         fun u8(i: Int) = data[offset + i].toInt() and 0xFF
         fun u16(i: Int) = (u8(i) shl 8) or u8(i + 1)
-        if (u8(0) == 0) return null // no session in this slot
+        fun start(year: Int) = LocalDateTime.of(year, u8(1), u8(2), u8(3), u8(4), u8(5)).atZone(zone).toInstant()
         val startedAt = try {
-            LocalDateTime.of(2000 + u8(0), u8(1), u8(2), u8(3), u8(4), u8(5)).atZone(zone).toInstant()
+            if (u8(0) != 0) {
+                start(2000 + u8(0))
+            } else {
+                // No year: an empty slot, unless the brush keeps none; month 0: a clock never set.
+                val at = now ?: return null
+                if (u8(1) == 0) return null
+                val year = at.atZone(zone).year
+                start(year).takeIf { !it.isAfter(at) } ?: start(year - 1)
+            }
         } catch (_: DateTimeException) {
             return null
         }
@@ -143,9 +175,12 @@ object OcleanCodec {
      * behind it is the newest session inline, cut short. Real brushes also send a count of 1 with
      * only that short record (ha-oclean-integration); [flush] reads what came when nothing follows.
      */
-    class SessionStream(private val zone: ZoneId) {
+    class SessionStream(private val zone: ZoneId, private val clock: () -> Instant) {
         private var buffer: ByteArrayOutputStream? = null
         private var expected = 0
+
+        /** True for brushes whose records carry no year ([Family.yearless]). */
+        var yearless = false
 
         /** The sessions once a transfer is complete, in the brush's order; null until then. */
         fun accept(value: ByteArray): List<Session>? {
@@ -175,7 +210,8 @@ object OcleanCodec {
 
         private fun records(bytes: ByteArray): List<Session> =
             (bytes.indices step RECORD_SIZE).mapNotNull { from ->
-                session(bytes, from, minOf(RECORD_SIZE, bytes.size - from), from / RECORD_SIZE + 1, zone)
+                val length = minOf(RECORD_SIZE, bytes.size - from)
+                session(bytes, from, length, from / RECORD_SIZE + 1, zone, if (yearless) clock() else null)
             }
 
         private fun isHeader(v: ByteArray) =
