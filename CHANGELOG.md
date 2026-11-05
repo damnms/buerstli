@@ -17,6 +17,8 @@ All notable changes to Bürstli are documented here. The format follows
   data of brushes Bürstli listens to.
 
 ### Fixed
+- Xiaomi T500: an encrypted broadcast no longer shows "key missing"; the T500 has no key to enter,
+  so Bürstli skips such frames again.
 - The notes on experimental brushes are right again: Xiaomi brushes are only listened to, Bürstli
   never connects to them; Philips Sonicare is the one brush where Bürstli also changes settings.
 
