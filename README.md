@@ -90,7 +90,7 @@ The protocols have been researched by others already, which makes a driver much 
 [philips_sonicare_ble](https://github.com/mtheli/philips_sonicare_ble/blob/main/docs/BLE_PROTOCOL.md),
 [oralb-ble](https://github.com/Bluetooth-Devices/oralb-ble),
 [xiaomi-ble](https://github.com/Bluetooth-Devices/xiaomi-ble) and, for Oclean,
-[ha-oclean-integration](https://github.com/Giallo1O/ha-oclean-integration/blob/main/docs/BLE-PROTOCOL-REFERENCE.md).
+[ha-oclean-integration](https://github.com/deniskie/ha-oclean-integration/blob/main/docs/BLE-PROTOCOL-REFERENCE.md).
 Experimental drivers are built on that research and only read; they become "tested" once an owner
 confirms them with Bürstli.
 

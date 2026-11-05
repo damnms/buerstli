@@ -9,7 +9,7 @@ Sources, studied to understand the protocol (interoperability, ADR-6), not copie
 - the official app Oclean Care+ 4.0.8 (`com.yunding.noopsychebrushforeign`). Its BLE layer is a
   library `com.ocleanble.lib` whose public API kept its names; the protocol classes behind it are
   obfuscated, so class names below (`g.i`, `w.b`, …) refer to that app version only.
-- [ha-oclean-integration](https://github.com/Giallo1O/ha-oclean-integration) (MIT), a Home Assistant
+- [ha-oclean-integration](https://github.com/deniskie/ha-oclean-integration) (MIT), a Home Assistant
   integration built from older app versions and checked on real brushes by its users. Where it
   shows what real brushes send, that wins over the app's code; see
   [Real brushes](#real-brushes-ha-oclean-integration).
