@@ -1,0 +1,7 @@
+Added:
+- Oclean, experimental and read-only: model, firmware and battery; the X series also shows its brushing history with the score. Untested – reports welcome!
+- Xiaomi T700, T700i and T501, experimental: read with the brush's key, which you enter and can remove again. Untested – reports welcome!
+- Xiaomi: the nerd log shows decrypted frames; reports describe each frame in words.
+
+Fixed:
+- The notes on experimental brushes are right again: only Philips Sonicare also changes settings.
